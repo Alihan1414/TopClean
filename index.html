@@ -74,11 +74,16 @@
             </div>
 
             <!-- 2. GÖREVLİ PANELİ (KAT/BÖLÜM SEÇİMİ) -->
-            <div id="gorevliPanel" class="view-panel w-100 mw-800">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold m-0" style="color: var(--text-muted);">
-                        Görevli Paneli <span class="mx-2" style="color: var(--accent-primary);">|</span> <span id="gorevliKatAd"></span>
-                    </h3>
+            <div id="gorevliPanel" class="view-panel w-100 mw-800 flex-column align-items-center" style="margin: 0 auto;">
+                <div class="w-100 mb-4 text-center">
+                    <div class="d-inline-block px-4 py-2 glass-card mb-2" style="border-radius: 50px;">
+                        <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 1rem;">
+                            GÖREVLİ PANELİ
+                        </h4>
+                    </div>
+                    <h2 class="fw-bold m-0" style="color: var(--accent-primary);">
+                        📍<span id="gorevliKatAd" class="ms-2"></span>
+                    </h2>
                 </div>
 
                 <div id="reddedilenUyari" class="alert alert-danger d-none d-flex align-items-center gap-3 p-3 rounded-3" style="background-color: rgba(225, 29, 72, 0.1); border-color: var(--danger-color);">
@@ -92,14 +97,17 @@
             </div>
 
             <!-- 3. KRİTER / CHECKLIST PANELİ -->
-            <div id="kriterPanel" class="view-panel w-100 mw-800">
-                <div class="d-flex align-items-center mb-3">
-                    <button class="btn btn-outline-secondary rounded-circle me-3 d-flex align-items-center justify-content-center p-0" style="width: 40px; height: 40px; border-color: var(--border-color);" onclick="KriterManager.geriDon()">
-                        <i data-lucide="arrow-left" size="20" class="text-muted"></i>
-                    </button>
-                    <h3 class="fw-bold m-0" style="color: var(--text-muted);">
-                        <span id="kriterKatAd"></span> <span class="mx-2">❯</span> <span id="kriterBolumAd" style="color: var(--text-main);"></span>
-                    </h3>
+            <div id="kriterPanel" class="view-panel w-100 mw-800 flex-column" style="margin: 0 auto;">
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+                    <div class="d-flex align-items-center gap-3">
+                        <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 40px; height: 40px; border-color: var(--border-color);" onclick="KriterManager.geriDon()">
+                            <i data-lucide="arrow-left" size="20" class="text-muted"></i>
+                        </button>
+                        <div>
+                            <div class="small fw-bold text-muted text-uppercase" id="kriterKatAd" style="letter-spacing: 1px;"></div>
+                            <h4 class="fw-bold m-0" style="color: var(--text-main);" id="kriterBolumAd"></h4>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Progress -->
