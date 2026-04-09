@@ -30,10 +30,32 @@ body {
     color: var(--text-main);
     font-family: 'Inter', sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
+    overflow: hidden; /* Prevent body scrolling for app-like feel */
+    margin: 0;
+    padding: 0;
 }
 
 .custom-bg {
-    background-color: var(--bg-color);
+    /* Modern, subtle gradient animated background */
+    background: linear-gradient(135deg, var(--bg-color) 0%, rgba(15, 118, 110, 0.15) 50%, var(--bg-color) 100%);
+    background-size: 200% 200%;
+    animation: gradientMove 15s ease infinite;
+    height: 100vh;
+    height: 100dvh; /* For mobile browsers */
+    overflow: hidden;
+    position: relative;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+main {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+    padding-bottom: 30px !important; 
 }
 
 .mw-800 {
@@ -77,24 +99,44 @@ body {
 
 /* Cards & Glassmorphism */
 .glass-card {
-    background-color: var(--card-color);
-    border: 1px solid var(--border-color);
-    border-radius: 16px;
-    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+    background-color: rgba(20, 29, 26, 0.65); /* Semi-transparent */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     transition: all 0.3s ease;
 }
 
-.action-card {
-    background-color: var(--card-color);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    transition: all 0.2s ease;
-    cursor: pointer;
+[data-bs-theme="light"] .glass-card {
+    background-color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    border-top: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
 }
+
+.action-card {
+    background-color: rgba(20, 29, 26, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    border-radius: 16px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+[data-bs-theme="light"] .action-card {
+    background-color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
 .action-card:hover {
     border-color: var(--accent-primary);
-    background-color: var(--elevated-card);
-    transform: translateY(-2px);
+    background-color: rgba(20, 184, 166, 0.05);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: 0 12px 25px rgba(15, 118, 110, 0.2);
 }
 
 /* Inputs */
