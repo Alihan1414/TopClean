@@ -240,16 +240,16 @@ function loadGorevliPanel(katAd) {
         }
 
         const div = document.createElement('div');
-        div.className = "action-card p-3 d-flex justify-content-between align-items-center";
+        div.className = "action-card p-3 p-md-4 d-flex flex-column gap-3";
         div.onclick = () => KriterManager.ac(katAd, bolumAd, kriterler);
         div.innerHTML = `
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 30px; height: 30px;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
-                    <i data-lucide="info" size="14"></i>
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <div class="fw-bold" style="font-size: 1.2rem; color: var(--text-main);">📍 ${bolumAd}</div>
+                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 35px; height: 35px; border-color: var(--border-color);" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
+                    <i data-lucide="info" size="16"></i>
                 </button>
-                <div class="fw-bold" style="font-size: 1.1rem; color: var(--text-main);">📍 ${bolumAd}</div>
             </div>
-            <div class="badge-status ${badgeClass} text-center shadow-sm" style="min-width: 90px;">
+            <div class="badge-status ${badgeClass} text-center shadow-sm w-100 py-2 fs-6">
                 ${badgeYazi}
             </div>
         `;
