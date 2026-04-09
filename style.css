@@ -238,3 +238,43 @@ div:where(.swal2-container) div:where(.swal2-html-container) {
 div:where(.swal2-container) button:where(.swal2-confirm) {
     background-color: var(--accent-primary) !important;
 }
+
+/* Mobil Cihazlar İçin Daraltma ve Düzenleme (Responsive) */
+@media (max-width: 576px) {
+    .main-title {
+        font-size: 1.5rem;
+    }
+    .sub-title {
+        font-size: 0.7rem;
+    }
+    #app-header {
+        padding: 10px 15px !important;
+    }
+    main {
+        padding: 15px 10px !important;
+    }
+    .glass-card {
+        padding: 1.25rem !important;
+        border-radius: 16px;
+    }
+    .action-card {
+        padding: 1rem !important;
+    }
+    h3 {
+        font-size: 1.25rem !important;
+    }
+    .custom-input, select.select-dark {
+        font-size: 16px !important; /* iOS Zoom sorununu engellemek için */
+    }
+    .glass-card form {
+        gap: 10px !important; /* Form elemanlarını sıkıştır */
+    }
+    .btn-emerald-lg {
+        padding: 12px !important;
+        font-size: 1rem !important;
+    }
+    /* Üst taraftaki "Çıkış" butonunun metnini kısaltmak veya simgeye düşürmek için */
+    #welcomeText {
+        font-size: 0.85rem;
+    }
+}
