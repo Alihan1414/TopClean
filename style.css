@@ -315,6 +315,36 @@ main {
 
 .cursor-pointer { cursor: pointer; }
 
+/* --- İdareci Tab Styles --- */
+.idarec-tab {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+.idarec-tab:hover {
+    background: rgba(16,185,129,0.1);
+    color: var(--accent-secondary);
+    border-color: var(--accent-primary);
+}
+.idarec-tab.active {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-deep));
+    color: white;
+    border-color: var(--accent-primary);
+    box-shadow: 0 4px 15px rgba(16,185,129,0.3);
+}
+.gecmis-filter { font-size: 0.7rem; transition: all 0.2s; }
+.gecmis-filter.active { opacity: 1; transform: scale(1.05); }
+.gecmis-filter:not(.active) { opacity: 0.6; }
+
+#idarecDateSelector::-webkit-calendar-picker-indicator,
+#raporDateSelector::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    cursor: pointer;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
