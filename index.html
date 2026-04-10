@@ -162,21 +162,49 @@
                 </div>
             </div>
 
-             <!-- 4. YÖNETİCİ/MÜFETTİŞ PANELİ (BASİTLEŞTİRİLMİŞ ÖZET) -->
             <div id="adminPanel" class="view-panel w-100 mw-800">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="fw-bold m-0" style="color: var(--text-muted);">
-                        Yönetici Özeti <span class="mx-2" style="color: var(--accent-primary);">|</span> Genel Durum
-                    </h3>
+                <div class="w-100 mb-4 text-center">
+                    <div class="d-inline-block px-4 py-2 glass-card mb-2" style="border-radius: 50px;">
+                        <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 1rem;">DENETİM MERKEZİ</h4>
+                    </div>
                 </div>
-                <div class="alert alert-info bg-transparent border rounded-3 p-4 text-center" style="border-color: var(--accent-primary) !important;">
-                    <i data-lucide="bar-chart-2" size="48" style="color: var(--accent-primary);" class="mb-3"></i>
-                    <h4 class="fw-bold text-white">Yönetici Paneli (Demo)</h4>
-                    <p class="text-muted">Bu ekranda normalde istatistikler listelenmektedir. Web versiyonunda veri kaynağı "LocalStorage" olduğu ve merkezi kümülatif veri olmadığı için, raporlama kısmı simüle edilmiştir.</p>
+
+                <!-- Admin Stats Grid -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="glass-card p-3 text-center h-100">
+                            <div class="small text-muted mb-1">Toplam</div>
+                            <h4 id="adminStatTotal" class="fw-bold m-0 text-white">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="glass-card p-3 text-center h-100">
+                            <div class="small text-muted mb-1">Onaylanan</div>
+                            <h4 id="adminStatSuccess" class="fw-bold m-0 text-success">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="col-12 glass-card p-3 text-center h-100">
+                            <div class="small text-muted mb-1">Bekleyen</div>
+                            <h4 id="adminStatPending" class="fw-bold m-0 text-warning">0</h4>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="glass-card p-3 text-center h-100">
+                            <div class="small text-muted mb-1">Reddedilen</div>
+                            <h4 id="adminStatDanger" class="fw-bold m-0 text-danger">0</h4>
+                        </div>
+                    </div>
                 </div>
                 
-                <h5 class="mt-5 mb-3 text-white">Cihaza Kayıtlı Raporlar (Son 10)</h5>
-                <div id="raporListesi" class="d-flex flex-column gap-3">
+                <div class="d-flex justify-content-between align-items-center mb-3 px-1">
+                    <h5 class="text-white m-0">Denetim Geçmişi</h5>
+                    <button class="btn btn-sm btn-emerald-outline px-3" onclick="AdminManager.exportCSV()">
+                        <i data-lucide="download" size="14"></i> EXCEL / CSV
+                    </button>
+                </div>
+
+                <div id="raporListesi" class="d-flex flex-column gap-3 overflow-auto" style="padding-bottom: 80px;">
                     <!-- Rapor kartları... -->
                 </div>
             </div>
@@ -184,7 +212,36 @@
         </main>
     </div>
 
+    <!-- INSPECTOR DETAIL MODAL -->
+    <div class="modal fade" id="adminDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border-0 shadow-lg">
+                <div class="modal-header border-bottom-0 pb-0">
+                    <h5 class="modal-title fw-bold text-white" id="modalKatBolum">Detaylı İnceleme</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <div id="modalFotoContainer" class="text-center mb-4">
+                        <img id="modalFoto" src="" class="img-fluid rounded-3 border shadow-sm" style="max-height: 250px;">
+                    </div>
+                    <div class="mb-4">
+                        <h6 class="fw-bold text-muted small text-uppercase mb-3">Tamamlanan Kriterler</h6>
+                        <div id="modalKriterListesi" class="small text-light"></div>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-muted small text-uppercase mb-2">Müfettiş Notu (Opsiyonel)</h6>
+                        <textarea id="modalAdminNot" class="form-control custom-input" rows="2" placeholder="Gözlemlerinizi buraya yazın..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top-0 pt-0 gap-2">
+                    <button type="button" class="btn btn-danger flex-grow-1 py-3 fw-bold rounded-3" onclick="AdminManager.processReport('reddedildi')">REDDET</button>
+                    <button type="button" class="btn btn-emerald-lg flex-grow-2 py-3 fw-bold rounded-3" onclick="AdminManager.processReport('onaylandi')">ONAYLA</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=4"></script>
+    <script src="app.js?v=5"></script>
 </body>
 </html>
