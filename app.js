@@ -241,6 +241,7 @@ function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
     document.getElementById('userProfileControls').classList.add('d-none');
+    initLoginSelect(); // Yenilenmiş personel listesini ana ekrana yükle
     showPanel("loginPanel");
     updateHeader();
 }
@@ -781,6 +782,7 @@ const IdarecManager = {
         document.getElementById('yeniPersonelKat').value = '';
         Swal.fire({icon:'success',title:'Kaydedildi!',text:ad+' sisteme eklendi.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
+        initLoginSelect(); // Login dropdown'u güncelle
     },
     personelSil: function(extraIdx) {
         var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
@@ -789,6 +791,7 @@ const IdarecManager = {
         localStorage.setItem('topclean_users', JSON.stringify(extras));
         Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
+        initLoginSelect(); // Login dropdown'u güncelle
     },
     exportCSV: function() {
         var selectedDate = document.getElementById('raporDateSelector').value;
