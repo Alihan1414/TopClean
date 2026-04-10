@@ -19,7 +19,7 @@
     <!-- SweetAlert2 (for beautiful alerts instead of tkinter messagebox) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=3.0">
 </head>
 <body>
     <!-- App Container -->
@@ -169,14 +169,14 @@
                     </div>
                 </div>
 
-                <!-- Admin Action Bar -->
-                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3 px-1">
-                    <div class="d-flex align-items-center gap-2 glass-card p-0 px-3 rounded-pill" style="border: 1px solid var(--accent-primary) !important; height: 38px;">
+                <!-- Admin Action Bar (Better Mobile Stacking) -->
+                <div class="d-flex flex-column flex-sm-row gap-2 justify-content-between align-items-center mb-3 px-1">
+                    <div class="d-flex align-items-center gap-2 glass-card p-0 px-3 rounded-pill w-100 w-sm-auto" style="border: 1px solid var(--accent-primary) !important; height: 40px; min-width: 160px;">
                         <i data-lucide="calendar" size="14" class="text-emerald"></i>
-                        <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white x-small fw-bold shadow-none" style="outline: none; width: 110px;">
+                        <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white x-small fw-bold shadow-none flex-grow-1" style="outline: none;">
                     </div>
-                    <button class="btn btn-sm btn-emerald-outline px-3 py-1 rounded-pill fw-bold d-flex align-items-center gap-2" onclick="AdminManager.exportCSV()" style="font-size: 0.75rem; height: 38px;">
-                        <i data-lucide="download" size="14"></i> EXCEL
+                    <button class="btn btn-sm btn-emerald-outline px-3 py-1 rounded-pill fw-bold d-flex align-items-center justify-content-center gap-2 w-100 w-sm-auto" onclick="AdminManager.exportCSV()" style="font-size: 0.75rem; height: 40px;">
+                        <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
                     </button>
                 </div>
 
@@ -208,7 +208,7 @@
                     </div>
                 </div>
 
-                <div id="denetimMatrisi" class="d-flex flex-column gap-4 pb-5">
+                <div id="denetimMatrisi" class="container-fluid p-0 d-flex flex-column gap-4 pb-5">
                     <!-- Kat ve Mahal ızgarası buraya gelecek -->
                 </div>
             </div>
