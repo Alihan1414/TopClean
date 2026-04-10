@@ -673,7 +673,6 @@ const IdarecManager = {
         var dayData = allData.filter(function(d){ return new Date(d.tarih).toLocaleDateString() === targetDateStr; });
         document.getElementById('idarecStatTotal').innerText = dayData.length;
         document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
-        document.getElementById('idarecStatPending').innerText = dayData.filter(function(d){return d.durum==='bekliyor';}).length;
         document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
         var katKeys = Object.keys(katlar);
         katKeys.forEach(function(katAd, kIdx) {
