@@ -504,7 +504,7 @@ function loadAdminPanel() {
                 <span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold shadow-sm" style="letter-spacing:1px;">${katAd.toUpperCase()}</span>
                 <div class="flex-grow-1 h-px bg-glass-border"></div>
             </div>
-            <div class="row g-3" id="rooms-${kIdx}"></div>
+            <div class="row g-2 m-0" id="rooms-${kIdx}"></div>
         `;
         matris.appendChild(katWrapper);
         
