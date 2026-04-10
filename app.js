@@ -240,16 +240,17 @@ function loadGorevliPanel(katAd) {
         }
 
         const div = document.createElement('div');
-        div.className = "action-card p-3 p-md-4 d-flex flex-column gap-3";
+        div.className = "action-card stagger-item p-3 p-md-4 d-flex flex-column gap-3 shadow-hover";
+        div.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.1}s`;
         div.onclick = () => KriterManager.ac(katAd, bolumAd, kriterler);
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center w-100">
-                <div class="fw-bold" style="font-size: 1.2rem; color: var(--text-main);">📍 ${bolumAd}</div>
-                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 35px; height: 35px; border-color: var(--border-color);" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
-                    <i data-lucide="info" size="16"></i>
+                <div class="fw-bold" style="font-size: 1.1rem; color: var(--text-main); letter-spacing: 0.5px;">📍 ${bolumAd}</div>
+                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--border-color); opacity: 0.6;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
+                    <i data-lucide="info" size="14"></i>
                 </button>
             </div>
-            <div class="badge-status ${badgeClass} text-center shadow-sm w-100 py-2 fs-6">
+            <div class="badge-status ${badgeClass} text-center shadow-sm w-100 py-2 fs-6" style="border-radius: 12px; font-weight: 700;">
                 ${badgeYazi}
             </div>
         `;
@@ -417,28 +418,29 @@ function loadAdminPanel() {
         return;
     }
 
-    data.forEach(d => {
+    data.forEach((d, idx) => {
         let isaretli = d.secilen.length;
         let dDate = new Date(d.tarih).toLocaleString('tr-TR');
         
-        let imgHtml = d.foto ? `<img src="${d.foto}" class="rounded mt-2 border" style="max-height: 80px; width: auto; border-color: var(--border-color)!important">` : '<div class="text-muted small mt-2"><i data-lucide="image-off" size="14"></i> Görsel yok</div>';
+        let imgHtml = d.foto ? `<img src="${d.foto}" class="rounded-3 mt-2 border-0 shadow-sm" style="max-height: 100px; width: auto; object-fit: cover;">` : '<div class="text-muted small mt-2 opacity-50"><i data-lucide="image-off" size="14"></i> Görsel yok</div>';
 
-        let badge = d.durum === "bekliyor" ? `<span class="badge bg-warning text-dark">Bekliyor</span>` : 
-                    d.durum === "reddedildi" ? `<span class="badge bg-danger">Reddedildi</span>` : 
-                    `<span class="badge bg-success">Onaylandı</span>`;
+        let badge = d.durum === "bekliyor" ? `<span class="badge-status badge-warning text-dark">Bekliyor</span>` : 
+                    d.durum === "reddedildi" ? `<span class="badge-status badge-danger">Reddedildi</span>` : 
+                    `<span class="badge-status badge-success">Onaylandı</span>`;
 
         let card = document.createElement('div');
-        card.className = "glass-card p-3 d-flex flex-column gap-2";
+        card.className = "glass-card stagger-item p-4 d-flex flex-column gap-2 mb-2 shadow-hover";
+        card.style.animationDelay = `${idx * 0.15}s`;
         card.innerHTML = `
             <div class="d-flex justify-content-between align-items-start">
                 <div>
-                    <h5 class="fw-bold mb-1" style="color: var(--text-main);">${d.kat} - ${d.bolum}</h5>
-                    <div class="small text-muted">${dDate}</div>
+                    <h5 class="fw-bold mb-1" style="color: var(--accent-secondary); letter-spacing: 0.5px;">${d.kat} - ${d.bolum}</h5>
+                    <div class="small text-muted opacity-75"><i data-lucide="calendar" size="12"></i> ${dDate}</div>
                 </div>
                 ${badge}
             </div>
-            <div class="text-muted small mt-1">İşaretlenen Kriter: <b>${isaretli}</b> madde</div>
-            ${d.yorum ? `<div class="p-2 rounded-2 mt-1 small" style="background-color: var(--bg-color);"><b>Not:</b> ${d.yorum}</div>` : ''}
+            <div class="text-muted small mt-2">İşaretlenen Kriter: <b class="text-white">${isaretli}</b> madde</div>
+            ${d.yorum ? `<div class="p-3 rounded-3 mt-2 small" style="background-color: rgba(255,255,255,0.03); border-left: 3px solid var(--accent-primary);"><b>Not:</b> ${d.yorum}</div>` : ''}
             <div>${imgHtml}</div>
         `;
         list.appendChild(card);
