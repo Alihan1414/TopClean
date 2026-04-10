@@ -19,7 +19,7 @@
     <!-- SweetAlert2 (for beautiful alerts instead of tkinter messagebox) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <link rel="stylesheet" href="style.css?v=4">
+    <link rel="stylesheet" href="style.css?v=2.1">
 </head>
 <body>
     <!-- App Container -->
@@ -170,13 +170,13 @@
                 </div>
 
                 <!-- Admin Action Bar -->
-                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-4 px-1">
-                    <div class="d-flex align-items-center gap-2 glass-card p-1 px-3 rounded-pill" style="border: 1px solid var(--accent-primary) !important;">
-                        <i data-lucide="calendar" size="16" class="text-emerald"></i>
-                        <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white small fw-bold shadow-none" style="outline: none;">
+                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3 px-1">
+                    <div class="d-flex align-items-center gap-2 glass-card p-0 px-3 rounded-pill" style="border: 1px solid var(--accent-primary) !important; height: 38px;">
+                        <i data-lucide="calendar" size="14" class="text-emerald"></i>
+                        <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white x-small fw-bold shadow-none" style="outline: none; width: 110px;">
                     </div>
-                    <button class="btn btn-sm btn-emerald-outline px-4 py-2 rounded-pill fw-bold d-flex align-items-center gap-2" onclick="AdminManager.exportCSV()">
-                        <i data-lucide="download" size="14"></i> EXCEL / CSV
+                    <button class="btn btn-sm btn-emerald-outline px-3 py-1 rounded-pill fw-bold d-flex align-items-center gap-2" onclick="AdminManager.exportCSV()" style="font-size: 0.75rem; height: 38px;">
+                        <i data-lucide="download" size="14"></i> EXCEL
                     </button>
                 </div>
 
