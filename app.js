@@ -799,7 +799,11 @@ const ListeManager = {
             document.getElementById('listDiger').value = data.diger || "";
             if (data.sonuclar) {
                 this.renderSonuclar(data.sonuclar);
+            } else {
+                document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small">Henüz dağıtım yapılmadı. İsimleri girip yukarıdaki butona basın.</div>';
             }
+        } else {
+            document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small">Henüz dağıtım yapılmadı. İsimleri girip yukarıdaki butona basın.</div>';
         }
         lucide.createIcons();
     },
