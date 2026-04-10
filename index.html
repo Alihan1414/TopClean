@@ -19,7 +19,7 @@
     <!-- SweetAlert2 (for beautiful alerts instead of tkinter messagebox) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-    <link rel="stylesheet" href="style.css?v=5.0">
+    <link rel="stylesheet" href="style.css?v=6.0">
 </head>
 <body>
     <!-- App Container -->
@@ -221,6 +221,123 @@
                 </div>
             </div>
 
+            <!-- 5. İDAREC PANELİ -->
+            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch">
+                <div class="w-100" style="max-width: 860px; margin: 0 auto; padding: 0;">
+
+                    <!-- Panel Title -->
+                    <div class="text-center mb-3">
+                        <div class="d-inline-block px-4 py-2 glass-card" style="border-radius: 50px;">
+                            <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 0.9rem;">🏛️ YÖNETİM MERKEZİ</h4>
+                        </div>
+                    </div>
+
+                    <!-- İdareci Sekmeleri (Tabs) -->
+                    <div class="d-flex gap-2 mb-4 overflow-auto pb-1" style="flex-wrap: nowrap;">
+                        <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('gecmis', this)">📋 Geçmiş</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👤 Personel</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('rapor', this)">📥 Rapor</button>
+                    </div>
+
+                    <!-- TAB 1: BİNA DURUMU -->
+                    <div id="idarec-tab-durum" class="idarec-tab-content">
+                        <!-- Date selector -->
+                        <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill w-100 mb-4" style="border: 1px solid var(--accent-primary) !important; height: 44px;">
+                            <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
+                            <input type="date" id="idarecDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1" style="outline: none; font-size: 0.85rem;">
+                        </div>
+                        <!-- Stats row -->
+                        <div class="row g-2 mb-4 mx-0">
+                            <div class="col-6 col-sm-3 px-1">
+                                <div class="glass-card p-2 text-center h-100">
+                                    <div class="x-small text-muted mb-1">Toplam</div>
+                                    <h5 id="idarecStatTotal" class="fw-bold m-0 text-white">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3 px-1">
+                                <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #28a745;">
+                                    <div class="x-small text-muted mb-1">Onay</div>
+                                    <h5 id="idarecStatSuccess" class="fw-bold m-0 text-success">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3 px-1">
+                                <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #ffc107;">
+                                    <div class="x-small text-muted mb-1">Bekle</div>
+                                    <h5 id="idarecStatPending" class="fw-bold m-0 text-warning">0</h5>
+                                </div>
+                            </div>
+                            <div class="col-6 col-sm-3 px-1">
+                                <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #dc3545;">
+                                    <div class="x-small text-muted mb-1">Red</div>
+                                    <h5 id="idarecStatDanger" class="fw-bold m-0 text-danger">0</h5>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Building matrix (read-only) -->
+                        <div id="idarecBinaMatrisi" class="d-flex flex-column gap-4 pb-5 w-100"></div>
+                    </div>
+
+                    <!-- TAB 2: DENETİM GEÇMİŞİ -->
+                    <div id="idarec-tab-gecmis" class="idarec-tab-content d-none">
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold gecmis-filter active" style="background: rgba(16,185,129,0.2); color: #34D399; border: 1px solid #10B981;" onclick="IdarecManager.filterGecmis('hepsi', this)">Hepsi</button>
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold gecmis-filter" style="background: rgba(40,167,69,0.1); color: #28a745; border: 1px solid #28a745;" onclick="IdarecManager.filterGecmis('onaylandi', this)">✅ Onaylı</button>
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold gecmis-filter" style="background: rgba(220,53,69,0.1); color: #dc3545; border: 1px solid #dc3545;" onclick="IdarecManager.filterGecmis('reddedildi', this)">❌ Reddedilen</button>
+                        </div>
+                        <div id="idarecGecmisList" class="d-flex flex-column gap-2 pb-5"></div>
+                    </div>
+
+                    <!-- TAB 3: PERSONEL YÖNETİMİ -->
+                    <div id="idarec-tab-personel" class="idarec-tab-content d-none">
+                        <!-- Add form -->
+                        <div class="glass-card p-4 mb-4">
+                            <h6 class="fw-bold text-white mb-3">➕ Yeni Görevli Ekle</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <input type="text" id="yeniPersonelAd" class="form-control custom-input" placeholder="Ad Soyad">
+                                <input type="password" id="yeniPersonelSifre" class="form-control custom-input" placeholder="Şifre">
+                                <select id="yeniPersonelKat" class="form-select custom-input">
+                                    <option value="">-- Kat Seç --</option>
+                                    <option>-1. Kat</option>
+                                    <option>0. Kat</option>
+                                    <option>1. Kat</option>
+                                    <option>2. Kat</option>
+                                    <option>3. Kat</option>
+                                    <option>4. Kat</option>
+                                </select>
+                                <button class="btn btn-emerald-lg w-100 py-2 fw-bold rounded-3" onclick="IdarecManager.personelEkle()">
+                                    <i data-lucide="user-plus" size="16"></i> KAYDET
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Personnel list -->
+                        <div id="personelListesi" class="d-flex flex-column gap-2 pb-5"></div>
+                    </div>
+
+                    <!-- TAB 4: RAPOR İNDİR -->
+                    <div id="idarec-tab-rapor" class="idarec-tab-content d-none">
+                        <div class="glass-card p-4 text-center">
+                            <div class="mb-4">
+                                <i data-lucide="file-spreadsheet" size="64" class="text-emerald opacity-75"></i>
+                            </div>
+                            <h5 class="fw-bold text-white mb-2">Günlük Temizlik Raporu</h5>
+                            <p class="text-muted small mb-4">Seçilen tarihe ait tüm temizlik ve denetim kayıtlarını CSV formatında indirin. Google Drive'a manuel olarak yükleyebilirsiniz.</p>
+                            <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill w-100 mb-3" style="border: 1px solid var(--accent-primary) !important; height: 44px;">
+                                <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
+                                <input type="date" id="raporDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1" style="outline: none; font-size: 0.85rem;">
+                            </div>
+                            <button class="btn btn-emerald-lg w-100 py-3 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2 mb-3" onclick="IdarecManager.exportCSV()">
+                                <i data-lucide="download" size="20"></i> CSV RAPORU İNDİR
+                            </button>
+                            <a href="https://drive.google.com/drive/my-drive" target="_blank" class="btn btn-outline-secondary w-100 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2" style="font-size: 0.85rem;">
+                                <i data-lucide="external-link" size="16"></i> Google Drive'ı Aç
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
         </main>
     </div>
 
@@ -254,6 +371,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=6"></script>
+    <script src="app.js?v=7"></script>
 </body>
 </html>
