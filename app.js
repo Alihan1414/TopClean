@@ -819,7 +819,7 @@ const ListeManager = {
             document.getElementById('listSaglikli').value = data.saglikli || "";
             document.getElementById('listDiger').value = data.diger || "";
             if (data.sonuclar) {
-                this.renderSonuclar(data.sonuclar);
+                this.renderSonuclar(data.sonuclar, data.baskanlar || {});
             } else {
                 document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small">Henüz dağıtım yapılmadı. İsimleri girip yukarıdaki butona basın.</div>';
             }
@@ -829,22 +829,30 @@ const ListeManager = {
         lucide.createIcons();
     },
 
-    save: function(sonuclar = null) {
+    save: function(sonuclar = null, baskanlar = null) {
+        const currentData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
         const data = {
             alerjik: document.getElementById('listAlerjik').value,
             astim: document.getElementById('listAstim').value,
             saglikli: document.getElementById('listSaglikli').value,
             diger: document.getElementById('listDiger').value,
-            sonuclar: sonuclar || (JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}')).sonuclar
+            sonuclar: sonuclar || currentData.sonuclar,
+            baskanlar: baskanlar || currentData.baskanlar || {}
         };
         localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
     },
 
+    getPoolNames: function() {
+        const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+        return [...parseList('listAlerjik'), ...parseList('listAstim'), ...parseList('listSaglikli'), ...parseList('listDiger')];
+    },
+
     dagit: function() {
-        this.save(); // Önce mevcut girdileri kaydet
+        this.save();
+        const currentData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const baskanlar = currentData.baskanlar || {};
         
         const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
-        
         let students = {
             alerjik: parseList('listAlerjik'),
             astim: parseList('listAstim'),
@@ -852,9 +860,7 @@ const ListeManager = {
             diger: parseList('listDiger')
         };
 
-        let distribution = {}; // { "Kat Adı": { "Oda Adı": ["Talebe 1", ...] } }
-
-        // Odaları topla ve sınıflandır
+        let distribution = {}; 
         let rooms = [];
         Object.keys(katlar).forEach(kat => {
             Object.keys(katlar[kat]).forEach(oda => {
@@ -862,78 +868,114 @@ const ListeManager = {
                 let nameLower = oda.toLowerCase();
                 if (nameLower.includes("wc") || nameLower.includes("lavabo")) type = "lavabo";
                 else if (nameLower.includes("merdiven") || nameLower.includes("donanım") || nameLower.includes("muhasebe")) type = "dar";
-                
                 rooms.push({ kat, oda, type, capacity: type === "lavabo" ? 2 : 1, assigned: [] });
             });
         });
 
-        // Dağıtım Havuzları
         let pool_astim = [...students.astim];
         let pool_alerjik = [...students.alerjik];
         let pool_genel = [...students.saglikli, ...students.diger];
 
-        // 1. ADIM: Astımlıları yerleştir (Dar yerlere gidemezler)
+        // Dağıtım
+        rooms.forEach(r => { if (r.type !== "dar" && pool_astim.length > 0 && r.assigned.length < r.capacity) r.assigned.push(pool_astim.shift()); });
+        rooms.forEach(r => { if (r.type !== "lavabo" && pool_alerjik.length > 0 && r.assigned.length < r.capacity) r.assigned.push(pool_alerjik.shift()); });
+        rooms.forEach(r => { while (pool_genel.length > 0 && r.assigned.length < r.capacity) r.assigned.push(pool_genel.shift()); });
+        
+        let leftoverTeams = [...pool_astim, ...pool_alerjik];
+        rooms.forEach(r => { while (leftoverTeams.length > 0 && r.assigned.length < r.capacity) r.assigned.push(leftoverTeams.shift()); });
+
+        // KRİTİK: Eğer bir talebe Kat Başkanı ise onun temizlik yerini boşa çıkart
+        const baskanImsmleri = Object.values(baskanlar);
         rooms.forEach(r => {
-            if (r.type !== "dar" && pool_astim.length > 0 && r.assigned.length < r.capacity) {
-                r.assigned.push(pool_astim.shift());
-            }
+            r.assigned = r.assigned.filter(isim => !baskanImsmleri.includes(isim));
         });
 
-        // 2. ADIM: Alerjik olanları yerleştir (Lavabolara gidemezler)
-        rooms.forEach(r => {
-            if (r.type !== "lavabo" && pool_alerjik.length > 0 && r.assigned.length < r.capacity) {
-                r.assigned.push(pool_alerjik.shift());
-            }
-        });
-
-        // 3. ADIM: Kalan herkesi (Sağlıklı + Diğer) boşluklara yerleştir
-        rooms.forEach(r => {
-            while (pool_genel.length > 0 && r.assigned.length < r.capacity) {
-                r.assigned.push(pool_genel.shift());
-            }
-        });
-
-        // 4. ADIM: Hala boş yer varsa ve havuzlarda kimse kalmadıysa diğer havuzlardan (varsa) takviye yap
-        let leftoverTeams = [...pool_astim, ...pool_alerjik]; // Kısıtlamalar yüzünden yerleşememiş olabilirler
-        rooms.forEach(r => {
-            while (leftoverTeams.length > 0 && r.assigned.length < r.capacity) {
-                // Burada kısıtlamayı bir miktar esnetiyoruz (başka çare yoksa) veya boş bırakıyoruz
-                // Ama kullanıcı "yetersiz talebe" görmek istiyordu.
-                r.assigned.push(leftoverTeams.shift());
-            }
-        });
-
-        // Sonuçları Grupla
+        // Grupla
         rooms.forEach(r => {
             if (!distribution[r.kat]) distribution[r.kat] = {};
             distribution[r.kat][r.oda] = r.assigned;
         });
 
-        this.renderSonuclar(distribution);
-        this.save(distribution);
+        this.renderSonuclar(distribution, baskanlar);
+        this.save(distribution, baskanlar);
         
-        Swal.fire({
-            icon: 'success',
-            title: 'Dağıtım Tamamlandı',
-            text: 'Talebe listesi sağlık durumlarına göre katlara dağıtıldı.',
-            timer: 2000,
-            showConfirmButton: false
-        });
+        Swal.fire({ icon: 'success', title: 'Dağıtım Tamamlandı', timer: 1500, showConfirmButton: false });
     },
 
-    renderSonuclar: function(dist) {
+    setBaskan: function(kat, isim) {
+        if (isim.trim() === "") {
+            const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+            const baskanlar = data.baskanlar || {};
+            delete baskanlar[kat];
+            this.save(null, baskanlar);
+            this.dagit(); // Yeniden dağıt ki boşa çıkan geri dönsün
+            return;
+        }
+
+        const havuz = this.getPoolNames();
+        if (!havuz.includes(isim)) {
+            Swal.fire('Hata', 'Girdiğiniz isim talebe listesinde bulunamadı!', 'error');
+            return;
+        }
+
+        const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const baskanlar = data.baskanlar || {};
+        baskanlar[kat] = isim;
+        this.save(null, baskanlar);
+        this.dagit(); // Yeniden dağıt ki başkanın yeri boşalsın
+    },
+
+    editOda: async function(kat, oda, index) {
+        const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const dist = data.sonuclar;
+        const currentInRoom = dist[kat][oda][index] || "";
+
+        const { value: newName } = await Swal.fire({
+            title: `${oda} - Talebe Değiştir`,
+            input: 'text',
+            inputLabel: 'Yeni İsim',
+            inputValue: currentInRoom,
+            showCancelButton: true,
+            confirmButtonText: 'Kaydet',
+            cancelButtonText: 'İptal'
+        });
+
+        if (newName !== undefined) {
+            if (newName.trim() === "") {
+                dist[kat][oda].splice(index, 1);
+            } else {
+                dist[kat][oda][index] = newName;
+            }
+            this.save(dist);
+            this.renderSonuclar(dist, data.baskanlar);
+        }
+    },
+
+    renderSonuclar: function(dist, baskanlar = {}) {
         const target = document.getElementById('listeSonuclari');
         if (!target) return;
         target.innerHTML = "";
 
         Object.keys(dist).forEach((kat, kIdx) => {
+            // Kat Hocasını Bul
+            const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+            const allUsers = [...usersData, ...extraUsers];
+            const hoca = allUsers.find(u => u.kat === kat && u.rol === 'gorevli');
+            const hocaAdi = hoca ? hoca.name : 'Hoca Atanmamış';
+
             const wrap = document.createElement('div');
-            wrap.className = "stagger-item";
+            wrap.className = "stagger-item mb-4";
             wrap.innerHTML = `
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <div class="flex-grow-1 bg-glass-border" style="height:1px;"></div>
-                    <span class="badge rounded-pill bg-secondary px-4 py-2 small fw-bold text-white">${kat.toUpperCase()}</span>
-                    <div class="flex-grow-1 bg-glass-border" style="height:1px;"></div>
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3 px-2">
+                    <div class="x-small text-muted fw-bold">👤 ${hocaAdi}</div>
+                    <div class="px-3 py-1 glass-card rounded-pill fw-bold small text-white" style="border: 1px solid var(--accent-primary);">${kat}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span class="x-small text-muted">Bşk:</span>
+                        <input type="text" class="form-control form-control-sm bg-transparent border-0 text-emerald text-end p-0 shadow-none fw-bold" 
+                               style="width: 80px; font-size: 0.75rem;" placeholder="Seçilmedi" 
+                               value="${baskanlar[kat] || ''}" 
+                               onblur="ListeManager.setBaskan('${kat}', this.value)">
+                    </div>
                 </div>
                 <div class="row g-2 mx-0" id="res-rooms-${kIdx}"></div>
             `;
@@ -944,19 +986,30 @@ const ListeManager = {
                 const names = dist[kat][oda];
                 const isWc = oda.toLowerCase().includes("wc") || oda.toLowerCase().includes("lavabo");
                 const capacity = isWc ? 2 : 1;
-                const isInsufficient = names.length < capacity;
 
                 const col = document.createElement('div');
                 col.className = "col-12 col-md-6 px-1";
-                col.innerHTML = `
-                    <div class="glass-card p-2 px-3 d-flex align-items-center justify-content-between">
-                        <div class="flex-grow-1">
-                            <div class="fw-bold text-white small">${oda}</div>
-                            <div class="x-small ${names.length > 0 ? 'text-emerald' : 'text-muted'}">
-                                ${names.length > 0 ? names.join(' - ') : '-'}
-                            </div>
+                
+                let namesHTML = "";
+                for(let i=0; i<capacity; i++) {
+                    const name = names[i] || "";
+                    namesHTML += `
+                        <div class="cursor-pointer d-flex align-items-center justify-content-between py-1 border-bottom border-secondary border-opacity-25" 
+                             onclick="ListeManager.editOda('${kat}', '${oda}', ${i})">
+                            <span class="${name ? 'text-emerald' : 'text-danger fw-bold'} x-small">
+                                ${name || '🆕 Doldurulabilir'}
+                            </span>
+                            <i data-lucide="edit-3" size="10" class="text-muted"></i>
                         </div>
-                        ${isInsufficient ? `<span class="badge bg-danger rounded-pill x-small" style="font-size:0.5rem;">⚠️ YETERSİZ TALEBE</span>` : ''}
+                    `;
+                }
+
+                col.innerHTML = `
+                    <div class="glass-card p-2 px-3 h-100">
+                        <div class="fw-bold text-white small mb-1">${oda}</div>
+                        <div class="d-flex flex-column">
+                            ${namesHTML}
+                        </div>
                     </div>
                 `;
                 row.appendChild(col);
