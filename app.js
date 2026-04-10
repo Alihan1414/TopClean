@@ -140,8 +140,9 @@ function initLoginSelect() {
     const select = document.getElementById('userSelect');
     select.innerHTML = "";
     // Merge hardcoded + localStorage users
+    const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
     const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-    const allUsers = [...usersData, ...extraUsers];
+    const allUsers = [...usersData.filter(u => !deletedFixed.includes(u.name)), ...extraUsers];
     allUsers.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.name;
@@ -755,15 +756,17 @@ const IdarecManager = {
         var list = document.getElementById('personelListesi');
         if(!list) return;
         list.innerHTML = '';
-        var sabitGorevliler = usersData.filter(function(u){return u.rol==='gorevli';});
+        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        var sabitGorevliler = usersData.filter(function(u){return u.rol==='gorevli' && !deletedFixed.includes(u.name);});
         var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
         var all = sabitGorevliler.concat(extraUsers);
         all.forEach(function(u, idx) {
             var isExtra = idx >= sabitGorevliler.length;
-            var extraIdx = idx - sabitGorevliler.length;
             var c = document.createElement('div');
             c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            var deleteBtn = isExtra ? '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + extraIdx + ')"><i data-lucide="trash-2" size="13"></i></button>' : '';
+            // Both extra and fixed users have delete buttons now
+            // We'll pass the name and isExtra to the delete function
+            var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(\'' + u.name + '\', ' + isExtra + ')"><i data-lucide="trash-2" size="13"></i></button>';
             c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div><div class="x-small text-muted">' + u.kat + ' | Şifre: ' + u.pass + '</div></div><div class="d-flex gap-2 align-items-center"><span class="badge-status ' + (isExtra?'badge-warning':'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra?'YENİ':'SABİT') + '</span>' + deleteBtn + '</div>';
             list.appendChild(c);
         });
@@ -784,11 +787,16 @@ const IdarecManager = {
         IdarecManager.loadPersonel();
         initLoginSelect(); // Login dropdown'u güncelle
     },
-    personelSil: function(extraIdx) {
-        var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        var name = extras[extraIdx] ? extras[extraIdx].name : '';
-        extras.splice(extraIdx, 1);
-        localStorage.setItem('topclean_users', JSON.stringify(extras));
+    personelSil: function(name, isExtra) {
+        if(isExtra) {
+            var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+            var filtered = extras.filter(u => u.name !== name);
+            localStorage.setItem('topclean_users', JSON.stringify(filtered));
+        } else {
+            var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+            deletedFixed.push(name);
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
+        }
         Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
         initLoginSelect(); // Login dropdown'u güncelle
