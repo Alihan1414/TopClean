@@ -158,6 +158,9 @@ function checkSession() {
             } else if (currentUser.rol === "idareci") {
                 IdarecManager.load();
                 showPanel("idarecPanel");
+            } else if (currentUser.rol === "liste") {
+                ListeManager.load();
+                showPanel("listePanel");
             } else {
                 loadAdminPanel();
                 showPanel("adminPanel");
@@ -174,9 +177,10 @@ function handleLogin(e) {
     const uPass = document.getElementById('passInput').value;
 
     if (uName === "Liste Dağılımı") {
-        currentUser = { name: "Liste Dağılımı", rol: "idareci", kat: "" };
-        IdarecManager.load();
-        showPanel("idarecPanel");
+        currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
+        localStorage.setItem('topclean_session', JSON.stringify(currentUser));
+        ListeManager.load();
+        showPanel("listePanel");
         updateHeader();
         return;
     }
@@ -780,5 +784,159 @@ const IdarecManager = {
         var a = document.createElement('a');
         a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    }
+};
+
+// ---------- LİSTE DAĞILIMI MANAGER ----------
+const ListeManager = {
+    load: function() {
+        const saved = localStorage.getItem('topclean_talebe_listesi');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('listAlerjik').value = data.alerjik || "";
+            document.getElementById('listAstim').value = data.astim || "";
+            document.getElementById('listSaglikli').value = data.saglikli || "";
+            document.getElementById('listDiger').value = data.diger || "";
+            if (data.sonuclar) {
+                this.renderSonuclar(data.sonuclar);
+            }
+        }
+        lucide.createIcons();
+    },
+
+    save: function(sonuclar = null) {
+        const data = {
+            alerjik: document.getElementById('listAlerjik').value,
+            astim: document.getElementById('listAstim').value,
+            saglikli: document.getElementById('listSaglikli').value,
+            diger: document.getElementById('listDiger').value,
+            sonuclar: sonuclar || (JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}')).sonuclar
+        };
+        localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
+    },
+
+    dagit: function() {
+        this.save(); // Önce mevcut girdileri kaydet
+        
+        const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+        
+        let students = {
+            alerjik: parseList('listAlerjik'),
+            astim: parseList('listAstim'),
+            saglikli: parseList('listSaglikli'),
+            diger: parseList('listDiger')
+        };
+
+        let distribution = {}; // { "Kat Adı": { "Oda Adı": ["Talebe 1", ...] } }
+
+        // Odaları topla ve sınıflandır
+        let rooms = [];
+        Object.keys(katlar).forEach(kat => {
+            Object.keys(katlar[kat]).forEach(oda => {
+                let type = "genel";
+                let nameLower = oda.toLowerCase();
+                if (nameLower.includes("wc") || nameLower.includes("lavabo")) type = "lavabo";
+                else if (nameLower.includes("merdiven") || nameLower.includes("donanım") || nameLower.includes("muhasebe")) type = "dar";
+                
+                rooms.push({ kat, oda, type, capacity: type === "lavabo" ? 2 : 1, assigned: [] });
+            });
+        });
+
+        // Dağıtım Havuzları
+        let pool_astim = [...students.astim];
+        let pool_alerjik = [...students.alerjik];
+        let pool_genel = [...students.saglikli, ...students.diger];
+
+        // 1. ADIM: Astımlıları yerleştir (Dar yerlere gidemezler)
+        rooms.forEach(r => {
+            if (r.type !== "dar" && pool_astim.length > 0 && r.assigned.length < r.capacity) {
+                r.assigned.push(pool_astim.shift());
+            }
+        });
+
+        // 2. ADIM: Alerjik olanları yerleştir (Lavabolara gidemezler)
+        rooms.forEach(r => {
+            if (r.type !== "lavabo" && pool_alerjik.length > 0 && r.assigned.length < r.capacity) {
+                r.assigned.push(pool_alerjik.shift());
+            }
+        });
+
+        // 3. ADIM: Kalan herkesi (Sağlıklı + Diğer) boşluklara yerleştir
+        rooms.forEach(r => {
+            while (pool_genel.length > 0 && r.assigned.length < r.capacity) {
+                r.assigned.push(pool_genel.shift());
+            }
+        });
+
+        // 4. ADIM: Hala boş yer varsa ve havuzlarda kimse kalmadıysa diğer havuzlardan (varsa) takviye yap
+        let leftoverTeams = [...pool_astim, ...pool_alerjik]; // Kısıtlamalar yüzünden yerleşememiş olabilirler
+        rooms.forEach(r => {
+            while (leftoverTeams.length > 0 && r.assigned.length < r.capacity) {
+                // Burada kısıtlamayı bir miktar esnetiyoruz (başka çare yoksa) veya boş bırakıyoruz
+                // Ama kullanıcı "yetersiz talebe" görmek istiyordu.
+                r.assigned.push(leftoverTeams.shift());
+            }
+        });
+
+        // Sonuçları Grupla
+        rooms.forEach(r => {
+            if (!distribution[r.kat]) distribution[r.kat] = {};
+            distribution[r.kat][r.oda] = r.assigned;
+        });
+
+        this.renderSonuclar(distribution);
+        this.save(distribution);
+        
+        Swal.fire({
+            icon: 'success',
+            title: 'Dağıtım Tamamlandı',
+            text: 'Talebe listesi sağlık durumlarına göre katlara dağıtıldı.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    },
+
+    renderSonuclar: function(dist) {
+        const target = document.getElementById('listeSonuclari');
+        if (!target) return;
+        target.innerHTML = "";
+
+        Object.keys(dist).forEach((kat, kIdx) => {
+            const wrap = document.createElement('div');
+            wrap.className = "stagger-item";
+            wrap.innerHTML = `
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="flex-grow-1 bg-glass-border" style="height:1px;"></div>
+                    <span class="badge rounded-pill bg-secondary px-4 py-2 small fw-bold text-white">${kat.toUpperCase()}</span>
+                    <div class="flex-grow-1 bg-glass-border" style="height:1px;"></div>
+                </div>
+                <div class="row g-2 mx-0" id="res-rooms-${kIdx}"></div>
+            `;
+            target.appendChild(wrap);
+
+            const row = document.getElementById(`res-rooms-${kIdx}`);
+            Object.keys(dist[kat]).forEach(oda => {
+                const names = dist[kat][oda];
+                const isWc = oda.toLowerCase().includes("wc") || oda.toLowerCase().includes("lavabo");
+                const capacity = isWc ? 2 : 1;
+                const isInsufficient = names.length < capacity;
+
+                const col = document.createElement('div');
+                col.className = "col-12 col-md-6 px-1";
+                col.innerHTML = `
+                    <div class="glass-card p-2 px-3 d-flex align-items-center justify-content-between">
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-white small">${oda}</div>
+                            <div class="x-small ${names.length > 0 ? 'text-emerald' : 'text-muted'}">
+                                ${names.length > 0 ? names.join(' - ') : '-'}
+                            </div>
+                        </div>
+                        ${isInsufficient ? `<span class="badge bg-danger rounded-pill x-small" style="font-size:0.5rem;">⚠️ YETERSİZ TALEBE</span>` : ''}
+                    </div>
+                `;
+                row.appendChild(col);
+            });
+        });
+        lucide.createIcons();
     }
 };
