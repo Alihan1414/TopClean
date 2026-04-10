@@ -60,7 +60,9 @@ const usersData = [
 let currentUser = null;
 let currentKat = "";
 let currentBolum = "";
-let currentKriterler = [];
+// Let's add a global reference for the modal
+let bootstrapModal = null;
+let currentActiveReport = null;
 
 // Base64 fotoğraf encode
 let fotoDataURL = "";
@@ -70,6 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
     initTheme();
     initLoginSelect();
+    checkSession(); // Restore session if exists
 
     // Event Listeners
     document.getElementById('loginForm').addEventListener('submit', handleLogin);
@@ -134,6 +137,25 @@ function checkLoginType() {
     }
 }
 
+function checkSession() {
+    const saved = localStorage.getItem('topclean_session');
+    if (saved) {
+        try {
+            currentUser = JSON.parse(saved);
+            updateHeader();
+            if (currentUser.rol === "gorevli") {
+                loadGorevliPanel(currentUser.kat);
+                showPanel("gorevliPanel");
+            } else {
+                loadAdminPanel();
+                showPanel("adminPanel");
+            }
+        } catch(e) {
+            localStorage.removeItem('topclean_session');
+        }
+    }
+}
+
 function handleLogin(e) {
     e.preventDefault();
     const uName = document.getElementById('userSelect').value;
@@ -150,6 +172,7 @@ function handleLogin(e) {
     const un = usersData.find(x => x.name === uName);
     if (un && un.pass === uPass) {
         currentUser = un;
+        localStorage.setItem('topclean_session', JSON.stringify(un));
         document.getElementById('passInput').value = ""; // clear
         updateHeader();
 
@@ -172,8 +195,10 @@ function handleLogin(e) {
 
 function handleLogout() {
     currentUser = null;
+    localStorage.removeItem('topclean_session');
     document.getElementById('userProfileControls').classList.add('d-none');
     showPanel("loginPanel");
+    updateHeader();
 }
 
 function updateHeader() {
@@ -216,26 +241,26 @@ function loadGorevliPanel(katAd) {
     let reddedilenCount = 0;
 
     for (const [bolumAd, kriterler] of Object.entries(bolumler)) {
-        // Kontrol - Bugün veri var mı?
-        // SQLite'daki gibi tarih[:10] mantıgı
         const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
         let badgeYazi = "Bekliyor";
         let badgeClass = "badge-idle";
 
         if (gecmis.length > 0) {
             const son = gecmis[gecmis.length - 1];
-            if(son.durum === "reddedildi")reddredileneCount++;
             
-            const isaretli = son.secilen.length;
-            const toplam = kriterler.length;
-            const oran = Math.floor((isaretli / toplam) * 100);
-
-            if (oran === 100) {
-                badgeClass = "badge-success"; badgeYazi = `%${oran} ✔`;
-            } else if (oran === 0) {
-                badgeClass = "badge-danger"; badgeYazi = `Kaydedildi`;
+            if (son.durum === "reddedildi") {
+                reddedilenCount++;
+                badgeClass = "badge-danger";
+                badgeYazi = "REDDEDİLDİ";
+            } else if (son.durum === "onaylandi") {
+                badgeClass = "badge-success";
+                badgeYazi = "ONAYLANDI ✨";
             } else {
-                badgeClass = "badge-warning"; badgeYazi = `%${oran}`;
+                const isaretli = son.secilen.length;
+                const toplam = kriterler.length;
+                const oran = Math.floor((isaretli / toplam) * 100);
+                badgeClass = "badge-warning";
+                badgeYazi = `%${oran} İNCELENİYOR`;
             }
         }
 
@@ -388,18 +413,50 @@ const KriterManager = {
     }
 };
 
-// Image Upload Handler to convert file to Base64
+// Image Upload Handler with Compression
 function handleFotoUpload(e) {
     const file = e.target.files[0];
     if (file) {
+        const fotoDurum = document.getElementById('fotoDurum');
+        fotoDurum.innerText = "İşleniyor...";
+        fotoDurum.style.color = "var(--warning-color)";
+
         const reader = new FileReader();
         reader.onload = function(evt) {
-            fotoDataURL = evt.target.result;
-            document.getElementById('fotoDurum').innerText = `✔ ${file.name}`;
-            document.getElementById('fotoDurum').style.color = "var(--success-color)";
-            
-            document.getElementById('fotoOnizleme').src = fotoDataURL;
-            document.getElementById('fotoOnizlemeContainer').classList.remove('d-none');
+            const tempImg = new Image();
+            tempImg.onload = function() {
+                // Resize using Canvas
+                const canvas = document.createElement('canvas');
+                let width = tempImg.width;
+                let height = tempImg.height;
+                const MAX_SIZE = 1024; // 1024px max
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tempImg, 0, 0, width, height);
+                
+                // Convert back to base64 with lower quality (0.7)
+                fotoDataURL = canvas.toDataURL('image/jpeg', 0.7);
+                
+                fotoDurum.innerText = `✔ ${file.name} (Optimize Edildi)`;
+                fotoDurum.style.color = "var(--success-color)";
+                document.getElementById('fotoOnizleme').src = fotoDataURL;
+                document.getElementById('fotoOnizlemeContainer').classList.remove('d-none');
+            };
+            tempImg.src = evt.target.result;
         };
         reader.readAsDataURL(file);
     }
@@ -410,40 +467,129 @@ function loadAdminPanel() {
     const list = document.getElementById('raporListesi');
     list.innerHTML = "";
     
-    // Sort descending by ID (which is timestamp)
-    let data = getData().sort((a,b) => parseInt(b.id) - parseInt(a.id)).slice(0, 10);
+    let allData = getData();
+    let data = allData.sort((a,b) => parseInt(b.id) - parseInt(a.id)).slice(0, 20);
     
+    // Stats Update
+    const total = allData.length;
+    const success = allData.filter(d => d.durum === "onaylandi").length;
+    const danger = allData.filter(d => d.durum === "reddedildi").length;
+    const pending = allData.filter(d => d.durum === "bekliyor").length;
+
+    document.getElementById('adminStatTotal').innerText = total;
+    document.getElementById('adminStatSuccess').innerText = success;
+    document.getElementById('adminStatDanger').innerText = danger;
+    document.getElementById('adminStatPending').innerText = pending;
+
     if(data.length === 0) {
-        list.innerHTML = '<div class="text-muted fst-italic">Henüz hiç kayıt bulunmuyor.</div>';
+        list.innerHTML = '<div class="glass-card p-4 text-center text-muted">Henüz hiç kayıt bulunmuyor.</div>';
         return;
     }
 
     data.forEach((d, idx) => {
         let isaretli = d.secilen.length;
         let dDate = new Date(d.tarih).toLocaleString('tr-TR');
-        
         let imgHtml = d.foto ? `<img src="${d.foto}" class="rounded-3 mt-2 border-0 shadow-sm" style="max-height: 100px; width: auto; object-fit: cover;">` : '<div class="text-muted small mt-2 opacity-50"><i data-lucide="image-off" size="14"></i> Görsel yok</div>';
 
-        let badge = d.durum === "bekliyor" ? `<span class="badge-status badge-warning text-dark">Bekliyor</span>` : 
-                    d.durum === "reddedildi" ? `<span class="badge-status badge-danger">Reddedildi</span>` : 
-                    `<span class="badge-status badge-success">Onaylandı</span>`;
+        let badgeClass = d.durum === "bekliyor" ? "badge-warning" : d.durum === "reddedildi" ? "badge-danger" : "badge-success";
+        let badgeYazi = d.durum.toUpperCase();
 
         let card = document.createElement('div');
-        card.className = "glass-card stagger-item p-4 d-flex flex-column gap-2 mb-2 shadow-hover";
-        card.style.animationDelay = `${idx * 0.15}s`;
+        card.className = "glass-card stagger-item p-4 d-flex flex-column gap-2 mb-1 shadow-hover";
+        card.style.animationDelay = `${idx * 0.1}s`;
+        card.onclick = () => AdminManager.showDetail(d);
         card.innerHTML = `
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <h5 class="fw-bold mb-1" style="color: var(--accent-secondary); letter-spacing: 0.5px;">${d.kat} - ${d.bolum}</h5>
                     <div class="small text-muted opacity-75"><i data-lucide="calendar" size="12"></i> ${dDate}</div>
                 </div>
-                ${badge}
+                <span class="badge-status ${badgeClass}">${badgeYazi}</span>
             </div>
-            <div class="text-muted small mt-2">İşaretlenen Kriter: <b class="text-white">${isaretli}</b> madde</div>
-            ${d.yorum ? `<div class="p-3 rounded-3 mt-2 small" style="background-color: rgba(255,255,255,0.03); border-left: 3px solid var(--accent-primary);"><b>Not:</b> ${d.yorum}</div>` : ''}
+            <div class="text-muted small mt-1">İçerik: <b class="text-white">${isaretli} Kriter</b></div>
             <div>${imgHtml}</div>
         `;
         list.appendChild(card);
     });
     lucide.createIcons();
 }
+
+const AdminManager = {
+    showDetail: function(report) {
+        currentActiveReport = report;
+        document.getElementById('modalKatBolum').innerText = `${report.kat} - ${report.bolum}`;
+        
+        // Foto
+        const img = document.getElementById('modalFoto');
+        if (report.foto) {
+            img.src = report.foto;
+            img.parentElement.classList.remove('d-none');
+        } else {
+            img.parentElement.classList.add('d-none');
+        }
+
+        // Kriter Listesi
+        const list = document.getElementById('modalKriterListesi');
+        list.innerHTML = "";
+        
+        // Find the original list to show what's NOT cleaned too
+        const originalList = katlar[report.kat][report.bolum];
+        originalList.forEach(k => {
+            const isDone = report.secilen.includes(k);
+            const item = document.createElement('div');
+            item.className = `d-flex align-items-center gap-2 mb-1 ${isDone ? 'text-success' : 'text-danger opacity-50'}`;
+            item.innerHTML = `<i data-lucide="${isDone ? 'check-circle' : 'circle'}" size="14"></i> ${k}`;
+            list.appendChild(item);
+        });
+
+        document.getElementById('modalAdminNot').value = report.mufettis_yorum || "";
+
+        if(!bootstrapModal) {
+            bootstrapModal = new bootstrap.Modal(document.getElementById('adminDetailModal'));
+        }
+        bootstrapModal.show();
+        lucide.createIcons();
+    },
+
+    processReport: function(status) {
+        const comment = document.getElementById('modalAdminNot').value.trim();
+        let data = getData();
+        const idx = data.findIndex(d => d.id === currentActiveReport.id);
+        
+        if (idx !== -1) {
+            data[idx].durum = status;
+            data[idx].mufettis_yorum = comment;
+            localStorage.setItem('topclean_data', JSON.stringify(data));
+            
+            bootstrapModal.hide();
+            Swal.fire({
+                icon: status === 'onaylandi' ? 'success' : 'warning',
+                title: status === 'onaylandi' ? 'Onaylandı' : 'Reddedildi',
+                text: 'İşlem başarıyla tamamlandı.',
+                timer: 1500,
+                showConfirmButton: false
+            }).then(() => {
+                loadAdminPanel();
+            });
+        }
+    },
+
+    exportCSV: function() {
+        let data = getData();
+        if (data.length === 0) return;
+
+        let csvHeader = "ID,Kat,Bolum,KriterSayisi,Tarih,Durum,GorevliNotu,MufettisNotu\n";
+        let csvBody = data.map(d => {
+            return `${d.id},${d.kat},${d.bolum},${d.secilen.length},"${new Date(d.tarih).toLocaleString()}",${d.durum},"${d.yorum || ''}","${d.mufettis_yorum || ''}"`;
+        }).join("\n");
+
+        const blob = new Blob(["\uFEFF" + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TopClean_Rapor_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
