@@ -273,7 +273,8 @@ main {
     body { overflow-x: hidden; }
     .custom-bg { overflow-x: hidden; }
     .main-title { font-size: 1.3rem; letter-spacing: 1.5px; }
-    .sub-title { font-size: 0.6rem; }
+    .sub.x-small { font-size: 0.7rem; line-height: 1.2; }
+    .flex-grow-2 { flex-grow: 2; }
     #app-header { padding: 0.5rem 1rem; }
     main { padding: 0.5rem !important; overflow-x: hidden; }
     .glass-card { padding: 1rem !important; border-radius: 12px; }
