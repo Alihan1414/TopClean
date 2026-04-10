@@ -79,6 +79,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('userSelect').addEventListener('change', checkLoginType);
     document.getElementById('fotoUpload').addEventListener('change', handleFotoUpload);
+
+    const dateSel = document.getElementById('adminDateSelector');
+    if(dateSel) {
+        dateSel.valueAsDate = new Date();
+        dateSel.addEventListener('change', loadAdminPanel);
+    }
 });
 
 // ---------- TEMA (Theme) ----------
@@ -205,7 +211,7 @@ function updateHeader() {
     if (currentUser) {
         document.getElementById('userProfileControls').classList.remove('d-none');
         document.getElementById('userProfileControls').classList.add('d-flex');
-        document.getElementById('welcomeText').innerText = `Hoş Geldiniz, ${currentUser.name} 👋`;
+        document.getElementById('welcomeText').innerText = `Hoş Geldiniz | ${currentUser.name}`;
         document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
     }
 }
@@ -464,53 +470,83 @@ function handleFotoUpload(e) {
 
 // ---------- İDARECİ / MÜFETTİŞ PANEL ----------
 function loadAdminPanel() {
-    const list = document.getElementById('raporListesi');
-    list.innerHTML = "";
+    const matris = document.getElementById('denetimMatrisi');
+    if(!matris) return;
+    matris.innerHTML = "";
+    
+    const selectedDate = document.getElementById('adminDateSelector').value; // yyyy-mm-dd
+    const targetDateStr = new Date(selectedDate).toLocaleDateString();
     
     let allData = getData();
-    let data = allData.sort((a,b) => parseInt(b.id) - parseInt(a.id)).slice(0, 20);
     
-    // Stats Update
-    const total = allData.length;
-    const success = allData.filter(d => d.durum === "onaylandi").length;
-    const danger = allData.filter(d => d.durum === "reddedildi").length;
-    const pending = allData.filter(d => d.durum === "bekliyor").length;
+    // Stats for the SELECTED DATE
+    const dayData = allData.filter(d => new Date(d.tarih).toLocaleDateString() === targetDateStr);
+    
+    const total = dayData.length;
+    const success = dayData.filter(d => d.durum === "onaylandi").length;
+    const danger = dayData.filter(d => d.durum === "reddedildi").length;
+    const pending = dayData.filter(d => d.durum === "bekliyor").length;
 
     document.getElementById('adminStatTotal').innerText = total;
     document.getElementById('adminStatSuccess').innerText = success;
     document.getElementById('adminStatDanger').innerText = danger;
     document.getElementById('adminStatPending').innerText = pending;
 
-    if(data.length === 0) {
-        list.innerHTML = '<div class="glass-card p-4 text-center text-muted">Henüz hiç kayıt bulunmuyor.</div>';
-        return;
-    }
-
-    data.forEach((d, idx) => {
-        let isaretli = d.secilen.length;
-        let dDate = new Date(d.tarih).toLocaleString('tr-TR');
-        let imgHtml = d.foto ? `<img src="${d.foto}" class="rounded-3 mt-2 border-0 shadow-sm" style="max-height: 100px; width: auto; object-fit: cover;">` : '<div class="text-muted small mt-2 opacity-50"><i data-lucide="image-off" size="14"></i> Görsel yok</div>';
-
-        let badgeClass = d.durum === "bekliyor" ? "badge-warning" : d.durum === "reddedildi" ? "badge-danger" : "badge-success";
-        let badgeYazi = d.durum.toUpperCase();
-
-        let card = document.createElement('div');
-        card.className = "glass-card stagger-item p-4 d-flex flex-column gap-2 mb-1 shadow-hover";
-        card.style.animationDelay = `${idx * 0.1}s`;
-        card.onclick = () => AdminManager.showDetail(d);
-        card.innerHTML = `
-            <div class="d-flex justify-content-between align-items-start">
-                <div>
-                    <h5 class="fw-bold mb-1" style="color: var(--accent-secondary); letter-spacing: 0.5px;">${d.kat} - ${d.bolum}</h5>
-                    <div class="small text-muted opacity-75"><i data-lucide="calendar" size="12"></i> ${dDate}</div>
-                </div>
-                <span class="badge-status ${badgeClass}">${badgeYazi}</span>
+    // Loop through Building Structure (katlar)
+    Object.keys(katlar).forEach((katAd, kIdx) => {
+        const katWrapper = document.createElement('div');
+        katWrapper.className = "stagger-item";
+        katWrapper.style.animationDelay = `${kIdx * 0.1}s`;
+        
+        katWrapper.innerHTML = `
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <div class="flex-grow-1 h-px bg-glass-border"></div>
+                <span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold shadow-sm" style="letter-spacing:1px;">${katAd.toUpperCase()}</span>
+                <div class="flex-grow-1 h-px bg-glass-border"></div>
             </div>
-            <div class="text-muted small mt-1">İçerik: <b class="text-white">${isaretli} Kriter</b></div>
-            <div>${imgHtml}</div>
+            <div class="row g-3" id="rooms-${kIdx}"></div>
         `;
-        list.appendChild(card);
+        matris.appendChild(katWrapper);
+        
+        const roomRow = document.getElementById(`rooms-${kIdx}`);
+        const bolumler = katlar[katAd];
+        
+        Object.keys(bolumler).forEach(bolumAd => {
+            // Find the LATEST report for this floor, section, and date
+            const sectionRecord = dayData.filter(d => d.kat === katAd && d.bolum === bolumAd)
+                                         .sort((a,b) => parseInt(b.id) - parseInt(a.id))[0];
+            
+            let statusClass = "badge-idle";
+            let statusYazi = "BEKLİYOR";
+            let hasReport = false;
+
+            if (sectionRecord) {
+                hasReport = true;
+                if (sectionRecord.durum === "onaylandi") {
+                    statusClass = "badge-success"; statusYazi = "ONAYLANDI";
+                } else if (sectionRecord.durum === "reddedildi") {
+                    statusClass = "badge-danger"; statusYazi = "REDDEDİLDİ";
+                } else {
+                    statusClass = "badge-warning"; statusYazi = "ONAY BEKLİYOR";
+                }
+            }
+
+            const roomCol = document.createElement('div');
+            roomCol.className = "col-12 col-md-6";
+            roomCol.innerHTML = `
+                <div class="glass-card p-3 d-flex align-items-center justify-content-between shadow-hover ${hasReport ? 'cursor-pointer' : ''}" 
+                     ${hasReport ? `onclick='AdminManager.showDetail(${JSON.stringify(sectionRecord)})'` : ''}>
+                    <div>
+                        <div class="fw-bold text-white small mb-1">${bolumAd}</div>
+                        <div class="x-small text-muted">${hasReport ? new Date(sectionRecord.tarih).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' | ' + sectionRecord.secilen.length + ' Kriter' : 'Kaydı bulunmuyor'}</div>
+                    </div>
+                    <span class="badge-status ${statusClass}" style="font-size: 0.65rem; padding: 4px 10px;">${statusYazi}</span>
+                </div>
+            `;
+            roomRow.appendChild(roomCol);
+        });
     });
+
     lucide.createIcons();
 }
 
