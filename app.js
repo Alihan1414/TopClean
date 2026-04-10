@@ -118,13 +118,16 @@ function updateThemeIcon(theme) {
 function initLoginSelect() {
     const select = document.getElementById('userSelect');
     select.innerHTML = "";
-    usersData.forEach(u => {
+    // Merge hardcoded + localStorage users
+    const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+    const allUsers = [...usersData, ...extraUsers];
+    allUsers.forEach(u => {
         const opt = document.createElement('option');
         opt.value = u.name;
         opt.textContent = u.name;
         select.appendChild(opt);
     });
-    // Liste Dağılımı seçeneği (Şifre istemeyen Demo amaçlı)
+    // Liste Dağılımı seçeneği (İdareci girişi)
     const opt = document.createElement('option');
     opt.value = "Liste Dağılımı";
     opt.textContent = "Liste Dağılımı (Demo)";
@@ -152,6 +155,9 @@ function checkSession() {
             if (currentUser.rol === "gorevli") {
                 loadGorevliPanel(currentUser.kat);
                 showPanel("gorevliPanel");
+            } else if (currentUser.rol === "idareci") {
+                IdarecManager.load();
+                showPanel("idarecPanel");
             } else {
                 loadAdminPanel();
                 showPanel("adminPanel");
@@ -168,23 +174,30 @@ function handleLogin(e) {
     const uPass = document.getElementById('passInput').value;
 
     if (uName === "Liste Dağılımı") {
-        // Direct admin view without pass
         currentUser = { name: "Liste Dağılımı", rol: "idareci", kat: "" };
-        showPanel("adminPanel");
+        IdarecManager.load();
+        showPanel("idarecPanel");
         updateHeader();
         return;
     }
 
-    const un = usersData.find(x => x.name === uName);
+    // Merge hardcoded + localStorage users for login
+    const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+    const allUsers = [...usersData, ...extraUsers];
+    const un = allUsers.find(x => x.name === uName);
+
     if (un && un.pass === uPass) {
         currentUser = un;
         localStorage.setItem('topclean_session', JSON.stringify(un));
-        document.getElementById('passInput').value = ""; // clear
+        document.getElementById('passInput').value = "";
         updateHeader();
 
         if (un.rol === "gorevli") {
             loadGorevliPanel(un.kat);
             showPanel("gorevliPanel");
+        } else if (un.rol === "idareci") {
+            IdarecManager.load();
+            showPanel("idarecPanel");
         } else {
             loadAdminPanel();
             showPanel("adminPanel");
@@ -504,7 +517,7 @@ function loadAdminPanel() {
                 <span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold shadow-sm" style="letter-spacing:1px;">${katAd.toUpperCase()}</span>
                 <div class="flex-grow-1 h-px bg-glass-border"></div>
             </div>
-            <div class="row g-2 m-0" id="rooms-${kIdx}"></div>
+            <div class="row g-2 justify-content-center" id="rooms-${kIdx}"></div>
         `;
         matris.appendChild(katWrapper);
         
@@ -627,5 +640,146 @@ const AdminManager = {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+};
+
+// ---------- İDARECİ MANAGER ----------
+const IdarecManager = {
+    load: function() {
+        const today = new Date().toISOString().split('T')[0];
+        const dateSel = document.getElementById('idarecDateSelector');
+        const raporSel = document.getElementById('raporDateSelector');
+        if(dateSel) { dateSel.value = today; dateSel.onchange = function(){ IdarecManager.loadBinaDurumu(); }; }
+        if(raporSel) raporSel.value = today;
+        this.loadBinaDurumu();
+        this.loadGecmis('hepsi');
+        this.loadPersonel();
+        lucide.createIcons();
+    },
+    switchTab: function(tab, btn) {
+        document.querySelectorAll('.idarec-tab-content').forEach(function(el){ el.classList.add('d-none'); });
+        document.querySelectorAll('.idarec-tab').forEach(function(el){ el.classList.remove('active'); });
+        document.getElementById('idarec-tab-' + tab).classList.remove('d-none');
+        btn.classList.add('active');
+        lucide.createIcons();
+    },
+    loadBinaDurumu: function() {
+        var matris = document.getElementById('idarecBinaMatrisi');
+        if(!matris) return;
+        matris.innerHTML = '';
+        var selectedDate = document.getElementById('idarecDateSelector').value;
+        var targetDateStr = new Date(selectedDate).toLocaleDateString();
+        var allData = getData();
+        var dayData = allData.filter(function(d){ return new Date(d.tarih).toLocaleDateString() === targetDateStr; });
+        document.getElementById('idarecStatTotal').innerText = dayData.length;
+        document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
+        document.getElementById('idarecStatPending').innerText = dayData.filter(function(d){return d.durum==='bekliyor';}).length;
+        document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
+        var katKeys = Object.keys(katlar);
+        katKeys.forEach(function(katAd, kIdx) {
+            var w = document.createElement('div');
+            w.className = 'stagger-item';
+            w.style.animationDelay = (kIdx * 0.08) + 's';
+            w.innerHTML = '<div class="d-flex align-items-center gap-2 mb-3"><div class="flex-grow-1 bg-glass-border" style="height:1px;"></div><span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold">' + katAd.toUpperCase() + '</span><div class="flex-grow-1 bg-glass-border" style="height:1px;"></div></div><div class="row g-2 mx-0" id="idarec-rooms-' + kIdx + '"></div>';
+            matris.appendChild(w);
+            var roomRow = document.getElementById('idarec-rooms-' + kIdx);
+            var bolumKeys = Object.keys(katlar[katAd]);
+            bolumKeys.forEach(function(bolumAd) {
+                var recs = dayData.filter(function(d){ return d.kat===katAd && d.bolum===bolumAd; });
+                recs.sort(function(a,b){ return parseInt(b.id)-parseInt(a.id); });
+                var rec = recs[0];
+                var sc = 'badge-idle', sy = 'BEKLİYOR';
+                if(rec) {
+                    if(rec.durum==='onaylandi'){sc='badge-success';sy='ONAYLANDI';}
+                    else if(rec.durum==='reddedildi'){sc='badge-danger';sy='REDDEDİLDİ';}
+                    else {sc='badge-warning';sy='ONAY BEKLİ';}
+                }
+                var col = document.createElement('div');
+                col.className = 'col-12 col-md-6 px-1';
+                var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' | ' + rec.secilen.length + ' kriter' : 'Kaydı yok';
+                col.innerHTML = '<div class="glass-card p-2 d-flex align-items-center justify-content-between"><div><div class="fw-bold text-white" style="font-size:0.8rem;">' + bolumAd + '</div><div class="x-small text-muted">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.6rem;padding:3px 8px;">' + sy + '</span></div>';
+                roomRow.appendChild(col);
+            });
+        });
+        lucide.createIcons();
+    },
+    loadGecmis: function(filter) {
+        var list = document.getElementById('idarecGecmisList');
+        if(!list) return;
+        list.innerHTML = '';
+        var data = getData().filter(function(d){return d.durum!=='bekliyor';});
+        if(filter !== 'hepsi') data = data.filter(function(d){return d.durum===filter;});
+        data.sort(function(a,b){return parseInt(b.id)-parseInt(a.id);});
+        if(data.length === 0) { list.innerHTML = '<div class="glass-card p-3 text-center text-muted small">Kayıt bulunamadı.</div>'; return; }
+        data.forEach(function(d) {
+            var isO = d.durum === 'onaylandi';
+            var c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
+            var yorumHtml = d.mufettis_yorum ? '<div class="x-small mt-1" style="color:var(--text-muted);">"' + d.mufettis_yorum + '"</div>' : '';
+            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + d.kat + ' – ' + d.bolum + '</div><div class="x-small text-muted">' + new Date(d.tarih).toLocaleString('tr-TR') + ' | ' + d.secilen.length + ' kriter</div>' + yorumHtml + '</div><span class="badge-status ' + (isO?'badge-success':'badge-danger') + '" style="font-size:0.6rem;padding:3px 8px;">' + (isO?'ONAYLANDI':'REDDEDİLDİ') + '</span>';
+            list.appendChild(c);
+        });
+        lucide.createIcons();
+    },
+    filterGecmis: function(filter, btn) {
+        document.querySelectorAll('.gecmis-filter').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        IdarecManager.loadGecmis(filter);
+    },
+    loadPersonel: function() {
+        var list = document.getElementById('personelListesi');
+        if(!list) return;
+        list.innerHTML = '';
+        var sabitGorevliler = usersData.filter(function(u){return u.rol==='gorevli';});
+        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var all = sabitGorevliler.concat(extraUsers);
+        all.forEach(function(u, idx) {
+            var isExtra = idx >= sabitGorevliler.length;
+            var extraIdx = idx - sabitGorevliler.length;
+            var c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
+            var deleteBtn = isExtra ? '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + extraIdx + ')"><i data-lucide="trash-2" size="13"></i></button>' : '';
+            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div><div class="x-small text-muted">' + u.kat + ' | Şifre: ' + u.pass + '</div></div><div class="d-flex gap-2 align-items-center"><span class="badge-status ' + (isExtra?'badge-warning':'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra?'YENİ':'SABİT') + '</span>' + deleteBtn + '</div>';
+            list.appendChild(c);
+        });
+        lucide.createIcons();
+    },
+    personelEkle: function() {
+        var ad = document.getElementById('yeniPersonelAd').value.trim();
+        var sifre = document.getElementById('yeniPersonelSifre').value.trim();
+        var kat = document.getElementById('yeniPersonelKat').value;
+        if(!ad || !sifre || !kat) { Swal.fire({icon:'warning',title:'Eksik Bilgi',text:'Tüm alanları doldurun.',timer:2000,showConfirmButton:false}); return; }
+        var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        extras.push({name:ad, pass:sifre, kat:kat, rol:'gorevli'});
+        localStorage.setItem('topclean_users', JSON.stringify(extras));
+        document.getElementById('yeniPersonelAd').value = '';
+        document.getElementById('yeniPersonelSifre').value = '';
+        document.getElementById('yeniPersonelKat').value = '';
+        Swal.fire({icon:'success',title:'Kaydedildi!',text:ad+' sisteme eklendi.',timer:1800,showConfirmButton:false});
+        IdarecManager.loadPersonel();
+    },
+    personelSil: function(extraIdx) {
+        var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var name = extras[extraIdx] ? extras[extraIdx].name : '';
+        extras.splice(extraIdx, 1);
+        localStorage.setItem('topclean_users', JSON.stringify(extras));
+        Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
+        IdarecManager.loadPersonel();
+    },
+    exportCSV: function() {
+        var selectedDate = document.getElementById('raporDateSelector').value;
+        var targetDateStr = new Date(selectedDate).toLocaleDateString();
+        var dayData = getData().filter(function(d){return new Date(d.tarih).toLocaleDateString()===targetDateStr;});
+        if(dayData.length===0){Swal.fire({icon:'info',title:'Kayıt Yok',text:'Seçilen tarih için rapor bulunamadı.',timer:2000,showConfirmButton:false});return;}
+        var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,MufettisNotu\n";
+        csv += dayData.map(function(d){
+            var saat = new Date(d.tarih).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+            return '"'+d.kat+'","'+d.bolum+'",'+d.secilen.length+','+saat+','+d.durum+',"'+(d.yorum||'')+'","'+(d.mufettis_yorum||'')+'"';
+        }).join("\n");
+        var blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
     }
 };
