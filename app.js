@@ -205,8 +205,8 @@ function updateHeader() {
     if (currentUser) {
         document.getElementById('userProfileControls').classList.remove('d-none');
         document.getElementById('userProfileControls').classList.add('d-flex');
-        document.getElementById('welcomeText').innerText = `Hoş geldin, ${currentUser.name} 👋`;
-        document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol;
+        document.getElementById('welcomeText').innerText = `Hoş Geldiniz, ${currentUser.name} 👋`;
+        document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
     }
 }
 
