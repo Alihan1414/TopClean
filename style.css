@@ -268,42 +268,27 @@ main {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- Mobile Fixes (Aggressive Stabilization) --- */
+/* --- Mobile Fixes --- */
 @media (max-width: 576px) {
-    body, .custom-bg { overflow-x: hidden !important; width: 100vw; position: relative; }
-    .main-title { font-size: 1.25rem; letter-spacing: 1px; }
-    .sub-title { font-size: 0.55rem; }
-    #app-header { padding: 0.5rem 0.75rem !important; min-height: 55px; }
+    body { overflow-x: hidden; }
+    .custom-bg { overflow-x: hidden; }
+    .main-title { font-size: 1.3rem; letter-spacing: 1.5px; }
+    .sub-title { font-size: 0.6rem; }
+    #app-header { padding: 0.5rem 1rem; }
     main { padding: 0.5rem !important; overflow-x: hidden; }
-    .glass-card { padding: 0.8rem !important; border-radius: 12px; }
-    
-    /* Stats mobile text fix */
-    h5 { font-size: 0.9rem !important; }
-    .x-small { font-size: 0.55rem !important; }
+    .glass-card { padding: 1rem !important; border-radius: 12px; }
+    .btn-emerald-lg { padding: 12px; width: 100%; border-radius: 10px; }
 
-    /* Matrix layout fix */
-    #denetimMatrisi { gap: 1.2rem !important; }
-    #denetimMatrisi .glass-card { 
-        padding: 0.5rem 0.75rem !important; 
-        flex-direction: row;
-        flex-wrap: nowrap;
+    /* Matrix room cards: compact on mobile */
+    #denetimMatrisi .glass-card {
+        padding: 0.6rem 0.8rem !important;
     }
-    #denetimMatrisi .text-white.small {
-        font-size: 0.8rem !important;
-        line-height: 1.2;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 130px;
-    }
-    
     .badge-status {
-        padding: 2px 6px;
-        font-size: 0.5rem !important;
+        font-size: 0.6rem;
+        padding: 3px 8px;
         white-space: nowrap;
     }
-    
-    .w-sm-auto { width: auto !important; }
+    #adminDateSelector::-webkit-calendar-picker-indicator { filter: invert(1); }
 }
 
 /* --- Administrative Dashboard Styles --- */
