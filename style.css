@@ -289,11 +289,12 @@ main {
         flex-wrap: nowrap;
     }
     #denetimMatrisi .text-white.small {
-        font-size: 0.75rem !important;
+        font-size: 0.8rem !important;
+        line-height: 1.2;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        max-width: 140px;
+        max-width: 130px;
     }
     
     .badge-status {
