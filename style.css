@@ -103,16 +103,17 @@ main {
 #app-header {
     position: relative;
     z-index: 10;
-    padding: 1.5rem 2rem;
-    background: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
+    padding: 1rem 1.5rem;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
     border-bottom: 1px solid var(--glass-border);
 }
 
 .main-title {
-    font-size: 2.2rem;
+    font-size: 1.8rem;
     font-weight: 800;
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     background: linear-gradient(135deg, #fff 30%, var(--accent-secondary) 100%);
     -webkit-background-clip: text;
     background-clip: text;
@@ -121,19 +122,19 @@ main {
 }
 
 .sub-title {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     font-weight: 700;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
     color: var(--accent-primary);
     text-transform: uppercase;
     opacity: 0.8;
 }
 
 .gradient-line {
-    height: 4px;
-    width: 60px;
+    height: 3px;
+    width: 40px;
     background: var(--accent-primary);
-    margin: 10px auto;
+    margin: 8px auto;
     border-radius: 2px;
     box-shadow: 0 0 15px var(--accent-primary);
 }
