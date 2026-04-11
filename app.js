@@ -1,3 +1,20 @@
+// ---------- FIREBASE CONFIGURATION ----------
+// TODO: console.firebase.google.com adresinden kendi anahtarlarını buraya yapıştır!
+const firebaseConfig = {
+    apiKey: "AIzaSyCO88ONQpL3vFRMSY-jyhRImbsNC1ngcmQ",
+    authDomain: "topclean-ce4e6.firebaseapp.com",
+    databaseURL: "https://topclean-ce4e6-default-rtdb.firebaseio.com",
+    projectId: "topclean-ce4e6",
+    storageBucket: "topclean-ce4e6.firebaseastorage.app",
+    messagingSenderId: "413118182506",
+    appId: "1:413118182506:web:4e1897da948b8348030613"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const auth = firebase.auth();
+
 // ---------- SABİT VERİLER ----------
 const katlar = {
     "-1. Kat": {
@@ -88,10 +105,13 @@ let currentActiveReport = null;
 // Base64 fotoğraf encode
 let fotoDataURL = "";
 
-// Initialize App
 document.addEventListener("DOMContentLoaded", () => {
     lucide.createIcons();
     initTheme();
+    
+    // 1. Start Cloud Sync
+    syncFromCloud();
+    
     initLoginSelect();
     checkSession(); // Restore session if exists
 
@@ -100,6 +120,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('userSelect').addEventListener('change', checkLoginType);
     document.getElementById('fotoUpload').addEventListener('change', handleFotoUpload);
+
+    // Initial Migration (Optional: LocalStorage to Firebase if needed)
+    migrateLocalToCloud();
 
     const dateSel = document.getElementById('adminDateSelector');
     if(dateSel) {
@@ -193,8 +216,54 @@ function checkSession() {
     }
 }
 
+let authMode = "quick"; // "quick" or "email"
+
+function toggleAuthMode() {
+    const qSec = document.getElementById('quickLoginSection');
+    const eSec = document.getElementById('emailLoginSection');
+    const btn = document.getElementById('toggleLoginMode');
+    
+    if (authMode === "quick") {
+        authMode = "email";
+        qSec.classList.add('d-none');
+        eSec.classList.remove('d-none');
+        btn.innerText = "Personel Seçimi ile Giriş";
+    } else {
+        authMode = "quick";
+        qSec.classList.remove('d-none');
+        eSec.classList.add('d-none');
+        btn.innerText = "E-posta ile Giriş Yap";
+    }
+}
+
 function handleLogin(e) {
     e.preventDefault();
+
+    if (authMode === "email") {
+        const email = document.getElementById('emailInput').value;
+        const pass = document.getElementById('emailPassInput').value;
+        
+        auth.signInWithEmailAndPassword(email, pass)
+            .then((userCredential) => {
+                // Determine user role from DB or fixed logic
+                db.ref('personnel').orderByChild('email').equalTo(email).once('value', snapshot => {
+                    const data = snapshot.val();
+                    if (data) {
+                        currentUser = Object.values(data)[0];
+                    } else {
+                        // Default to admin if not found in personnel list
+                        currentUser = { name: email.split('@')[0], rol: "idareci", kat: "" };
+                    }
+                    localStorage.setItem('topclean_session', JSON.stringify(currentUser));
+                    loginSuccess();
+                });
+            })
+            .catch((error) => {
+                Swal.fire({ icon: 'error', title: 'Hata', text: 'E-posta veya şifre hatalı!' });
+            });
+        return;
+    }
+
     const uName = document.getElementById('userSelect').value;
     const uPass = document.getElementById('passInput').value;
 
@@ -215,19 +284,7 @@ function handleLogin(e) {
     if (un && un.pass === uPass) {
         currentUser = un;
         localStorage.setItem('topclean_session', JSON.stringify(un));
-        document.getElementById('passInput').value = "";
-        updateHeader();
-
-        if (un.rol === "gorevli") {
-            loadGorevliPanel(un.kat);
-            showPanel("gorevliPanel");
-        } else if (un.rol === "idareci") {
-            IdarecManager.load();
-            showPanel("idarecPanel");
-        } else {
-            loadAdminPanel();
-            showPanel("adminPanel");
-        }
+        loginSuccess();
     } else {
         Swal.fire({
             icon: 'error',
@@ -235,6 +292,31 @@ function handleLogin(e) {
             text: 'Bilgilerinizi hatalı girdiniz, lütfen tekrar deneyin.',
             confirmButtonText: 'Tamam'
         });
+    }
+}
+
+function loginSuccess() {
+    document.getElementById('passInput').value = "";
+    document.getElementById('emailPassInput').value = "";
+    updateHeader();
+    
+    Swal.fire({
+        icon: 'success',
+        title: 'Giriş Başarılı',
+        text: 'Bulut senkronizasyonu aktif.',
+        timer: 1500,
+        showConfirmButton: false
+    });
+
+    if (currentUser.rol === "gorevli") {
+        loadGorevliPanel(currentUser.kat);
+        showPanel("gorevliPanel");
+    } else if (currentUser.rol === "idareci") {
+        IdarecManager.load();
+        showPanel("idarecPanel");
+    } else {
+        loadAdminPanel();
+        showPanel("adminPanel");
     }
 }
 
@@ -261,16 +343,66 @@ function showPanel(id) {
     document.getElementById(id).classList.add('active');
 }
 
-// ---------- VERİ (LocalStorage) ----------
-function getData() {
-    return JSON.parse(localStorage.getItem('topclean_data') || '[]');
+// ---------- VERİ (Cloud / LocalStorage) ----------
+// Firebase'den veri çekme (Realtime)
+let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+
+function syncFromCloud() {
+    db.ref('reports').on('value', (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+            cachedData = Object.values(data);
+            localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+            // UI'ı aktif panele göre güncelle
+            refreshCurrentPanel();
+        }
+    });
+
+    db.ref('personnel').on('value', (snapshot) => {
+        const pData = snapshot.val();
+        if (pData) {
+            localStorage.setItem('topclean_users', JSON.stringify(Object.values(pData)));
+            initLoginSelect();
+        }
+    });
 }
+
+function refreshCurrentPanel() {
+    if (!currentUser) return;
+    if (currentUser.rol === "gorevli") loadGorevliPanel(currentUser.kat);
+    else if (currentUser.rol === "idareci") IdarecManager.loadBinaDurumu();
+    else if (currentUser.rol === "mufettis") loadAdminPanel();
+}
+
+function getData() {
+    return cachedData;
+}
+
 function saveData(item) {
-    let data = getData();
-    // Item format: { id, kat, bolum, secilen:[], foto, tarih, durum, yorum }
     item.id = new Date().getTime().toString();
-    data.push(item);
-    localStorage.setItem('topclean_data', JSON.stringify(data));
+    // Cloud save
+    db.ref('reports/' + item.id).set(item);
+    // Local fallback
+    cachedData.push(item);
+    localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+}
+
+// Migration Helper
+function migrateLocalToCloud() {
+    const localData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+    const localUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+
+    if (localData.length > 0) {
+        localData.forEach(item => {
+            db.ref('reports/' + item.id).set(item);
+        });
+    }
+
+    if (localUsers.length > 0) {
+        localUsers.forEach(u => {
+            db.ref('personnel/' + u.name.replace(/\s+/g, '_')).set(u);
+        });
+    }
 }
 
 // ---------- GÖREVLİ PANELİ ----------
@@ -635,7 +767,17 @@ const AdminManager = {
         if (idx !== -1) {
             data[idx].durum = status;
             data[idx].mufettis_yorum = comment;
+            data[idx].mufettis_tarih = new Date().getTime();
+            
+            // Cloud Update
+            db.ref('reports/' + currentActiveReport.id).update({
+                durum: status,
+                mufettis_yorum: comment,
+                mufettis_tarih: data[idx].mufettis_tarih
+            });
+
             localStorage.setItem('topclean_data', JSON.stringify(data));
+            cachedData = data; // Update cache
             
             bootstrapModal.hide();
             Swal.fire({
@@ -778,7 +920,12 @@ const IdarecManager = {
         var kat = document.getElementById('yeniPersonelKat').value;
         if(!ad || !sifre || !kat) { Swal.fire({icon:'warning',title:'Eksik Bilgi',text:'Tüm alanları doldurun.',timer:2000,showConfirmButton:false}); return; }
         var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        extras.push({name:ad, pass:sifre, kat:kat, rol:'gorevli'});
+        var newUser = {name:ad, pass:sifre, kat:kat, rol:'gorevli'};
+        extras.push(newUser);
+        
+        // Save to Firebase
+        db.ref('personnel/' + ad.replace(/\s+/g, '_')).set(newUser);
+        
         localStorage.setItem('topclean_users', JSON.stringify(extras));
         document.getElementById('yeniPersonelAd').value = '';
         document.getElementById('yeniPersonelSifre').value = '';
@@ -797,9 +944,12 @@ const IdarecManager = {
             deletedFixed.push(name);
             localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
         }
+        // Cloud Delete
+        db.ref('personnel/' + name.replace(/\s+/g, '_')).remove();
+        
         Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
-        initLoginSelect(); // Login dropdown'u güncelle
+        initLoginSelect();
     },
     exportCSV: function() {
         var selectedDate = document.getElementById('raporDateSelector').value;
@@ -851,6 +1001,9 @@ const ListeManager = {
             baskanlar: baskanlar || currentData.baskanlar || {}
         };
         localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
+        // Cloud Save
+        db.ref('student_distribution').set(data);
+        Swal.fire({icon:'success',title:'Bulut Kaydı',text:'Öğrenci listesi senkronize edildi.',timer:1500,showConfirmButton:false});
     },
 
     getPoolNames: function() {
