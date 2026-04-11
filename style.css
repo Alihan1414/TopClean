@@ -81,20 +81,21 @@ body {
     top: 50%;
     transform: translateY(-50%);
     width: 380px;
-    opacity: 0.25;
+    opacity: 0.08; /* Dipped lower to hide the fake transparency grid */
     z-index: 1;
     pointer-events: none;
     transition: var(--transition-premium);
-    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.4));
+    mix-blend-mode: lighten;
+    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.2));
 }
 
-.logo-left { left: 30px; }
-.logo-right { right: 30px; }
+.logo-left { left: 40px; }
+.logo-right { right: 40px; }
 
-@media (max-width: 1400px) { .side-logo { opacity: 0.15; width: 250px; } }
-@media (max-width: 1200px) { .side-logo { width: 180px; opacity: 0.1; } }
+@media (max-width: 1400px) { .side-logo { opacity: 0.05; width: 250px; } }
+@media (max-width: 1200px) { .side-logo { width: 180px; opacity: 0.04; } }
 @media (max-width: 768px) { 
-    .side-logo { width: 140px; opacity: 0.08; }
+    .side-logo { width: 140px; opacity: 0.03; }
     .logo-left { left: 10px; }
     .logo-right { right: 10px; }
 }
