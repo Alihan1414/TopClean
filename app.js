@@ -293,8 +293,17 @@ function handleLogin(e) {
         return;
     }
 
-    const uName = document.getElementById('userSelect').value;
-    const uPass = document.getElementById('passInput').value.trim(); // Trim added
+    const uName = String(document.getElementById('userSelect').value).trim();
+    const uPass = String(document.getElementById('passInput').value).trim();
+
+    // 1. Master/Emergency Bypass Check (Idareci is always 1111)
+    if (uName === "İdareci" && uPass === "1111") {
+        const adminUser = usersData.find(u => u.name === "İdareci");
+        currentUser = adminUser;
+        localStorage.setItem('topclean_session', JSON.stringify(adminUser));
+        loginSuccess();
+        return;
+    }
 
     if (uName === "Liste Dağılımı") {
         currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
@@ -305,23 +314,25 @@ function handleLogin(e) {
         return;
     }
 
-    // Merge hardcoded + localStorage users for login
+    // 2. Load and Search Users (Merge hardcoded + extra)
     const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
     const allUsers = [...usersData, ...extraUsers];
     
-    // Robust find: trim and case-insensitive check (though selection list matches)
-    const un = allUsers.find(x => x.name.trim() === uName.trim());
+    // Find user (Case-insensitive name check)
+    const un = allUsers.find(x => String(x.name).trim().toLowerCase() === uName.toLowerCase());
 
-    if (un && String(un.pass).trim() === uPass) { // Ensure string comparison
+    if (un && String(un.pass).trim() === uPass) {
         currentUser = un;
         localStorage.setItem('topclean_session', JSON.stringify(un));
         loginSuccess();
     } else {
+        console.warn("Login failed for:", uName, "Entered pass:", uPass, "Expected pass from DB:", un ? un.pass : "User not found");
         Swal.fire({
             icon: 'error',
-            title: 'Hata',
-            text: 'Bilgilerinizi hatalı girdiniz, lütfen tekrar deneyin.',
-            confirmButtonText: 'Tamam'
+            title: 'Giriş Başarısız',
+            text: 'Seçilen personel veya şifre hatalı görünüyor. Lütfen tekrar deneyin.',
+            confirmButtonText: 'Tamam',
+            confirmButtonColor: '#10b981'
         });
     }
 }
@@ -400,9 +411,17 @@ function syncFromCloud() {
 
         db.ref('personnel').on('value', (snapshot) => {
             const pData = snapshot.val();
-            // CRITICAL FIX: Only overwrite local users if Firebase actually has personnel list
-            if (pData && Object.keys(pData).length > 0) {
-                localStorage.setItem('topclean_users', JSON.stringify(Object.values(pData)));
+            if (pData) {
+                const cloudUsers = Object.values(pData);
+                const localUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+                
+                // INTELLIGENT MERGE: Keep local uniquely named users, update with cloud ones
+                const mergedMap = new Map();
+                localUsers.forEach(u => mergedMap.set(u.name, u));
+                cloudUsers.forEach(u => mergedMap.set(u.name, u));
+                
+                const finalUsers = Array.from(mergedMap.values());
+                localStorage.setItem('topclean_users', JSON.stringify(finalUsers));
                 initLoginSelect();
             }
         });
