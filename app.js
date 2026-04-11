@@ -311,17 +311,17 @@ function loadGorevliPanel(katAd) {
         }
 
         const div = document.createElement('div');
-        div.className = "action-card stagger-item p-3 p-md-4 d-flex flex-column gap-3 shadow-hover";
+        div.className = "action-card stagger-item d-flex flex-column gap-3";
         div.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.1}s`;
         div.onclick = () => KriterManager.ac(katAd, bolumAd, kriterler);
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center w-100">
-                <div class="fw-bold" style="font-size: 1.1rem; color: var(--text-main); letter-spacing: 0.5px;">📍 ${bolumAd}</div>
-                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--border-color); opacity: 0.6;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
+                <div class="fw-bold text-white" style="font-size: 1.1rem; letter-spacing: 0.5px;">📍 ${bolumAd}</div>
+                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--glass-border); opacity: 0.8;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
                     <i data-lucide="info" size="14"></i>
                 </button>
             </div>
-            <div class="badge-status ${badgeClass} text-center shadow-sm w-100 py-2 fs-6" style="border-radius: 12px; font-weight: 700;">
+            <div class="badge-status ${badgeClass} text-center justify-content-center w-100 py-2" style="font-weight: 800;">
                 ${badgeYazi}
             </div>
         `;
@@ -355,10 +355,10 @@ const KriterManager = {
         kriterler.forEach((k, idx) => {
             const div = document.createElement('label');
             div.className = "custom-checkbox-wrapper p-3 border-bottom d-flex align-items-center gap-3 mb-0";
-            div.style.borderColor = "var(--border-color) !important";
+            div.style.borderColor = "var(--glass-border) !important";
             div.innerHTML = `
-                <input type="checkbox" class="custom-control-input chk-kriter" value="${k}" onchange="KriterManager.guncelleBar()">
-                <span class="fs-6 d-block mt-1">${k}</span>
+                <input type="checkbox" class="chk-kriter" value="${k}" onchange="KriterManager.guncelleBar()">
+                <span class="fs-6 d-block text-white-50">${k}</span>
             `;
             listEl.appendChild(div);
         });
@@ -381,16 +381,16 @@ const KriterManager = {
         bar.style.width = `${yuzde}%`;
 
         if (yuzde === 100) {
-            bar.style.backgroundColor = "var(--success-color)";
-            lbl.style.color = "var(--success-color)";
+            bar.style.background = "var(--success)";
+            lbl.style.color = "var(--success)";
             lbl.innerText = `%${yuzde} Temiz ✔`;
         } else if (yuzde === 0) {
-            bar.style.backgroundColor = "var(--accent-primary)";
-            lbl.style.color = "var(--text-muted)";
+            bar.style.background = "var(--accent-glow)";
+            lbl.style.color = "var(--text-dim)";
             lbl.innerText = `%0 Temiz`;
         } else {
-            bar.style.backgroundColor = "var(--warning-color)";
-            lbl.style.color = "var(--warning-color)";
+            bar.style.background = "var(--warning)";
+            lbl.style.color = "var(--warning)";
             lbl.innerText = `%${yuzde} Temiz (${isaretli}/${toplam})`;
         }
     },
@@ -723,7 +723,7 @@ const IdarecManager = {
                 var col = document.createElement('div');
                 col.className = 'col-12 col-md-6 px-1';
                 var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' | ' + rec.secilen.length + ' kriter' : 'Kaydı yok';
-                col.innerHTML = '<div class="glass-card p-2 d-flex align-items-center justify-content-between"><div><div class="fw-bold text-white" style="font-size:0.8rem;">' + bolumAd + '</div><div class="x-small text-muted">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.6rem;padding:3px 8px;">' + sy + '</span></div>';
+                col.innerHTML = '<div class="glass-card p-3 d-flex align-items-center justify-content-between mb-2"><div><div class="fw-bold text-white" style="font-size:0.9rem; letter-spacing:0.5px;">' + bolumAd + '</div><div class="x-small text-dim">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.65rem;">' + sy + '</span></div>';
                 roomRow.appendChild(col);
             });
         });
