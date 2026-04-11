@@ -199,6 +199,14 @@ main {
     box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
 
+/* Fix for Select Options Visibility in Dark Mode */
+select.custom-input option {
+    background: #0a0f0e !important;
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+
 /* --- Badges --- */
 .badge-status {
     padding: 0.6rem 1.25rem;
