@@ -1,5 +1,5 @@
-// ---------- FIREBASE CONFIGURATION ----------
-// TODO: console.firebase.google.com adresinden kendi anahtarlarını buraya yapıştır!
+// ---------- FIREBASE CONFIGURATION (DISABLED FOR DEMO) ----------
+/*
 const firebaseConfig = {
     apiKey: "AIzaSyCO88ONQpL3vFRMSY-jyhRImbsNC1ngcmQ",
     authDomain: "topclean-ce4e6.firebaseapp.com",
@@ -17,16 +17,14 @@ try {
         var db = firebase.database();
         var auth = firebase.auth();
         console.log("Firebase initialized successfully.");
-    } else {
-        console.warn("Firebase not loaded. Running in Local Mode.");
-        var db = null;
-        var auth = null;
     }
 } catch (e) {
     console.error("Firebase Init Error:", e);
-    var db = null;
-    var auth = null;
 }
+*/
+const db = null;
+const auth = null;
+
 
 // ---------- SABİT VERİLER ----------
 const katlar = {
@@ -123,13 +121,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
         initTheme();
         
-        // 1. Start Cloud Sync if available
-        if (db) syncFromCloud();
+        // 1. Cloud Sync Disabled for Demo
+        // if (db) syncFromCloud();
         
         initLoginSelect();
         checkSession(); // Restore session if exists
 
-        // Event Listeners
+        // Event Listeners (Restored)
         const lForm = document.getElementById('loginForm');
         if (lForm) lForm.addEventListener('submit', handleLogin);
         
@@ -142,13 +140,16 @@ document.addEventListener("DOMContentLoaded", () => {
         const fUp = document.getElementById('fotoUpload');
         if (fUp) fUp.addEventListener('change', handleFotoUpload);
 
-        // Initial Migration (Optional: LocalStorage to Firebase if needed)
-        if (db) migrateLocalToCloud();
+        // Migration Disabled for Demo
+        // if (db) migrateLocalToCloud();
 
-        const dateSel = document.getElementById('adminDateSelector');
+        const dateSel = document.getElementById('idarecDateSelector');
         if(dateSel) {
             dateSel.valueAsDate = new Date();
-            dateSel.addEventListener('change', loadAdminPanel);
+            dateSel.addEventListener('change', () => {
+                if (currentUser.rol === "idareci") IdarecManager.loadBinaDurumu();
+                else loadAdminPanel();
+            });
         }
     } catch (err) {
         console.error("App Init Error:", err);
@@ -268,30 +269,13 @@ function toggleAuthMode() {
 function handleLogin(e) {
     e.preventDefault();
 
+    // Email auth disabled for demo
+    /*
     if (authMode === "email") {
-        const email = document.getElementById('emailInput').value;
-        const pass = document.getElementById('emailPassInput').value;
-        
-        auth.signInWithEmailAndPassword(email, pass)
-            .then((userCredential) => {
-                // Determine user role from DB or fixed logic
-                db.ref('personnel').orderByChild('email').equalTo(email).once('value', snapshot => {
-                    const data = snapshot.val();
-                    if (data) {
-                        currentUser = Object.values(data)[0];
-                    } else {
-                        // Default to admin if not found in personnel list
-                        currentUser = { name: email.split('@')[0], rol: "idareci", kat: "" };
-                    }
-                    localStorage.setItem('topclean_session', JSON.stringify(currentUser));
-                    loginSuccess();
-                });
-            })
-            .catch((error) => {
-                Swal.fire({ icon: 'error', title: 'Hata', text: 'E-posta veya şifre hatalı!' });
-            });
-        return;
+        ...
     }
+    */
+
 
     const uName = String(document.getElementById('userSelect').value).trim();
     const uPass = String(document.getElementById('passInput').value).trim();
@@ -345,7 +329,7 @@ function loginSuccess() {
     Swal.fire({
         icon: 'success',
         title: 'Giriş Başarılı',
-        text: 'Bulut senkronizasyonu aktif.',
+        text: 'Oturum Başarıyla Açıldı.',
         timer: 1500,
         showConfirmButton: false
     });
@@ -365,18 +349,32 @@ function loginSuccess() {
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
-    document.getElementById('userProfileControls').classList.add('d-none');
-    initLoginSelect(); // Yenilenmiş personel listesini ana ekrana yükle
+    
+    const header = document.getElementById('app-header');
+    const badge = document.getElementById('headerUserBadge');
+    if (header) header.classList.add('d-none');
+    if (badge) badge.classList.add('d-none');
+
+    initLoginSelect(); 
     showPanel("loginPanel");
     updateHeader();
 }
 
 function updateHeader() {
+    const header = document.getElementById('app-header');
+    const badge = document.getElementById('headerUserBadge');
+    const nameEl = document.getElementById('headerName');
+
     if (currentUser) {
-        document.getElementById('userProfileControls').classList.remove('d-none');
-        document.getElementById('userProfileControls').classList.add('d-flex');
-        document.getElementById('welcomeText').innerText = `Hoş Geldiniz | ${currentUser.name}`;
-        document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
+        if (header) header.classList.remove('d-none');
+        if (badge) {
+            badge.classList.remove('d-none');
+            badge.classList.add('d-flex');
+        }
+        if (nameEl) nameEl.innerText = currentUser.name;
+    } else {
+        if (header) header.classList.add('d-none');
+        if (badge) badge.classList.add('d-none');
     }
 }
 
@@ -392,42 +390,7 @@ let isSyncing = false;
 let syncTimeout = null;
 
 function syncFromCloud() {
-    try {
-        db.ref('reports').on('value', (snapshot) => {
-            const data = snapshot.val();
-            // Only update if cloud has actual data and we aren't currently migrating
-            if (data && !isSyncing) {
-                cachedData = Object.values(data);
-                localStorage.setItem('topclean_data', JSON.stringify(cachedData));
-                
-                if (syncTimeout) clearTimeout(syncTimeout);
-                syncTimeout = setTimeout(() => {
-                    refreshCurrentPanel();
-                }, 300);
-            }
-        }, (error) => {
-            console.error("Firebase Sync Error:", error);
-        });
-
-        db.ref('personnel').on('value', (snapshot) => {
-            const pData = snapshot.val();
-            if (pData) {
-                const cloudUsers = Object.values(pData);
-                const localUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-                
-                // INTELLIGENT MERGE: Keep local uniquely named users, update with cloud ones
-                const mergedMap = new Map();
-                localUsers.forEach(u => mergedMap.set(u.name, u));
-                cloudUsers.forEach(u => mergedMap.set(u.name, u));
-                
-                const finalUsers = Array.from(mergedMap.values());
-                localStorage.setItem('topclean_users', JSON.stringify(finalUsers));
-                initLoginSelect();
-            }
-        });
-    } catch (e) {
-        console.warn("Cloud connection failed, using local mode.");
-    }
+    // Cloud sync disabled for demo
 }
 
 function refreshCurrentPanel() {
@@ -443,41 +406,16 @@ function getData() {
 
 function saveData(item) {
     item.id = new Date().getTime().toString();
-    // Cloud save
-    db.ref('reports/' + item.id).set(item);
-    // Local fallback
+    // Cloud save disabled for demo
+    
+    // Local storage only
     cachedData.push(item);
     localStorage.setItem('topclean_data', JSON.stringify(cachedData));
 }
 
 // Migration Helper
 async function migrateLocalToCloud() {
-    const localData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
-    const localUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-    
-    // Alreay migrated check
-    if (localStorage.getItem('topclean_migrated') === 'true') return;
-
-    if (localData.length === 0 && localUsers.length === 0) return;
-
-    isSyncing = true;
-    console.log("Migration started...");
-
-    try {
-        for (const item of localData) {
-            await db.ref('reports/' + item.id).set(item);
-        }
-        for (const u of localUsers) {
-            await db.ref('personnel/' + u.name.replace(/\s+/g, '_')).set(u);
-        }
-        localStorage.setItem('topclean_migrated', 'true');
-        console.log("Migration completed.");
-    } catch (e) {
-        console.error("Migration failed:", e);
-    } finally {
-        isSyncing = false;
-        refreshCurrentPanel();
-    }
+    // Migration disabled for demo
 }
 
 // ---------- GÖREVLİ PANELİ ----------
@@ -717,11 +655,12 @@ function handleFotoUpload(e) {
 
 // ---------- İDARECİ / MÜFETTİŞ PANEL ----------
 function loadAdminPanel() {
-    const matris = document.getElementById('denetimMatrisi');
+    const matris = document.getElementById('idarecBinaMatrisi') || document.getElementById('denetimMatrisi');
     if(!matris) return;
     matris.innerHTML = "";
     
-    const selectedDate = document.getElementById('adminDateSelector').value; // yyyy-mm-dd
+    const dateSwitcher = document.getElementById('idarecDateSelector') || document.getElementById('adminDateSelector');
+    const selectedDate = dateSwitcher ? dateSwitcher.value : new Date().toISOString().split('T')[0];
     const targetDateStr = new Date(selectedDate).toLocaleDateString();
     
     let allData = getData();
@@ -734,10 +673,13 @@ function loadAdminPanel() {
     const danger = dayData.filter(d => d.durum === "reddedildi").length;
     const pending = dayData.filter(d => d.durum === "bekliyor").length;
 
-    document.getElementById('adminStatTotal').innerText = total;
-    document.getElementById('adminStatSuccess').innerText = success;
-    document.getElementById('adminStatDanger').innerText = danger;
-    document.getElementById('adminStatPending').innerText = pending;
+    const sTotal = document.getElementById('idarecStatTotal') || document.getElementById('adminStatTotal');
+    const sSuccess = document.getElementById('idarecStatSuccess') || document.getElementById('adminStatSuccess');
+    const sDanger = document.getElementById('idarecStatDanger') || document.getElementById('adminStatDanger');
+    
+    if (sTotal) sTotal.innerText = total;
+    if (sSuccess) sSuccess.innerText = success;
+    if (sDanger) sDanger.innerText = danger;
 
     // Loop through Building Structure (katlar)
     Object.keys(katlar).forEach((katAd, kIdx) => {
@@ -844,12 +786,8 @@ const AdminManager = {
             data[idx].mufettis_yorum = comment;
             data[idx].mufettis_tarih = new Date().getTime();
             
-            // Cloud Update
-            db.ref('reports/' + currentActiveReport.id).update({
-                durum: status,
-                mufettis_yorum: comment,
-                mufettis_tarih: data[idx].mufettis_tarih
-            });
+            // Cloud update disabled for demo
+            // db.ref('reports/' + currentActiveReport.id).update({ ... });
 
             localStorage.setItem('topclean_data', JSON.stringify(data));
             cachedData = data; // Update cache
@@ -996,8 +934,9 @@ const IdarecManager = {
         var newUser = {name:ad, pass:sifre, kat:kat, rol:'gorevli'};
         extras.push(newUser);
         
-        // Save to Firebase
-        db.ref('personnel/' + ad.replace(/\s+/g, '_')).set(newUser);
+        // Save to Firebase disabled for demo
+        // Save to Firebase disabled for demo
+        // if (db) db.ref('personnel/' + ad.replace(/\s+/g, '_')).set(newUser);
         
         localStorage.setItem('topclean_users', JSON.stringify(extras));
         document.getElementById('yeniPersonelAd').value = '';
@@ -1017,8 +956,9 @@ const IdarecManager = {
             deletedFixed.push(name);
             localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
         }
-        // Cloud Delete
-        db.ref('personnel/' + name.replace(/\s+/g, '_')).remove();
+        // Cloud Delete disabled for demo
+        // Cloud Delete disabled for demo
+        // if (db) db.ref('personnel/' + name.replace(/\s+/g, '_')).remove();
         
         Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
@@ -1074,9 +1014,9 @@ const ListeManager = {
             baskanlar: baskanlar || currentData.baskanlar || {}
         };
         localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
-        // Cloud Save
-        db.ref('student_distribution').set(data);
-        Swal.fire({icon:'success',title:'Bulut Kaydı',text:'Öğrenci listesi senkronize edildi.',timer:1500,showConfirmButton:false});
+        // Cloud Save disabled for demo
+        // if (db) db.ref('student_distribution').set(data);
+        Swal.fire({icon:'success',title:'Liste Kaydedildi',text:'Öğrenci listesi başarıyla güncellendi.',timer:1500,showConfirmButton:false});
     },
 
     getPoolNames: function() {
