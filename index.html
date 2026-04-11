@@ -26,25 +26,25 @@
     <div id="app" class="container-fluid min-vh-100 p-0 m-0 custom-bg d-flex flex-column">
         
         <!-- HEADER -->
-        <header id="app-header" class="w-100 py-3 px-4 d-flex justify-content-between align-items-center">
+        <header id="app-header" class="w-100 d-flex justify-content-between align-items-center mb-4">
             <div class="d-flex align-items-center gap-3">
-                <button id="themeToggleBtn" class="btn btn-outline-secondary rounded-pill btn-sm d-flex align-items-center gap-2 text-muted px-3" style="border-color: var(--border-color);">
+                <button id="themeToggleBtn" class="btn btn-outline-secondary rounded-pill btn-sm d-flex align-items-center gap-2 text-muted px-3" style="border-color: var(--glass-border);">
                     <i data-lucide="moon" size="16"></i> <span class="d-none d-sm-inline">Tema</span>
                 </button>
             </div>
             
             <div class="text-center flex-grow-1">
-                <h1 class="main-title fw-bold mb-0">✨ TOPCLEAN ✨</h1>
-                <p class="sub-title fw-bold mt-1 mb-0 pb-2">🛠️ CLEANING APP YÖNETİM SİSTEMİ 🛠️</p>
+                <h1 class="main-title mb-0">TOPCLEAN</h1>
+                <p class="sub-title mt-1 mb-0">Management System</p>
                 <div class="gradient-line mx-auto"></div>
             </div>
 
             <div id="userProfileControls" class="d-flex align-items-center gap-3 d-none">
                 <div class="d-none d-md-block text-end">
-                    <span id="welcomeText" class="fw-bold d-block" style="color: var(--accent-primary);"></span>
-                    <span id="roleText" class="small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;"></span>
+                    <span id="welcomeText" class="fw-bold d-block text-white" style="font-size: 0.9rem;"></span>
+                    <span id="roleText" class="small text-dim text-uppercase fw-bold" style="letter-spacing: 1.5px; font-size: 0.7rem;"></span>
                 </div>
-                <button id="logoutBtn" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 shadow-sm d-flex align-items-center gap-2">
+                <button id="logoutBtn" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 d-flex align-items-center gap-2">
                     <i data-lucide="log-out" size="16"></i> Çıkış
                 </button>
             </div>
@@ -54,20 +54,31 @@
         <main class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4" style="padding-top: 1.5rem !important;">
             
             <!-- 1. LOGIN PANEL -->
-            <div id="loginPanel" class="view-panel active d-flex flex-column align-items-center justify-content-center w-100">
-                <div class="glass-card text-center p-4 p-md-5 mw-100" style="width: 450px;">
-                    <h2 class="fw-bold mb-2">Hoş Geldiniz</h2>
-                    <p class="text-muted mb-4 pb-2">Lütfen devam etmek için giriş yapın</p>
+            <div id="loginPanel" class="view-panel active d-flex flex-column align-items-center justify-content-center w-100 h-100">
+                <div class="glass-card text-center p-5 mw-100" style="width: 480px;">
+                    <div class="mb-4">
+                        <div class="d-inline-flex p-3 rounded-circle bg-emerald-glow mb-3">
+                            <i data-lucide="shield-check" class="text-emerald" size="48"></i>
+                        </div>
+                        <h2 class="fw-black mb-2 text-white">Sisteme Giriş</h2>
+                        <p class="text-secondary">Yönetim paneline erişmek için kimlik seçin</p>
+                    </div>
                     
                     <form id="loginForm" class="d-flex flex-column gap-3">
-                        <select id="userSelect" class="form-select custom-input py-3 select-dark">
-                            <!-- Populated via JS -->
-                        </select>
+                        <div class="text-start">
+                            <label class="small fw-bold text-dim mb-2 ms-2">PERSONEL SEÇİMİ</label>
+                            <select id="userSelect" class="form-select custom-input select-dark py-3">
+                                <!-- Populated via JS -->
+                            </select>
+                        </div>
                         
-                        <input type="password" id="passInput" class="form-control custom-input py-3 text-center" placeholder="Mevcut Şifreniz" autocomplete="current-password">
+                        <div class="text-start">
+                            <label class="small fw-bold text-dim mb-2 ms-2">GÜVENLİK ŞİFRESİ</label>
+                            <input type="password" id="passInput" class="form-control custom-input py-3 text-center" placeholder="••••" autocomplete="current-password">
+                        </div>
                         
-                        <button type="submit" class="btn btn-emerald-lg w-100 py-3 mt-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i data-lucide="key" size="20"></i> GÜVENLİ GİRİŞ
+                        <button type="submit" class="btn btn-emerald-lg w-100 py-3 mt-4 d-flex align-items-center justify-content-center gap-2">
+                            <i data-lucide="arrow-right-circle" size="20"></i> OTURUMU AÇ
                         </button>
                     </form>
                 </div>
@@ -186,29 +197,29 @@
                     </div>
 
                     <!-- Stats Grid -->
-                    <div class="row g-2 mb-4 mx-0">
-                        <div class="col-6 col-sm-3 px-1">
-                            <div class="glass-card p-2 text-center h-100">
-                                <div class="x-small text-muted mb-1">Toplam</div>
-                                <h5 id="adminStatTotal" class="fw-bold m-0 text-white">0</h5>
+                    <div class="row g-3 mb-4 mx-0">
+                        <div class="col-6 col-md-3">
+                            <div class="stat-card">
+                                <div class="small text-dim mb-1">TOPLAM</div>
+                                <div id="adminStatTotal" class="stat-value text-white">0</div>
                             </div>
                         </div>
-                        <div class="col-6 col-sm-3 px-1">
-                            <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #28a745;">
-                                <div class="x-small text-muted mb-1">Onay</div>
-                                <h5 id="adminStatSuccess" class="fw-bold m-0 text-success">0</h5>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-card" style="border-bottom: 3px solid var(--success);">
+                                <div class="small text-dim mb-1">ONAY</div>
+                                <div id="adminStatSuccess" class="stat-value text-emerald">0</div>
                             </div>
                         </div>
-                        <div class="col-6 col-sm-3 px-1">
-                            <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #ffc107;">
-                                <div class="x-small text-muted mb-1">Bekle</div>
-                                <h5 id="adminStatPending" class="fw-bold m-0 text-warning">0</h5>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-card" style="border-bottom: 3px solid var(--warning);">
+                                <div class="small text-dim mb-1">BEKLEME</div>
+                                <div id="adminStatPending" class="stat-value text-warning">0</div>
                             </div>
                         </div>
-                        <div class="col-6 col-sm-3 px-1">
-                            <div class="glass-card p-2 text-center h-100" style="border-bottom: 2px solid #dc3545;">
-                                <div class="x-small text-muted mb-1">Red</div>
-                                <h5 id="adminStatDanger" class="fw-bold m-0 text-danger">0</h5>
+                        <div class="col-6 col-md-3">
+                            <div class="stat-card" style="border-bottom: 3px solid var(--danger);">
+                                <div class="small text-dim mb-1">RED</div>
+                                <div id="adminStatDanger" class="stat-value text-danger">0</div>
                             </div>
                         </div>
                     </div>
@@ -395,21 +406,21 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body py-4">
-                    <div id="modalFotoContainer" class="text-center mb-4">
-                        <img id="modalFoto" src="" class="img-fluid rounded-3 border shadow-sm" style="max-height: 250px;">
+                    <div id="modalFotoContainer" class="text-center mb-4 d-none">
+                        <img id="modalFoto" src="" class="img-fluid rounded-4 border shadow-lg" style="max-height: 280px; border-color: var(--glass-border) !important;">
                     </div>
                     <div class="mb-4">
-                        <h6 class="fw-bold text-muted small text-uppercase mb-3">Tamamlanan Kriterler</h6>
-                        <div id="modalKriterListesi" class="small text-light"></div>
+                        <h6 class="fw-bold text-dim small text-uppercase mb-3" style="letter-spacing: 1px;">Kriter Analizi</h6>
+                        <div id="modalKriterListesi" class="d-flex flex-column gap-2"></div>
                     </div>
                     <div class="mb-3">
-                        <h6 class="fw-bold text-muted small text-uppercase mb-2">Müfettiş Notu (Opsiyonel)</h6>
-                        <textarea id="modalAdminNot" class="form-control custom-input" rows="2" placeholder="Gözlemlerinizi buraya yazın..."></textarea>
+                        <h6 class="fw-bold text-dim small text-uppercase mb-2" style="letter-spacing: 1px;">Denetçi Notu</h6>
+                        <textarea id="modalAdminNot" class="form-control custom-input" rows="3" placeholder="Gözlemlerinizi buraya not edin..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-top-0 pt-0 gap-2">
-                    <button type="button" class="btn btn-danger flex-grow-1 py-3 fw-bold rounded-3" onclick="AdminManager.processReport('reddedildi')">REDDET</button>
-                    <button type="button" class="btn btn-emerald-lg flex-grow-2 py-3 fw-bold rounded-3" onclick="AdminManager.processReport('onaylandi')">ONAYLA</button>
+                    <button type="button" class="btn btn-outline-danger flex-grow-1 py-3 fw-bold rounded-pill" onclick="AdminManager.processReport('reddedildi')" style="border-radius: 50px !important;">REDDET</button>
+                    <button type="button" class="btn btn-emerald-lg flex-grow-1 py-3 fw-bold" onclick="AdminManager.processReport('onaylandi')">ONAYLA</button>
                 </div>
             </div>
         </div>
