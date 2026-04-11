@@ -10,10 +10,23 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// Initialize Firebase
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-const auth = firebase.auth();
+// Initialize Firebase Safely
+try {
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.database();
+        var auth = firebase.auth();
+        console.log("Firebase initialized successfully.");
+    } else {
+        console.warn("Firebase not loaded. Running in Local Mode.");
+        var db = null;
+        var auth = null;
+    }
+} catch (e) {
+    console.error("Firebase Init Error:", e);
+    var db = null;
+    var auth = null;
+}
 
 // ---------- SABİT VERİLER ----------
 const katlar = {
@@ -106,28 +119,44 @@ let currentActiveReport = null;
 let fotoDataURL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
-    lucide.createIcons();
-    initTheme();
-    
-    // 1. Start Cloud Sync
-    syncFromCloud();
-    
-    initLoginSelect();
-    checkSession(); // Restore session if exists
+    try {
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initTheme();
+        
+        // 1. Start Cloud Sync if available
+        if (db) syncFromCloud();
+        
+        initLoginSelect();
+        checkSession(); // Restore session if exists
 
-    // Event Listeners
-    document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-    document.getElementById('userSelect').addEventListener('change', checkLoginType);
-    document.getElementById('fotoUpload').addEventListener('change', handleFotoUpload);
+        // Event Listeners
+        const lForm = document.getElementById('loginForm');
+        if (lForm) lForm.addEventListener('submit', handleLogin);
+        
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+        
+        const uSel = document.getElementById('userSelect');
+        if (uSel) uSel.addEventListener('change', checkLoginType);
+        
+        const fUp = document.getElementById('fotoUpload');
+        if (fUp) fUp.addEventListener('change', handleFotoUpload);
 
-    // Initial Migration (Optional: LocalStorage to Firebase if needed)
-    migrateLocalToCloud();
+        // Initial Migration (Optional: LocalStorage to Firebase if needed)
+        if (db) migrateLocalToCloud();
 
-    const dateSel = document.getElementById('adminDateSelector');
-    if(dateSel) {
-        dateSel.valueAsDate = new Date();
-        dateSel.addEventListener('change', loadAdminPanel);
+        const dateSel = document.getElementById('adminDateSelector');
+        if(dateSel) {
+            dateSel.valueAsDate = new Date();
+            dateSel.addEventListener('change', loadAdminPanel);
+        }
+    } catch (err) {
+        console.error("App Init Error:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Sistem Hatası',
+            text: 'Uygulama başlatılırken bir sorun oluştu, ancak temel özellikler çalışmaya devam edecek.'
+        });
     }
 });
 
