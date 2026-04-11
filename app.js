@@ -412,6 +412,7 @@ function showPanel(id) {
 // ---------- VERİ (Cloud / LocalStorage) ----------
 // Firebase'den veri çekme (Realtime)
 let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+let cachedArizalar = JSON.parse(localStorage.getItem('topclean_arizalar') || '[]');
 let isSyncing = false;
 let syncTimeout = null;
 
@@ -453,6 +454,15 @@ function syncFromCloud() {
             if(currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
         }
     });
+
+    db.ref('arizalar').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedArizalar = Object.values(val);
+            localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+            refreshCurrentPanel();
+        }
+    });
 }
 
 function refreshCurrentPanel() {
@@ -485,6 +495,19 @@ function saveData(item) {
     }
 }
 
+// Ariza kaydetme
+function saveAriza(ariza) {
+    ariza.id = "ARZ_" + new Date().getTime().toString();
+    ariza.onay_tarih = null;
+    cachedArizalar.push(ariza);
+    localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+    
+    // Cloud Save
+    if (db) {
+        db.ref('arizalar/' + ariza.id).set(ariza).catch(err => console.error("Firebase ariza save error:", err));
+    }
+}
+
 // Migration Helper
 async function migrateLocalToCloud() {
     if(!db) return;
@@ -496,6 +519,62 @@ async function migrateLocalToCloud() {
 }
 
 // ---------- GÖREVLİ PANELİ ----------
+function showArizaForm() {
+    if (!currentUser || !currentKat) return;
+
+    const bolumler = katlar[currentKat] ? Object.keys(katlar[currentKat]) : [];
+    let opts = '<option value="">-- Bölüm Seçiniz --</option>';
+    bolumler.forEach(b => {
+        opts += `<option value="${b}">${b}</option>`;
+    });
+
+    Swal.fire({
+        title: 'Teknik Arıza Bildir',
+        html: `
+            <div class="text-start">
+                <label class="form-label text-white small fw-bold">ARIZALI BÖLÜM</label>
+                <select id="arizaBolumSel" class="form-select custom-input mb-3 text-white border-secondary" style="background-color: var(--glass-bg);">
+                    ${opts}
+                </select>
+                <label class="form-label text-white small fw-bold">ARIZA AÇIKLAMASI</label>
+                <textarea id="arizaNot" class="form-control custom-input text-white border-secondary" style="background-color: var(--glass-bg);" placeholder="Örn: Priz çalışmıyor, ampul patlamış..." rows="3"></textarea>
+            </div>
+        `,
+        background: 'var(--bg-main)',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Gönder',
+        cancelButtonText: 'İptal',
+        confirmButtonColor: '#f59e0b',
+        preConfirm: () => {
+            const bolum = document.getElementById('arizaBolumSel').value;
+            const not = document.getElementById('arizaNot').value.trim();
+            if (!bolum) return Swal.showValidationMessage("Lütfen bir bölüm seçiniz!");
+            if (!not) return Swal.showValidationMessage("Lütfen arıza detayını yazınız!");
+            return {bolum, not};
+        }
+    }).then(res => {
+        if (res.isConfirmed) {
+            const ariza = {
+                gonderen: currentUser.name,
+                kat: currentKat,
+                bolum: res.value.bolum,
+                detay: res.value.not,
+                durum: "bekliyor",
+                tarih: new Date().getTime()
+            };
+            saveAriza(ariza);
+            Swal.fire({
+                icon: 'success',
+                title: 'İletildi!',
+                text: 'Teknik arıza talebiniz yetkililere gönderildi.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
 function loadGorevliPanel(katAd) {
     currentKat = katAd;
     document.getElementById('gorevliKatAd').innerText = katAd;
@@ -507,6 +586,19 @@ function loadGorevliPanel(katAd) {
     const bugunStr = new Date().toLocaleDateString();
 
     let reddedilenCount = 0;
+
+    // Arıza loglarını kontrol et
+    const onarilanArizalar = cachedArizalar.filter(a => a.gonderen === currentUser.name && a.durum === "onarildi");
+    const arizaKutu = document.getElementById('onarilanArizaUyari');
+    const arizaList = document.getElementById('onarilanArizaList');
+    if (onarilanArizalar.length > 0) {
+        arizaKutu.classList.remove('d-none');
+        arizaKutu.classList.add('d-flex');
+        arizaList.innerHTML = onarilanArizalar.map(a => `<div>• <b>${a.bolum}</b>: ${a.detay} (Onarıldı)</div>`).join('');
+    } else {
+        arizaKutu.classList.add('d-none');
+        arizaKutu.classList.remove('d-flex');
+    }
 
     for (const [bolumAd, kriterler] of Object.entries(bolumler)) {
         const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
@@ -532,13 +624,19 @@ function loadGorevliPanel(katAd) {
             }
         }
 
+        // Kat ve bölüme ait aktif bir arıza var mı?
+        const aktifAriza = cachedArizalar.find(a => a.kat === katAd && a.bolum === bolumAd && a.durum === "bekliyor");
+
         const div = document.createElement('div');
         div.className = "action-card stagger-item d-flex flex-column gap-3";
         div.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.1}s`;
         div.onclick = () => KriterManager.ac(katAd, bolumAd, kriterler);
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center w-100">
-                <div class="fw-bold text-white" style="font-size: 1.1rem; letter-spacing: 0.5px;">📍 ${bolumAd}</div>
+                <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 1.1rem; letter-spacing: 0.5px;">
+                    📍 ${bolumAd}
+                    ${aktifAriza ? '<span class="badge bg-warning text-dark px-2 py-1 rounded-pill ms-2" style="font-size:0.7rem;"><i data-lucide="wrench" size="12"></i> Arızalı</span>' : ''}
+                </div>
                 <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--glass-border); opacity: 0.8;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
                     <i data-lucide="info" size="14"></i>
                 </button>
@@ -549,7 +647,7 @@ function loadGorevliPanel(katAd) {
         `;
         listeEl.appendChild(div);
     }
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     if(reddedilenCount > 0) {
         document.getElementById('reddedilenUyari').classList.remove('d-none');
@@ -752,6 +850,9 @@ function loadAdminPanel() {
         if(document.getElementById('adminStatDanger')) document.getElementById('adminStatDanger').innerText = danger;
         if(document.getElementById('adminStatPending')) document.getElementById('adminStatPending').innerText = pending;
 
+        const arizaCtn = cachedArizalar.filter(a => a.durum === "bekliyor").length;
+        if(document.getElementById('adminArizaCount')) document.getElementById('adminArizaCount').innerText = arizaCtn;
+
     // Loop through Building Structure (katlar)
     Object.keys(katlar).forEach((katAd, kIdx) => {
         const katWrapper = document.createElement('div');
@@ -902,6 +1003,87 @@ const AdminManager = {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    },
+
+    showArizalar: function() {
+        const bekleyenler = cachedArizalar.filter(a => a.durum === "bekliyor");
+        if (bekleyenler.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Harika!', text: 'Bekleyen teknik arıza bulunmuyor.', confirmButtonColor: '#10b981' });
+            return;
+        }
+
+        let html = '<div class="d-flex flex-column gap-3 text-start mt-3" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">';
+        bekleyenler.forEach(a => {
+            html += `
+                <div class="glass-card p-3 border border-warning position-relative" style="background: rgba(245, 158, 11, 0.1);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-warning d-flex align-items-center gap-1"><i data-lucide="wrench" size="14"></i> ${a.kat} - ${a.bolum}</span>
+                        <span class="small text-muted">${new Date(a.tarih).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div class="small text-white mb-2"><strong>Arıza:</strong> ${a.detay}</div>
+                    <div class="small text-muted mb-3"><strong>Bildiren:</strong> ${a.gonderen}</div>
+                    <button class="btn btn-sm btn-success w-100 fw-bold rounded-pill" onclick="AdminManager.onarildiIsaretle('${a.id}')">
+                        <i data-lucide="check-circle" size="14"></i> Onarıldı Olarak İşaretle
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'TEKNİK ARIZALAR',
+            html: html,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        });
+    },
+
+    onarildiIsaretle: function(arizaId) {
+        Swal.fire({
+            title: 'Emin misiniz?',
+            text: "Bu durumdaki arıza 'onarıldı' olarak kaydedilecek ve görevliye bildirilecek.",
+            icon: 'question',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Evet, Onarıldı',
+            cancelButtonText: 'İptal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const idx = cachedArizalar.findIndex(a => a.id === arizaId);
+                if (idx !== -1) {
+                    cachedArizalar[idx].durum = "onarildi";
+                    cachedArizalar[idx].onay_tarih = new Date().getTime();
+                    
+                    localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+                    
+                    if (db) {
+                        db.ref('arizalar/' + arizaId).update({
+                            durum: "onarildi",
+                            onay_tarih: cachedArizalar[idx].onay_tarih
+                        });
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'İşlem Başarılı',
+                        text: 'Arıza onarıldı olarak güncellendi.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        this.showArizalar(); // Listeyi yenile
+                        loadAdminPanel(); // Sayacı yenile
+                    });
+                }
+            }
+        });
     }
 };
 
@@ -918,6 +1100,7 @@ const IdarecManager = {
             this.loadBinaDurumu();
             this.loadGecmis('hepsi');
             this.loadPersonel();
+            this.loadArizalar('hepsi');
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
             console.error("IdarecManager.load Error:", e);
@@ -1077,6 +1260,64 @@ const IdarecManager = {
         var a = document.createElement('a');
         a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    },
+
+    loadArizalar: function(filterType) {
+        var aList = cachedArizalar;
+        if(filterType === 'bekliyor') aList = aList.filter(a => a.durum === 'bekliyor');
+        else if(filterType === 'onarildi') aList = aList.filter(a => a.durum === 'onarildi');
+
+        aList.sort((a,b) => b.tarih - a.tarih);
+        var container = document.getElementById('idarecArizaList');
+        if(!container) return;
+        container.innerHTML = '';
+        if(aList.length === 0) {
+            container.innerHTML = '<div class="glass-card text-center text-muted p-4 small">Kayıtlı arıza bulunmuyor.</div>';
+            return;
+        }
+
+        aList.forEach(a => {
+            var sc = a.durum === 'onarildi' ? 'badge-success' : 'badge-warning';
+            var sy = a.durum === 'onarildi' ? 'ONARILDI' : 'BEKLİYOR';
+            var div = document.createElement('div');
+            div.className = 'glass-card p-3 mb-2';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold fs-6 text-white"><i data-lucide="wrench" size="14"></i> ${a.kat} / ${a.bolum}</span>
+                    <span class="badge-status ${sc} px-2 py-1" style="font-size:0.6rem;">${sy}</span>
+                </div>
+                <div class="small text-white mb-2">${a.detay}</div>
+                <div class="x-small text-muted d-flex justify-content-between mt-2 pt-2 border-top border-secondary">
+                    <span>GÖNDEREN: ${a.gonderen}</span>
+                    <span>${new Date(a.tarih).toLocaleString()}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        if(typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    filterArizalar: function(type, btn) {
+        document.querySelectorAll('.ariza-filter').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        this.loadArizalar(type);
+    },
+
+    exportArizaCSV: function() {
+        if (cachedArizalar.length === 0) return;
+        let csvHeader = "ID,Kat,Bolum,Gonderen,Detay,Tarih,Durum,OnayTarihi\n";
+        let csvBody = cachedArizalar.map(a => {
+            let onayTarihStr = a.onay_tarih ? new Date(a.onay_tarih).toLocaleString() : "";
+            return `${a.id},${a.kat},${a.bolum},${a.gonderen},"${a.detay}","${new Date(a.tarih).toLocaleString()}",${a.durum},"${onayTarihStr}"`;
+        }).join("\n");
+        const blob = new Blob(["\uFEFF" + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TopClean_Arizalar.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 };
 
