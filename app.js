@@ -627,10 +627,36 @@ function loadGorevliPanel(katAd) {
         // Kat ve bölüme ait aktif bir arıza var mı?
         const aktifAriza = cachedArizalar.find(a => a.kat === katAd && a.bolum === bolumAd && a.durum === "bekliyor");
 
+        // Reddedilen raporu referanslayalım
+        const sonRapor = gecmis.length > 0 ? gecmis[gecmis.length - 1] : null;
+        const isRejected = sonRapor && sonRapor.durum === "reddedildi";
+        const rejectionNote = isRejected ? (sonRapor.mufettis_yorum || "Not belirtilmedi.") : "";
+
         const div = document.createElement('div');
         div.className = "action-card stagger-item d-flex flex-column gap-3";
         div.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.1}s`;
-        div.onclick = () => KriterManager.ac(katAd, bolumAd, kriterler);
+        div.onclick = () => {
+            if (isRejected) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '❌ Müfettiş Bu Bölümü Reddetti',
+                    html: `<div class="text-start"><p class="mb-2"><strong>Bölüm:</strong> ${bolumAd}</p><p class="mb-2"><strong>Müfettiş Notu:</strong></p><div class="p-3 rounded-3 mb-2" style="background: rgba(220,53,69,0.15); border: 1px solid #dc3545; color: #fca5a5;">${rejectionNote}</div><p class="small text-muted mt-3">Tamam'a basarsanız bölümü tekrar düzenleyebilirsiniz.</p></div>`,
+                    background: 'var(--bg-main)',
+                    color: '#fff',
+                    confirmButtonText: 'Tamam, Düzenle',
+                    confirmButtonColor: '#10b981',
+                    showCancelButton: true,
+                    cancelButtonText: 'Geri Dön',
+                    cancelButtonColor: '#6c757d'
+                }).then(res => {
+                    if (res.isConfirmed) {
+                        KriterManager.ac(katAd, bolumAd, kriterler);
+                    }
+                });
+            } else {
+                KriterManager.ac(katAd, bolumAd, kriterler);
+            }
+        };
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center w-100">
                 <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 1.1rem; letter-spacing: 0.5px;">
