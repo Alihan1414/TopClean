@@ -365,18 +365,42 @@ function loginSuccess() {
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
-    document.getElementById('userProfileControls').classList.add('d-none');
+    
+    const headerEl = document.getElementById('app-header');
+    if (headerEl) headerEl.classList.add('d-none');
+    
+    const badgeEl = document.getElementById('headerUserBadge');
+    if (badgeEl) {
+        badgeEl.classList.add('d-none');
+        badgeEl.classList.remove('d-flex');
+    }
+    
     initLoginSelect(); // Yenilenmiş personel listesini ana ekrana yükle
     showPanel("loginPanel");
     updateHeader();
 }
 
 function updateHeader() {
+    const headerEl = document.getElementById('app-header');
+    const badgeEl = document.getElementById('headerUserBadge');
+    const nameEl = document.getElementById('headerName');
+    
     if (currentUser) {
-        document.getElementById('userProfileControls').classList.remove('d-none');
-        document.getElementById('userProfileControls').classList.add('d-flex');
-        document.getElementById('welcomeText').innerText = `Hoş Geldiniz | ${currentUser.name}`;
-        document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
+        if (headerEl) headerEl.classList.remove('d-none');
+        if (badgeEl) {
+            badgeEl.classList.remove('d-none');
+            badgeEl.classList.add('d-flex');
+        }
+        if (nameEl) {
+            let userDisplay = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
+            nameEl.innerText = `${currentUser.name} | ${userDisplay}`;
+        }
+    } else {
+        if (headerEl) headerEl.classList.add('d-none');
+        if (badgeEl) {
+            badgeEl.classList.add('d-none');
+            badgeEl.classList.remove('d-flex');
+        }
     }
 }
 
