@@ -1,5 +1,4 @@
-// ---------- FIREBASE CONFIGURATION (DISABLED FOR DEMO) ----------
-/*
+// ---------- FIREBASE CONFIGURATION ----------
 const firebaseConfig = {
     apiKey: "AIzaSyCO88ONQpL3vFRMSY-jyhRImbsNC1ngcmQ",
     authDomain: "topclean-ce4e6.firebaseapp.com",
@@ -10,21 +9,20 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
+let db = null;
+let auth = null;
+
 // Initialize Firebase Safely
 try {
     if (typeof firebase !== 'undefined') {
         firebase.initializeApp(firebaseConfig);
-        var db = firebase.database();
-        var auth = firebase.auth();
+        db = firebase.database();
+        auth = firebase.auth();
         console.log("Firebase initialized successfully.");
     }
 } catch (e) {
     console.error("Firebase Init Error:", e);
 }
-*/
-const db = null;
-const auth = null;
-
 
 // ---------- SABİT VERİLER ----------
 const katlar = {
@@ -121,8 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (typeof lucide !== 'undefined') lucide.createIcons();
         initTheme();
         
-        // 1. Cloud Sync Disabled for Demo
-        // if (db) syncFromCloud();
+        // 1. Cloud Sync
+        if (db) syncFromCloud();
         
         initLoginSelect();
         checkSession(); // Restore session if exists
@@ -277,15 +275,7 @@ function handleLogin(e) {
     const uName = String(document.getElementById('userSelect').value).trim();
     const uPass = String(document.getElementById('passInput').value).trim();
 
-    // 1. Master/Emergency Bypass Check (Idareci is always 1111)
-    if (uName === "İdareci" && uPass === "1111") {
-        const adminUser = usersData.find(u => u.name === "İdareci");
-        currentUser = adminUser;
-        localStorage.setItem('topclean_session', JSON.stringify(adminUser));
-        loginSuccess();
-        return;
-    }
-
+    // 1. Liste Dağılımı Özel Giriş
     if (uName === "Liste Dağılımı") {
         currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
         localStorage.setItem('topclean_session', JSON.stringify(currentUser));
@@ -295,9 +285,13 @@ function handleLogin(e) {
         return;
     }
 
-    // 2. Load and Search Users (Merge hardcoded + extra)
+    // 2. Load and Search Users (Firebase Data Primary, Hardcoded Secondary)
+    const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
     const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-    const allUsers = [...usersData, ...extraUsers];
+    const activeFixed = usersData.filter(u => !deletedFixed.includes(u.name));
+    
+    // Extra Users (Firebase) öne koyuluyor ki, sabit şifreler dinamik olarak üstüne yazılabilsin
+    const allUsers = [...extraUsers, ...activeFixed];
     
     // Find user (Case-insensitive name check)
     const un = allUsers.find(x => String(x.name).trim().toLowerCase() === uName.toLowerCase());
@@ -373,7 +367,43 @@ let isSyncing = false;
 let syncTimeout = null;
 
 function syncFromCloud() {
-    // Cloud sync disabled for demo
+    if (!db) return;
+
+    db.ref('reports').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedData = Object.values(val);
+            localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+            refreshCurrentPanel();
+        }
+    });
+
+    db.ref('users').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            localStorage.setItem('topclean_users', JSON.stringify(Object.values(val)));
+            initLoginSelect();
+        } else {
+            localStorage.setItem('topclean_users', '[]');
+        }
+    });
+
+    db.ref('student_distribution').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            localStorage.setItem('topclean_talebe_listesi', JSON.stringify(val));
+            if (currentUser && currentUser.rol === "liste") ListeManager.load();
+        }
+    });
+    
+    db.ref('deleted_fixed_users').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(Object.values(val)));
+            initLoginSelect();
+            if(currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
+        }
+    });
 }
 
 function refreshCurrentPanel() {
@@ -396,16 +426,24 @@ function toShortDate(dateInput) {
 
 function saveData(item) {
     item.id = new Date().getTime().toString();
-    // Cloud save disabled for demo
     
-    // Local storage only
     cachedData.push(item);
     localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+
+    // Cloud Save
+    if (db) {
+        db.ref('reports/' + item.id).set(item).catch(err => console.error("Firebase save error:", err));
+    }
 }
 
 // Migration Helper
 async function migrateLocalToCloud() {
-    // Migration disabled for demo
+    if(!db) return;
+    const data = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+    data.forEach(item => {
+        db.ref('reports/' + item.id).set(item);
+    });
+    console.log("Migration complete");
 }
 
 // ---------- GÖREVLİ PANELİ ----------
@@ -775,8 +813,14 @@ const AdminManager = {
             data[idx].mufettis_yorum = comment;
             data[idx].mufettis_tarih = new Date().getTime();
             
-            // Cloud update disabled for demo
-            // db.ref('reports/' + currentActiveReport.id).update({ ... });
+            // Cloud update
+            if (db) {
+                db.ref('reports/' + currentActiveReport.id).update({
+                    durum: status,
+                    mufettis_yorum: comment,
+                    mufettis_tarih: data[idx].mufettis_tarih
+                });
+            }
 
             localStorage.setItem('topclean_data', JSON.stringify(data));
             cachedData = data; // Update cache
@@ -932,6 +976,9 @@ const IdarecManager = {
         extras.push(newUser);
         
         localStorage.setItem('topclean_users', JSON.stringify(extras));
+        if (db) {
+            db.ref('users/' + newUser.name).set(newUser);
+        }
         document.getElementById('yeniPersonelAd').value = '';
         document.getElementById('yeniPersonelSifre').value = '';
         document.getElementById('yeniPersonelKat').value = '';
@@ -957,9 +1004,11 @@ const IdarecManager = {
             var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
             deletedFixed.push(target.name);
             localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
+            if (db) db.ref('deleted_fixed_users').set(deletedFixed);
         }
-        // Cloud Delete disabled for demo
-        // if (db) db.ref('personnel/' + name.replace(/\s+/g, '_')).remove();
+        
+        // Cloud Delete
+        if (db) db.ref('users/' + target.name).remove();
         
         Swal.fire({icon:'info',title:'Silindi',text:target.name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
@@ -1014,8 +1063,8 @@ const ListeManager = {
             baskanlar: baskanlar || currentData.baskanlar || {}
         };
         localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
-        // Cloud Save disabled for demo
-        // if (db) db.ref('student_distribution').set(data);
+        // Cloud Save
+        if (db) db.ref('student_distribution').set(data);
         Swal.fire({icon:'success',title:'Liste Kaydedildi',text:'Öğrenci listesi başarıyla güncellendi.',timer:1500,showConfirmButton:false});
     },
 
