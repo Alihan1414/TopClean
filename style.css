@@ -81,7 +81,7 @@ body {
     top: 50%;
     transform: translateY(-50%);
     width: 380px;
-    opacity: 0.3;
+    opacity: 0.25;
     z-index: 1;
     pointer-events: none;
     transition: var(--transition-premium);
@@ -92,7 +92,12 @@ body {
 .logo-right { right: 30px; }
 
 @media (max-width: 1400px) { .side-logo { opacity: 0.15; width: 250px; } }
-@media (max-width: 1200px) { .side-logo { display: none; } }
+@media (max-width: 1200px) { .side-logo { width: 180px; opacity: 0.1; } }
+@media (max-width: 768px) { 
+    .side-logo { width: 140px; opacity: 0.08; }
+    .logo-left { left: 10px; }
+    .logo-right { right: 10px; }
+}
 
 .app-container {
     display: flex;
