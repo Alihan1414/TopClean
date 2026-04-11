@@ -71,9 +71,25 @@
 
         <!-- MAIN CONTENT AREA -->
         <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4">
-            <!-- Branding Layer (Moved inside scrollable container) -->
-            <img src="assets/logo_enderun_white.png" class="side-logo logo-left" alt="Enderun Logo">
-            <img src="assets/logo_cleaning_white.png" class="side-logo logo-right" alt="Cleaning Logo">
+            <!-- Branding Layer (Pure SVG Vector Implementation for Perfect Transparency) -->
+            <div class="side-branding branding-left">
+                <!-- Enderun Knowledge Tree SVG -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22V12M12 22h3M12 22H9"/>
+                    <path d="M19 10c0-3.866-3.134-7-7-7s-7 3.134-7 7c0 1.933.784 3.683 2.05 4.95a7.973 7.973 0 0 0-1.05 2.05H11m1-7c0 3.866 3.134 7 7 7s7-3.134 7-7c0-1.933-.784-3.683-2.05-4.95a7.973 7.973 0 0 0 1.05-2.05H13"/>
+                    <path d="M12 12c.5 0 2.5-.5 2.5-3s-2-4-2-4-2 1.5-2 4 2 3 2 3z" fill="rgba(16, 185, 129, 0.2)"/>
+                    <circle cx="12" cy="10" r="8" opacity="0.1" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="side-branding branding-right">
+                <!-- Cleaning Eco-House SVG -->
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <path d="M9 22V12h6v10"/>
+                    <path d="M12 7c2 0 4 2 4 5s-2 5-4 5-4-2-4-5 2-5 4-5z" fill="rgba(16, 185, 129, 0.2)"/>
+                    <path d="m11 12 1 1 2-2" stroke="var(--accent-emerald)"/>
+                </svg>
+            </div>
             
             <!-- 1. LOGIN PANEL -->
             <div id="loginPanel" class="view-panel active d-flex flex-column align-items-center justify-content-center w-100 h-100">
