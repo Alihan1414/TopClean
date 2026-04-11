@@ -85,7 +85,7 @@ body {
     z-index: 1;
     pointer-events: none;
     transition: var(--transition-premium);
-    filter: brightness(0) invert(1) drop-shadow(0 0 30px rgba(16, 185, 129, 0.25));
+    filter: drop-shadow(0 0 20px rgba(16, 185, 129, 0.4));
 }
 
 .logo-left { left: 30px; }
