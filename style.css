@@ -96,14 +96,21 @@ body {
 @media (max-width: 1400px) { .side-logo { opacity: 0.1; width: 300px; } }
 @media (max-width: 1200px) { .side-logo { display: none; } }
 
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100dvh;
+    width: 100%;
+}
+
 /* --- App Layout --- */
 main {
     position: relative;
     z-index: 10;
-    height: 100dvh;
+    /* Removed height: 100dvh so flex-grow-1 controls the layout properly */
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 100px;
+    padding-bottom: 120px; /* Better spacing for mobile bottom bounds */
 }
 
 /* --- Header --- */
