@@ -382,11 +382,11 @@ function syncFromCloud() {
     try {
         db.ref('reports').on('value', (snapshot) => {
             const data = snapshot.val();
+            // Only update if cloud has actual data and we aren't currently migrating
             if (data && !isSyncing) {
                 cachedData = Object.values(data);
                 localStorage.setItem('topclean_data', JSON.stringify(cachedData));
                 
-                // Debounce refresh to avoid freezing
                 if (syncTimeout) clearTimeout(syncTimeout);
                 syncTimeout = setTimeout(() => {
                     refreshCurrentPanel();
@@ -398,7 +398,8 @@ function syncFromCloud() {
 
         db.ref('personnel').on('value', (snapshot) => {
             const pData = snapshot.val();
-            if (pData) {
+            // CRITICAL FIX: Only overwrite local users if Firebase actually has personnel list
+            if (pData && Object.keys(pData).length > 0) {
                 localStorage.setItem('topclean_users', JSON.stringify(Object.values(pData)));
                 initLoginSelect();
             }
