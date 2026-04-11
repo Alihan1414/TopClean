@@ -645,23 +645,25 @@ function handleFotoUpload(e) {
 
 // ---------- İDARECİ / MÜFETTİŞ PANEL ----------
 function loadAdminPanel() {
-    const matris = document.getElementById('denetimMatrisi');
-    if(!matris) return;
-    matris.innerHTML = "";
-    
-    const selectedDate = document.getElementById('adminDateSelector').value; // yyyy-mm-dd
-    let allData = getData();
-    const dayData = allData.filter(d => toShortDate(d.tarih) === selectedDate);
-    
-    const total = dayData.length;
-    const success = dayData.filter(d => d.durum === "onaylandi").length;
-    const danger = dayData.filter(d => d.durum === "reddedildi").length;
-    const pending = dayData.filter(d => d.durum === "bekliyor").length;
+    try {
+        const matris = document.getElementById('denetimMatrisi');
+        const dateEl = document.getElementById('adminDateSelector');
+        if(!matris || !dateEl) return;
+        
+        matris.innerHTML = "";
+        const selectedDate = dateEl.value; // yyyy-mm-dd
+        let allData = getData();
+        const dayData = allData.filter(d => toShortDate(d.tarih) === selectedDate);
+        
+        const total = dayData.length;
+        const success = dayData.filter(d => d.durum === "onaylandi").length;
+        const danger = dayData.filter(d => d.durum === "reddedildi").length;
+        const pending = dayData.filter(d => d.durum === "bekliyor").length;
 
-    document.getElementById('adminStatTotal').innerText = total;
-    document.getElementById('adminStatSuccess').innerText = success;
-    document.getElementById('adminStatDanger').innerText = danger;
-    document.getElementById('adminStatPending').innerText = pending;
+        if(document.getElementById('adminStatTotal')) document.getElementById('adminStatTotal').innerText = total;
+        if(document.getElementById('adminStatSuccess')) document.getElementById('adminStatSuccess').innerText = success;
+        if(document.getElementById('adminStatDanger')) document.getElementById('adminStatDanger').innerText = danger;
+        if(document.getElementById('adminStatPending')) document.getElementById('adminStatPending').innerText = pending;
 
     // Loop through Building Structure (katlar)
     Object.keys(katlar).forEach((katAd, kIdx) => {
@@ -718,7 +720,10 @@ function loadAdminPanel() {
         });
     });
 
-    lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+        console.error("loadAdminPanel Error:", e);
+    }
 }
 
 const AdminManager = {
@@ -810,15 +815,20 @@ const AdminManager = {
 // ---------- İDARECİ MANAGER ----------
 const IdarecManager = {
     load: function() {
-        const today = new Date().toISOString().split('T')[0];
-        const dateSel = document.getElementById('idarecDateSelector');
-        const raporSel = document.getElementById('raporDateSelector');
-        if(dateSel) { dateSel.value = today; dateSel.onchange = function(){ IdarecManager.loadBinaDurumu(); }; }
-        if(raporSel) raporSel.value = today;
-        this.loadBinaDurumu();
-        this.loadGecmis('hepsi');
-        this.loadPersonel();
-        lucide.createIcons();
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const dateSel = document.getElementById('idarecDateSelector');
+            const raporSel = document.getElementById('raporDateSelector');
+            if(dateSel) { dateSel.value = today; dateSel.onchange = function(){ IdarecManager.loadBinaDurumu(); }; }
+            if(raporSel) raporSel.value = today;
+            
+            this.loadBinaDurumu();
+            this.loadGecmis('hepsi');
+            this.loadPersonel();
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (e) {
+            console.error("IdarecManager.load Error:", e);
+        }
     },
     switchTab: function(tab, btn) {
         document.querySelectorAll('.idarec-tab-content').forEach(function(el){ el.classList.add('d-none'); });
@@ -829,14 +839,16 @@ const IdarecManager = {
     },
     loadBinaDurumu: function() {
         var matris = document.getElementById('idarecBinaMatrisi');
-        if(!matris) return;
+        var dateSel = document.getElementById('idarecDateSelector');
+        if(!matris || !dateSel) return;
         matris.innerHTML = '';
-        var selectedDate = document.getElementById('idarecDateSelector').value;
+        var selectedDate = dateSel.value;
         var allData = getData();
         var dayData = allData.filter(function(d){ return toShortDate(d.tarih) === selectedDate; });
-        document.getElementById('idarecStatTotal').innerText = dayData.length;
-        document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
-        document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
+        
+        if(document.getElementById('idarecStatTotal')) document.getElementById('idarecStatTotal').innerText = dayData.length;
+        if(document.getElementById('idarecStatSuccess')) document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
+        if(document.getElementById('idarecStatDanger')) document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
         var katKeys = Object.keys(katlar);
         katKeys.forEach(function(katAd, kIdx) {
             var w = document.createElement('div');
