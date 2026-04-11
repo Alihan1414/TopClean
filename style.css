@@ -76,21 +76,21 @@ body {
 }
 
 /* --- Fixed Side Logos --- */
+/* --- Scrolling Side Logos --- */
 .side-logo {
-    position: fixed;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 420px;
-    opacity: 0.12;
+    position: absolute;
+    top: 500px;
+    width: 480px;
+    opacity: 0.25;
     z-index: 0;
     pointer-events: none;
     transition: var(--transition-premium);
-    filter: grayscale(1) brightness(2);
 }
 
-.logo-left { left: 40px; }
-.logo-right { right: 40px; }
+.logo-left { left: 20px; }
+.logo-right { right: 20px; }
 
+@media (max-width: 1400px) { .side-logo { opacity: 0.1; width: 300px; } }
 @media (max-width: 1200px) { .side-logo { display: none; } }
 
 /* --- App Layout --- */
