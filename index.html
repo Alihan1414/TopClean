@@ -72,8 +72,8 @@
         <!-- MAIN CONTENT AREA -->
         <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4">
             <!-- Branding Layer (Moved inside scrollable container) -->
-            <img src="assets/logo_enderun_transparent.png" class="side-logo logo-left" alt="Enderun Logo">
-            <img src="assets/logo_cleaning_transparent.png" class="side-logo logo-right" alt="Cleaning Logo">
+            <img src="assets/logo_enderun.png" class="side-logo logo-left" alt="Enderun Logo">
+            <img src="assets/logo_cleaning.png" class="side-logo logo-right" alt="Cleaning Logo">
             
             <!-- 1. LOGIN PANEL -->
             <div id="loginPanel" class="view-panel active d-flex flex-column align-items-center justify-content-center w-100 h-100">
@@ -135,6 +135,18 @@
                     <i data-lucide="alert-circle" class="text-danger" size="24"></i>
                     <div class="fw-bold flex-grow-1" style="color: #fca5a5;">🚨 İçin reddedilen <span id="reddedilenSayi"></span> bölüm var — müfettiş notlarını inceleyin!</div>
                 </div>
+
+                <div id="onarilanArizaUyari" class="alert alert-success d-none flex-column gap-2 p-3 rounded-3 mb-3 w-100" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success-color);">
+                    <div class="d-flex align-items-center gap-3">
+                        <i data-lucide="wrench" class="text-emerald" size="24"></i>
+                        <div class="fw-bold flex-grow-1 text-emerald">✅ Onarılan Arızalarınız Var!</div>
+                    </div>
+                    <div id="onarilanArizaList" class="small mt-2" style="color: #a7f3d0;"></div>
+                </div>
+                
+                <button class="btn btn-warning w-100 py-3 mb-4 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="showArizaForm()" style="background-color: #f59e0b; color: #1e1e1e; border: none; font-size: 1.1rem;">
+                    <i data-lucide="wrench" size="22"></i> TEKNİK ARIZA BİLDİR
+                </button>
 
                 <div id="bolumListesi" class="d-flex flex-column gap-3 overflow-auto" style="padding-bottom: 80px;">
                     <!-- Bölüm kartları buraya eklenecek -->
@@ -225,8 +237,11 @@
                             <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
                             <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1" style="outline: none; font-size: 0.85rem;">
                         </div>
-                        <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
+                        <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
                             <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
+                        </button>
+                        <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.showArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
+                            <i data-lucide="wrench" size="14"></i> BEKLEYEN ARIZALAR (<span id="adminArizaCount">0</span>)
                         </button>
                     </div>
 
@@ -281,8 +296,8 @@
                     <div class="d-flex gap-2 mb-4 overflow-auto pb-1" style="flex-wrap: nowrap;">
                         <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('gecmis', this)">📋 Geçmiş</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👤 Personel</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('rapor', this)">📥 Rapor</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('ari', this)">🛠️ Arızalar</button>
                     </div>
 
                     <!-- TAB 1: BİNA DURUMU -->
@@ -373,6 +388,20 @@
                             </a>
                         </div>
                     </div>
+
+                    <!-- TAB 5: ARIZALAR -->
+                    <div id="idarec-tab-ari" class="idarec-tab-content d-none">
+                        <div class="d-flex gap-2 mb-3">
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter active" style="background: rgba(16,185,129,0.2); color: #34D399; border: 1px solid #10B981;" onclick="IdarecManager.filterArizalar('hepsi', this)">Tümü</button>
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b;" onclick="IdarecManager.filterArizalar('bekliyor', this)">⏳ Bekleyenler</button>
+                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter" style="background: rgba(40,167,69,0.1); color: #28a745; border: 1px solid #28a745;" onclick="IdarecManager.filterArizalar('onarildi', this)">✅ Onarılanlar</button>
+                        </div>
+                        <div class="d-flex justify-content-end mb-3">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="IdarecManager.exportArizaCSV()"><i data-lucide="download" size="14"></i> EXCEL</button>
+                        </div>
+                        <div id="idarecArizaList" class="d-flex flex-column gap-2 pb-5"></div>
+                    </div>
+
                 </div>
             </div>
 
