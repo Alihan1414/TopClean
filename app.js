@@ -143,13 +143,10 @@ document.addEventListener("DOMContentLoaded", () => {
         // Migration Disabled for Demo
         // if (db) migrateLocalToCloud();
 
-        const dateSel = document.getElementById('idarecDateSelector');
+        const dateSel = document.getElementById('adminDateSelector');
         if(dateSel) {
             dateSel.valueAsDate = new Date();
-            dateSel.addEventListener('change', () => {
-                if (currentUser.rol === "idareci") IdarecManager.loadBinaDurumu();
-                else loadAdminPanel();
-            });
+            dateSel.addEventListener('change', loadAdminPanel);
         }
     } catch (err) {
         console.error("App Init Error:", err);
@@ -349,32 +346,18 @@ function loginSuccess() {
 function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
-    
-    const header = document.getElementById('app-header');
-    const badge = document.getElementById('headerUserBadge');
-    if (header) header.classList.add('d-none');
-    if (badge) badge.classList.add('d-none');
-
-    initLoginSelect(); 
+    document.getElementById('userProfileControls').classList.add('d-none');
+    initLoginSelect(); // Yenilenmiş personel listesini ana ekrana yükle
     showPanel("loginPanel");
     updateHeader();
 }
 
 function updateHeader() {
-    const header = document.getElementById('app-header');
-    const badge = document.getElementById('headerUserBadge');
-    const nameEl = document.getElementById('headerName');
-
     if (currentUser) {
-        if (header) header.classList.remove('d-none');
-        if (badge) {
-            badge.classList.remove('d-none');
-            badge.classList.add('d-flex');
-        }
-        if (nameEl) nameEl.innerText = currentUser.name;
-    } else {
-        if (header) header.classList.add('d-none');
-        if (badge) badge.classList.add('d-none');
+        document.getElementById('userProfileControls').classList.remove('d-none');
+        document.getElementById('userProfileControls').classList.add('d-flex');
+        document.getElementById('welcomeText').innerText = `Hoş Geldiniz | ${currentUser.name}`;
+        document.getElementById('roleText').innerText = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
     }
 }
 
@@ -402,6 +385,13 @@ function refreshCurrentPanel() {
 
 function getData() {
     return cachedData;
+}
+
+// Helper for consistent date comparison (YYYY-MM-DD)
+function toShortDate(dateInput) {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split('T')[0];
 }
 
 function saveData(item) {
@@ -655,31 +645,23 @@ function handleFotoUpload(e) {
 
 // ---------- İDARECİ / MÜFETTİŞ PANEL ----------
 function loadAdminPanel() {
-    const matris = document.getElementById('idarecBinaMatrisi') || document.getElementById('denetimMatrisi');
+    const matris = document.getElementById('denetimMatrisi');
     if(!matris) return;
     matris.innerHTML = "";
     
-    const dateSwitcher = document.getElementById('idarecDateSelector') || document.getElementById('adminDateSelector');
-    const selectedDate = dateSwitcher ? dateSwitcher.value : new Date().toISOString().split('T')[0];
-    const targetDateStr = new Date(selectedDate).toLocaleDateString();
-    
+    const selectedDate = document.getElementById('adminDateSelector').value; // yyyy-mm-dd
     let allData = getData();
-    
-    // Stats for the SELECTED DATE
-    const dayData = allData.filter(d => new Date(d.tarih).toLocaleDateString() === targetDateStr);
+    const dayData = allData.filter(d => toShortDate(d.tarih) === selectedDate);
     
     const total = dayData.length;
     const success = dayData.filter(d => d.durum === "onaylandi").length;
     const danger = dayData.filter(d => d.durum === "reddedildi").length;
     const pending = dayData.filter(d => d.durum === "bekliyor").length;
 
-    const sTotal = document.getElementById('idarecStatTotal') || document.getElementById('adminStatTotal');
-    const sSuccess = document.getElementById('idarecStatSuccess') || document.getElementById('adminStatSuccess');
-    const sDanger = document.getElementById('idarecStatDanger') || document.getElementById('adminStatDanger');
-    
-    if (sTotal) sTotal.innerText = total;
-    if (sSuccess) sSuccess.innerText = success;
-    if (sDanger) sDanger.innerText = danger;
+    document.getElementById('adminStatTotal').innerText = total;
+    document.getElementById('adminStatSuccess').innerText = success;
+    document.getElementById('adminStatDanger').innerText = danger;
+    document.getElementById('adminStatPending').innerText = pending;
 
     // Loop through Building Structure (katlar)
     Object.keys(katlar).forEach((katAd, kIdx) => {
@@ -724,7 +706,7 @@ function loadAdminPanel() {
             roomCol.className = "col-12 col-md-6";
             roomCol.innerHTML = `
                 <div class="glass-card p-3 d-flex align-items-center justify-content-between shadow-hover ${hasReport ? 'cursor-pointer' : ''}" 
-                     ${hasReport ? `onclick='AdminManager.showDetail(${JSON.stringify(sectionRecord)})'` : ''}>
+                     ${hasReport ? `onclick="AdminManager.showDetail('${sectionRecord.id}')"` : ''}>
                     <div>
                         <div class="fw-bold text-white small mb-1">${bolumAd}</div>
                         <div class="x-small text-muted">${hasReport ? new Date(sectionRecord.tarih).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + ' | ' + sectionRecord.secilen.length + ' Kriter' : 'Kaydı bulunmuyor'}</div>
@@ -740,7 +722,9 @@ function loadAdminPanel() {
 }
 
 const AdminManager = {
-    showDetail: function(report) {
+    showDetail: function(reportId) {
+        const report = getData().find(d => d.id === reportId);
+        if (!report) return;
         currentActiveReport = report;
         document.getElementById('modalKatBolum').innerText = `${report.kat} - ${report.bolum}`;
         
@@ -848,9 +832,8 @@ const IdarecManager = {
         if(!matris) return;
         matris.innerHTML = '';
         var selectedDate = document.getElementById('idarecDateSelector').value;
-        var targetDateStr = new Date(selectedDate).toLocaleDateString();
         var allData = getData();
-        var dayData = allData.filter(function(d){ return new Date(d.tarih).toLocaleDateString() === targetDateStr; });
+        var dayData = allData.filter(function(d){ return toShortDate(d.tarih) === selectedDate; });
         document.getElementById('idarecStatTotal').innerText = dayData.length;
         document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
         document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
@@ -867,6 +850,7 @@ const IdarecManager = {
                 var recs = dayData.filter(function(d){ return d.kat===katAd && d.bolum===bolumAd; });
                 recs.sort(function(a,b){ return parseInt(b.id)-parseInt(a.id); });
                 var rec = recs[0];
+                var hasReport = !!rec;
                 var sc = 'badge-idle', sy = 'BEKLİYOR';
                 if(rec) {
                     if(rec.durum==='onaylandi'){sc='badge-success';sy='ONAYLANDI';}
@@ -876,7 +860,8 @@ const IdarecManager = {
                 var col = document.createElement('div');
                 col.className = 'col-12 col-md-6 px-1';
                 var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' | ' + rec.secilen.length + ' kriter' : 'Kaydı yok';
-                col.innerHTML = '<div class="glass-card p-3 d-flex align-items-center justify-content-between mb-2"><div><div class="fw-bold text-white" style="font-size:0.9rem; letter-spacing:0.5px;">' + bolumAd + '</div><div class="x-small text-dim">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.65rem;">' + sy + '</span></div>';
+                var clickAttr = hasReport ? 'onclick="AdminManager.showDetail(\'' + rec.id + '\')"' : '';
+                col.innerHTML = '<div class="glass-card p-3 d-flex align-items-center justify-content-between mb-2 ' + (hasReport ? 'cursor-pointer' : '') + '" ' + clickAttr + '><div><div class="fw-bold text-white" style="font-size:0.9rem; letter-spacing:0.5px;">' + bolumAd + '</div><div class="x-small text-dim">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.65rem;">' + sy + '</span></div>';
                 roomRow.appendChild(col);
             });
         });
@@ -919,7 +904,7 @@ const IdarecManager = {
             c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
             // Both extra and fixed users have delete buttons now
             // We'll pass the name and isExtra to the delete function
-            var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(\'' + u.name + '\', ' + isExtra + ')"><i data-lucide="trash-2" size="13"></i></button>';
+            var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
             c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div><div class="x-small text-muted">' + u.kat + ' | Şifre: ' + u.pass + '</div></div><div class="d-flex gap-2 align-items-center"><span class="badge-status ' + (isExtra?'badge-warning':'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra?'YENİ':'SABİT') + '</span>' + deleteBtn + '</div>';
             list.appendChild(c);
         });
@@ -934,10 +919,6 @@ const IdarecManager = {
         var newUser = {name:ad, pass:sifre, kat:kat, rol:'gorevli'};
         extras.push(newUser);
         
-        // Save to Firebase disabled for demo
-        // Save to Firebase disabled for demo
-        // if (db) db.ref('personnel/' + ad.replace(/\s+/g, '_')).set(newUser);
-        
         localStorage.setItem('topclean_users', JSON.stringify(extras));
         document.getElementById('yeniPersonelAd').value = '';
         document.getElementById('yeniPersonelSifre').value = '';
@@ -946,28 +927,35 @@ const IdarecManager = {
         IdarecManager.loadPersonel();
         initLoginSelect(); // Login dropdown'u güncelle
     },
-    personelSil: function(name, isExtra) {
-        if(isExtra) {
+    personelSil: function(allIdx) {
+        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        var sabitGorevliler = usersData.filter(function(u){return u.rol==='gorevli' && !deletedFixed.includes(u.name);});
+        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var all = sabitGorevliler.concat(extraUsers);
+        var target = all[allIdx];
+        if(!target) return;
+
+        if(allIdx >= sabitGorevliler.length) {
+            // Extra user
             var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-            var filtered = extras.filter(u => u.name !== name);
+            var filtered = extras.filter(u => u.name !== target.name);
             localStorage.setItem('topclean_users', JSON.stringify(filtered));
         } else {
+            // Fixed user
             var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-            deletedFixed.push(name);
+            deletedFixed.push(target.name);
             localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
         }
         // Cloud Delete disabled for demo
-        // Cloud Delete disabled for demo
         // if (db) db.ref('personnel/' + name.replace(/\s+/g, '_')).remove();
         
-        Swal.fire({icon:'info',title:'Silindi',text:name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
+        Swal.fire({icon:'info',title:'Silindi',text:target.name+' sistemden kaldırıldı.',timer:1800,showConfirmButton:false});
         IdarecManager.loadPersonel();
         initLoginSelect();
     },
     exportCSV: function() {
         var selectedDate = document.getElementById('raporDateSelector').value;
-        var targetDateStr = new Date(selectedDate).toLocaleDateString();
-        var dayData = getData().filter(function(d){return new Date(d.tarih).toLocaleDateString()===targetDateStr;});
+        var dayData = getData().filter(function(d){return toShortDate(d.tarih) === selectedDate;});
         if(dayData.length===0){Swal.fire({icon:'info',title:'Kayıt Yok',text:'Seçilen tarih için rapor bulunamadı.',timer:2000,showConfirmButton:false});return;}
         var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,MufettisNotu\n";
         csv += dayData.map(function(d){
