@@ -294,7 +294,7 @@ function handleLogin(e) {
     }
 
     const uName = document.getElementById('userSelect').value;
-    const uPass = document.getElementById('passInput').value;
+    const uPass = document.getElementById('passInput').value.trim(); // Trim added
 
     if (uName === "Liste Dağılımı") {
         currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
@@ -308,9 +308,11 @@ function handleLogin(e) {
     // Merge hardcoded + localStorage users for login
     const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
     const allUsers = [...usersData, ...extraUsers];
-    const un = allUsers.find(x => x.name === uName);
+    
+    // Robust find: trim and case-insensitive check (though selection list matches)
+    const un = allUsers.find(x => x.name.trim() === uName.trim());
 
-    if (un && un.pass === uPass) {
+    if (un && String(un.pass).trim() === uPass) { // Ensure string comparison
         currentUser = un;
         localStorage.setItem('topclean_session', JSON.stringify(un));
         loginSuccess();
@@ -840,8 +842,6 @@ const AdminManager = {
                 text: 'İşlem başarıyla tamamlandı.',
                 timer: 1500,
                 showConfirmButton: false
-            }).then(() => {
-                loadAdminPanel();
             });
         }
     },
