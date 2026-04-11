@@ -346,25 +346,37 @@ function showPanel(id) {
 // ---------- VERİ (Cloud / LocalStorage) ----------
 // Firebase'den veri çekme (Realtime)
 let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+let isSyncing = false;
+let syncTimeout = null;
 
 function syncFromCloud() {
-    db.ref('reports').on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-            cachedData = Object.values(data);
-            localStorage.setItem('topclean_data', JSON.stringify(cachedData));
-            // UI'ı aktif panele göre güncelle
-            refreshCurrentPanel();
-        }
-    });
+    try {
+        db.ref('reports').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (data && !isSyncing) {
+                cachedData = Object.values(data);
+                localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+                
+                // Debounce refresh to avoid freezing
+                if (syncTimeout) clearTimeout(syncTimeout);
+                syncTimeout = setTimeout(() => {
+                    refreshCurrentPanel();
+                }, 300);
+            }
+        }, (error) => {
+            console.error("Firebase Sync Error:", error);
+        });
 
-    db.ref('personnel').on('value', (snapshot) => {
-        const pData = snapshot.val();
-        if (pData) {
-            localStorage.setItem('topclean_users', JSON.stringify(Object.values(pData)));
-            initLoginSelect();
-        }
-    });
+        db.ref('personnel').on('value', (snapshot) => {
+            const pData = snapshot.val();
+            if (pData) {
+                localStorage.setItem('topclean_users', JSON.stringify(Object.values(pData)));
+                initLoginSelect();
+            }
+        });
+    } catch (e) {
+        console.warn("Cloud connection failed, using local mode.");
+    }
 }
 
 function refreshCurrentPanel() {
@@ -388,20 +400,32 @@ function saveData(item) {
 }
 
 // Migration Helper
-function migrateLocalToCloud() {
+async function migrateLocalToCloud() {
     const localData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
     const localUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+    
+    // Alreay migrated check
+    if (localStorage.getItem('topclean_migrated') === 'true') return;
 
-    if (localData.length > 0) {
-        localData.forEach(item => {
-            db.ref('reports/' + item.id).set(item);
-        });
-    }
+    if (localData.length === 0 && localUsers.length === 0) return;
 
-    if (localUsers.length > 0) {
-        localUsers.forEach(u => {
-            db.ref('personnel/' + u.name.replace(/\s+/g, '_')).set(u);
-        });
+    isSyncing = true;
+    console.log("Migration started...");
+
+    try {
+        for (const item of localData) {
+            await db.ref('reports/' + item.id).set(item);
+        }
+        for (const u of localUsers) {
+            await db.ref('personnel/' + u.name.replace(/\s+/g, '_')).set(u);
+        }
+        localStorage.setItem('topclean_migrated', 'true');
+        console.log("Migration completed.");
+    } catch (e) {
+        console.error("Migration failed:", e);
+    } finally {
+        isSyncing = false;
+        refreshCurrentPanel();
     }
 }
 
