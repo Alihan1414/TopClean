@@ -27,40 +27,50 @@
     <link rel="stylesheet" href="style.css?v=7.0">
 </head>
 <body>
-    <!-- BACKGROUND SIDE LOGOS -->
-    <img src="assets/logo_enderun.png" class="side-logo logo-left" alt="Enderun Logo">
-    <img src="assets/logo_cleaning.png" class="side-logo logo-right" alt="Cleaning Logo">
+    <!-- Dynamic Aurora Background -->
+    <div class="aurora-container">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
 
-    <!-- App Container -->
-    <div id="app" class="container-fluid min-vh-100 p-0 m-0 custom-bg d-flex flex-column">
-        
+    <!-- Branding Layer -->
+    <img src="assets/logo_enderun_transparent.png" class="side-logo logo-left" alt="Enderun Logo">
+    <img src="assets/logo_cleaning_transparent.png" class="side-logo logo-right" alt="Cleaning Logo">
+
+    <div class="app-container">
         <!-- HEADER -->
-        <header id="app-header" class="w-100 d-flex justify-content-between align-items-center mb-4">
-            <div class="d-flex align-items-center gap-3">
-                <button id="themeToggleBtn" class="btn btn-outline-secondary rounded-pill btn-sm d-flex align-items-center gap-2 text-muted px-3" style="border-color: var(--glass-border);">
-                    <i data-lucide="moon" size="16"></i> <span class="d-none d-sm-inline">Tema</span>
-                </button>
-            </div>
-            
-            <div class="text-center flex-grow-1">
-                <h1 class="main-title mb-0">TOPCLEAN</h1>
-                <p class="sub-title mt-1 mb-0">Management System</p>
-                <div class="gradient-line mx-auto"></div>
-            </div>
-
-            <div id="userProfileControls" class="d-flex align-items-center gap-3 d-none">
-                <div class="d-none d-md-block text-end">
-                    <span id="welcomeText" class="fw-bold d-block text-white" style="font-size: 0.9rem;"></span>
-                    <span id="roleText" class="small text-dim text-uppercase fw-bold" style="letter-spacing: 1.5px; font-size: 0.7rem;"></span>
+        <header id="app-header" class="d-none">
+            <div class="header-content container-fluid d-flex justify-content-between align-items-center">
+                <div class="header-brand">
+                    <h1 class="main-title mb-0">TopClean</h1>
+                    <div class="header-status-indicator d-flex align-items-center gap-2">
+                        <div class="pulse-emerald"></div>
+                        <span class="x-small text-dim text-uppercase opacity-75" style="letter-spacing: 2px;">Cloud Sync Active</span>
+                    </div>
                 </div>
-                <button id="logoutBtn" class="btn btn-danger btn-sm rounded-pill fw-bold px-3 d-flex align-items-center gap-2">
-                    <i data-lucide="log-out" size="16"></i> Çıkış
-                </button>
+                
+                <div class="d-flex align-items-center gap-3">
+                    <div id="headerUserBadge" class="header-user-badge d-flex align-items-center gap-2 px-3 py-2 rounded-pill d-none">
+                        <div class="user-avatar-small bg-emerald-glow">
+                            <i data-lucide="user" size="14" class="text-emerald"></i>
+                        </div>
+                        <span id="headerName" class="small fw-bold text-white"></span>
+                    </div>
+                    <div class="header-actions d-flex gap-2">
+                        <button id="themeToggleBtn" class="btn btn-glass-round" title="Tema Değiştir">
+                            <i data-lucide="moon" size="18"></i>
+                        </button>
+                        <button id="logoutBtn" class="btn btn-glass-round text-danger-glow" title="Çıkış Yap">
+                            <i data-lucide="log-out" size="18"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- MAIN CONTENT AREA -->
-        <main class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4" style="padding-top: 1.5rem !important;">
+        <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4">
             
             <!-- 1. LOGIN PANEL -->
             <div id="loginPanel" class="view-panel active d-flex flex-column align-items-center justify-content-center w-100 h-100">
