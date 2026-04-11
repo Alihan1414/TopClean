@@ -116,16 +116,7 @@ let fotoDataURL = "";
 
 document.addEventListener("DOMContentLoaded", () => {
     try {
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        initTheme();
-        
-        // 1. Cloud Sync
-        if (db) syncFromCloud();
-        
-        initLoginSelect();
-        checkSession(); // Restore session if exists
-
-        // Event Listeners (Restored)
+        // Event Listeners (Guaranteed Bind)
         const lForm = document.getElementById('loginForm');
         if (lForm) lForm.addEventListener('submit', handleLogin);
         
@@ -137,6 +128,16 @@ document.addEventListener("DOMContentLoaded", () => {
         
         const fUp = document.getElementById('fotoUpload');
         if (fUp) fUp.addEventListener('change', handleFotoUpload);
+
+        // State Init
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initTheme();
+        
+        // 1. Cloud Sync
+        if (db) syncFromCloud();
+        
+        initLoginSelect();
+        checkSession(); // Restore session if exists
 
         // Migration Disabled for Demo
         // if (db) migrateLocalToCloud();
@@ -185,23 +186,37 @@ function updateThemeIcon(theme) {
 
 // ---------- GİRİŞ (Login) ----------
 function initLoginSelect() {
-    const select = document.getElementById('userSelect');
-    select.innerHTML = "";
-    // Merge hardcoded + localStorage users
-    const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-    const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-    const allUsers = [...usersData.filter(u => !deletedFixed.includes(u.name)), ...extraUsers];
-    allUsers.forEach(u => {
+    try {
+        const select = document.getElementById('userSelect');
+        if (!select) return;
+        select.innerHTML = "";
+        
+        let deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        if (!Array.isArray(deletedFixed)) deletedFixed = [];
+        
+        let extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        if (!Array.isArray(extraUsers)) extraUsers = [];
+        
+        const activeFixed = usersData.filter(u => u && !deletedFixed.includes(u.name));
+        const allUsers = [...activeFixed, ...extraUsers].filter(u => u !== null && u !== undefined && typeof u === 'object');
+        
+        allUsers.forEach(u => {
+            if (u && u.name) {
+                const opt = document.createElement('option');
+                opt.value = u.name;
+                opt.textContent = u.name;
+                select.appendChild(opt);
+            }
+        });
+        
+        // Liste Dağılımı seçeneği (İdareci girişi)
         const opt = document.createElement('option');
-        opt.value = u.name;
-        opt.textContent = u.name;
+        opt.value = "Liste Dağılımı";
+        opt.textContent = "Liste Dağılımı (Demo)";
         select.appendChild(opt);
-    });
-    // Liste Dağılımı seçeneği (İdareci girişi)
-    const opt = document.createElement('option');
-    opt.value = "Liste Dağılımı";
-    opt.textContent = "Liste Dağılımı (Demo)";
-    select.appendChild(opt);
+    } catch(err) {
+        console.error("initLoginSelect Error:", err);
+    }
 }
 
 function checkLoginType() {
@@ -275,39 +290,49 @@ function handleLogin(e) {
     const uName = String(document.getElementById('userSelect').value).trim();
     const uPass = String(document.getElementById('passInput').value).trim();
 
-    // 1. Liste Dağılımı Özel Giriş
-    if (uName === "Liste Dağılımı") {
-        currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
-        localStorage.setItem('topclean_session', JSON.stringify(currentUser));
-        ListeManager.load();
-        showPanel("listePanel");
-        updateHeader();
-        return;
-    }
+    try {
+        // 1. Liste Dağılımı Özel Giriş
+        if (uName === "Liste Dağılımı") {
+            currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
+            localStorage.setItem('topclean_session', JSON.stringify(currentUser));
+            ListeManager.load();
+            showPanel("listePanel");
+            updateHeader();
+            return;
+        }
 
-    // 2. Load and Search Users (Firebase Data Primary, Hardcoded Secondary)
-    const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-    const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-    const activeFixed = usersData.filter(u => !deletedFixed.includes(u.name));
-    
-    // Extra Users (Firebase) öne koyuluyor ki, sabit şifreler dinamik olarak üstüne yazılabilsin
-    const allUsers = [...extraUsers, ...activeFixed];
-    
-    // Find user (Case-insensitive name check)
-    const un = allUsers.find(x => String(x.name).trim().toLowerCase() === uName.toLowerCase());
+        // 2. Load and Search Users (Firebase Data Primary, Hardcoded Secondary)
+        const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        const activeFixed = usersData.filter(u => !deletedFixed.includes(u.name));
+        
+        // Extra Users (Firebase) öne koyuluyor ki, sabit şifreler dinamik olarak üstüne yazılabilsin
+        const allUsers = [...extraUsers, ...activeFixed].filter(u => u !== null && u !== undefined);
+        
+        // Find user (Case-insensitive name check)
+        const un = allUsers.find(x => x && x.name && String(x.name).trim().toLowerCase() === uName.toLowerCase());
 
-    if (un && String(un.pass).trim() === uPass) {
-        currentUser = un;
-        localStorage.setItem('topclean_session', JSON.stringify(un));
-        loginSuccess();
-    } else {
-        console.warn("Login failed for:", uName, "Entered pass:", uPass, "Expected pass from DB:", un ? un.pass : "User not found");
+        if (un && String(un.pass).trim() === uPass) {
+            currentUser = un;
+            localStorage.setItem('topclean_session', JSON.stringify(un));
+            loginSuccess();
+        } else {
+            console.warn("Login failed for:", uName, "Entered pass:", uPass, "Expected pass from DB:", un ? un.pass : "User not found");
+            Swal.fire({
+                icon: 'error',
+                title: 'Giriş Başarısız',
+                text: 'Seçilen personel veya şifre hatalı görünüyor. Lütfen tekrar deneyin.',
+                confirmButtonText: 'Tamam',
+                confirmButtonColor: '#10b981'
+            });
+        }
+    } catch (err) {
+        console.error("Login Exception:", err);
         Swal.fire({
             icon: 'error',
-            title: 'Giriş Başarısız',
-            text: 'Seçilen personel veya şifre hatalı görünüyor. Lütfen tekrar deneyin.',
-            confirmButtonText: 'Tamam',
-            confirmButtonColor: '#10b981'
+            title: 'Sistem Hatası',
+            text: 'Giriş yapılırken beklenmeyen bir hata oluştu: ' + err.message,
+            confirmButtonText: 'Tamam'
         });
     }
 }
