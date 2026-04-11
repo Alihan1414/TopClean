@@ -79,13 +79,16 @@ body {
 /* --- Scrolling Side Logos --- */
 .side-logo {
     position: absolute;
-    top: 500px;
-    width: 480px;
-    opacity: 0.25;
-    z-index: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 520px;
+    opacity: 0.35;
+    z-index: 10; /* Lower than cards (which are 100 on hover, let's keep it safe) */
     pointer-events: none;
     transition: var(--transition-premium);
+    filter: drop-shadow(0 0 30px rgba(16, 185, 129, 0.4));
 }
+
 
 .logo-left { left: 20px; }
 .logo-right { right: 20px; }
