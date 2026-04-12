@@ -151,6 +151,9 @@
                     <button id="btnStokIslemi" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.showMovementForm()" style="font-size: 1.1rem;">
                         <i data-lucide="package" size="22"></i> STOK İŞLEMİ
                     </button>
+                    <button id="btnUrunTanimla" class="btn btn-glass-round py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg d-none" onclick="InventoryManager.showAddProductForm()" style="font-size: 1.1rem; border: 1px solid var(--accent-emerald) !important;">
+                        <i data-lucide="plus-circle" size="22"></i> YENİ ÜRÜN TANIMLA
+                    </button>
                 </div>
 
                 <div id="bolumListesi" class="d-flex flex-column gap-3 overflow-auto" style="padding-bottom: 80px;">
@@ -421,10 +424,7 @@
 
                         <!-- Actions bar -->
                         <div class="d-flex gap-2 mb-4">
-                            <button class="btn btn-emerald-lg flex-grow-1 py-3 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2" onclick="InventoryManager.showAddProductForm()">
-                                <i data-lucide="plus-circle" size="20"></i> YENİ ÜRÜN EKLE
-                            </button>
-                            <button class="btn btn-warning py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2" onclick="InventoryManager.showThresholdConfig()" title="Bildirim Ayarla">
+                            <button class="btn btn-warning flex-grow-1 py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2" onclick="InventoryManager.showThresholdConfig()" title="Bildirim Ayarla">
                                 <i data-lucide="bell" size="20"></i> BİLDİRİM AYARLA
                             </button>
                             <button class="btn btn-glass-round" onclick="InventoryManager.showAllLogs()" title="Tüm Hareket Geçmişi">
