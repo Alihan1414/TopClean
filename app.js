@@ -664,7 +664,7 @@ function loadGorevliPanel(katAd) {
                     ${aktifAriza ? '<span class="badge bg-warning text-dark px-2 py-1 rounded-pill ms-2" style="font-size:0.7rem;"><i data-lucide="wrench" size="12"></i> Arızalı</span>' : ''}
                 </div>
                 <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--glass-border); opacity: 0.8;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
-                    <i data-lucide="info" size="14"></i>
+                    <i data-lucide="alert-circle" size="14"></i>
                 </button>
             </div>
             <div class="badge-status ${badgeClass} text-center justify-content-center w-100 py-2" style="font-weight: 800;">
@@ -786,19 +786,83 @@ const KriterManager = {
     },
 
     rehberBilgi: function(bolum) {
+        const b = bolum.toLowerCase();
+        let title = "✨ Standart Temizlik Prosedürü";
+        let content = `
+            1. <b>HAVALANDIRMA:</b> Odaya girdiğinizde ilk iş camları açıp temiz hava girmesini sağlayın.<br>
+            2. <b>ÇÖP BOŞALTMA:</b> Çöp kutularını boşaltın, torbaları yenileyin.<br>
+            3. <b>TOZ ALMA:</b> Yukarıdan aşağıya (raflardan zemine) doğru toz alın.<br>
+            4. <b>YÜZEY TEMİZLİĞİ:</b> Masaları ve temas noktalarını dezenfektanlı bezle silin.<br>
+            5. <b>ZEMİNLER:</b> Zemini süpürün ve ardından uygun temizleyici ile paspaslayın.<br>
+            6. <b>KOKU & DÜZEN:</b> Odaya hoş bir koku sıkın ve eşyaları düzeltin.<br>
+            7. <b>KONTROL:</b> Çıkmadan önce odanın genel görünümünü %100 kontrol edin.
+        `;
+
+        if (b.includes("wc") || b.includes("lavabo")) {
+            title = "🧼 WC Temizlik Talimatı";
+            content = `
+                1. <b>HİJYEN:</b> Eldivenlerinizi takın ve lavaboları dezenfektanla ovun.<br>
+                2. <b>KLOZETLER:</b> İç kısımları fırçalayın, dış ve kapak kısımlarını alkol bazlı temizleyici ile silin.<br>
+                3. <b>İKRAM/SARF:</b> Tuvalet kağıdı ve kağıt havluları yenileyin, sabunları doldurun.<br>
+                4. <b>AYNALAR:</b> Cam temizleyici ile iz kalmayacak şekilde aynaları parlatın.<br>
+                5. <b>ZEMİNLER:</b> Çamaşır sulu su ile zemini paspaslayın, gider deliklerini kontrol edin.<br>
+                6. <b>HAVALANDIRMA:</b> Varsa fanı çalıştırın, kapıyı açık bırakarak havalandırın.
+            `;
+        } else if (b.includes("yatakhane") || b.includes("misafir")) {
+            title = "🛏️ Yatakhane Temizlik Talimatı";
+            content = `
+                1. <b>YATAK DÜZENİ:</b> Çarşafları gerginleştirin ve yorganları nizami katlayın.<br>
+                2. <b>ZEMİN:</b> Yatak altlarına giren tozları özel olarak temizleyin.<br>
+                3. <b>DOLAPLAR:</b> Dolap üstlerinin tozunu alın ve parmak izlerini silin.<br>
+                4. <b>HAVALANDIRMA:</b> Pencereleri en az 15 dakika tam açık tutun.<br>
+                5. <b>KİŞİSEL ALAN:</b> Terliklerin ve ayakkabıların düzenli durduğundan emin olun.
+            `;
+        } else if (b.includes("mescit")) {
+            title = "🕌 Mescit Temizlik Talimatı";
+            content = `
+                1. <b>HALILAR:</b> Halıları enine ve boyuna olacak şekilde güçlü vakumla süpürün.<br>
+                2. <b>KİTAPLIK:</b> Elifba ve Kur'an-ı Kerim raflarının tozunu incitmeden alın.<br>
+                3. <b>KÜRSÜ:</b> Kürsü ve mihrap çevresini detaylıca silin.<br>
+                4. <b>ESANSLAMA:</b> Cemaati rahatsız etmeyecek hafif gül/misk kokusu uygulayın.<br>
+                5. <b>DÜZEN:</b> Rahleleri ve tesbihleri düzenli sıralarına dizin.
+            `;
+        } else if (b.includes("çayhane") || b.includes("kantin") || b.includes("mutfak")) {
+            title = "☕ Çayhane/Kantin Talimatı";
+            content = `
+                1. <b>HİJYEN:</b> Tezgah üzerlerini gıda dostu dezenfektanlarla temizleyin.<br>
+                2. <b>DEMLİKLER:</b> Çay makinelerini ve demlikleri kireçten arındırıp parlatın.<br>
+                3. <b>BARDAKLAR:</b> Bardaklarda su lekesi kalmadığını kontrol edin.<br>
+                4. <b>ZEMİN:</b> Yapışkanlık kalmayacak şekilde sıcak su ve deterjanla silin.<br>
+                5. <b>ÇÖPLER:</b> Gıda atığı içeren çöpleri bekletmeden dışarı çıkarın.
+            `;
+        } else if (b.includes("donanım") || b.includes("lab") || b.includes("robotik")) {
+            title = "💻 Teknik Alan Temizlik Talimatı";
+            content = `
+                1. <b>TOZ ALMA:</b> Elektronik cihazlara asla ıslak bez sürmeyin, sadece kuru mikrofiber kullanın.<br>
+                2. <b>ZEMİN:</b> Kablolara takılmadan, hassas hareketlerle paspas yapın.<br>
+                3. <b>KLAVYELER:</b> Klavye ve mouse yüzeylerini dezenfektanlı mendille hafifçe silin.<br>
+                4. <b>HAVALANDIRMA:</b> Tozu dışarı atacak şekilde pencereleri açın.<br>
+                5. <b>GÜVENLİK:</b> Temizlik sonrası fişlerin ve kabloların yerinden oynamadığını kontrol edin.
+            `;
+        } else if (b.includes("merdiven") || b.includes("koridor")) {
+            title = "🚶 Sirkülasyon Alanı Talimatı";
+            content = `
+                1. <b>KORKULUKLAR:</b> Merdiven korkuluklarını ve kapı kollarını dezenfekte edin.<br>
+                2. <b>KÖŞELER:</b> Süpürgelik kenarlarında biriken tozları özel olarak alın.<br>
+                3. <b>PASPAS:</b> Ayak altı çok olduğu için gerekirse günde 2 kez paspas geçin.<br>
+                4. <b>AYDINLATMA:</b> Sensörlü lambaların düzgün çalıştığını kontrol edin.
+            `;
+        }
+
         Swal.fire({
-            title: '✨ Standart Temizlik Prosedürü',
+            title: title,
             html: `
             <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
-                1. <b>HAVALANDIRMA:</b> Odaya girdiğinizde ilk iş camları açıp temiz hava girmesini sağlayın.<br>
-                2. <b>ÇÖP BOŞALTMA:</b> Çöp kutularını boşaltın, torbaları yenileyin.<br>
-                3. <b>TOZ ALMA:</b> Yukarıdan aşağıya (raflardan zemine) doğru toz alın.<br>
-                4. <b>YÜZEY TEMİZLİĞİ:</b> Masaları ve temas noktalarını dezenfektanlı bezle silin.<br>
-                5. <b>ZEMİNLER:</b> Zemini süpürün ve ardından uygun temizleyici ile paspaslayın.<br>
-                6. <b>KOKU & DÜZEN:</b> Odaya hoş bir koku sıkın ve eşyaları düzeltin.<br>
-                7. <b>KONTROL:</b> Çıkmadan önce odanın genel görünümünü %100 kontrol edin.
+                ${content}
             </div>
             `,
+            background: 'var(--bg-main)',
+            color: '#fff',
             confirmButtonText: 'Tamam',
             width: '600px'
         });
