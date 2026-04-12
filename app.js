@@ -1223,6 +1223,7 @@ const IdarecManager = {
             this.loadBinaDurumu();
             this.loadGecmis('hepsi');
             this.loadPersonel();
+            this.loadMufettis();
             this.loadArizalar('hepsi');
             InventoryManager.render();
             if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1291,7 +1292,7 @@ const IdarecManager = {
             var isO = d.durum === 'onaylandi';
             var c = document.createElement('div');
             c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            var yorumHtml = d.mufettis_yorum ? '<div class="x-small mt-1" style="color:var(--text-muted);">"' + d.mufettis_yorum + '"</div>' : '';
+            var yorumHtml = d.mufettis_yorum ? '<div class="x-small mt-1" style="color:var(--text-muted);">İç Mesul Notu: "' + d.mufettis_yorum + '"</div>' : '';
             c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + d.kat + ' – ' + d.bolum + '</div><div class="x-small text-muted">' + new Date(d.tarih).toLocaleString('tr-TR') + ' | ' + d.secilen.length + ' kriter</div>' + yorumHtml + '</div><span class="badge-status ' + (isO?'badge-success':'badge-danger') + '" style="font-size:0.6rem;padding:3px 8px;">' + (isO?'ONAYLANDI':'REDDEDİLDİ') + '</span>';
             list.appendChild(c);
         });
@@ -1301,6 +1302,57 @@ const IdarecManager = {
         document.querySelectorAll('.gecmis-filter').forEach(function(b){b.classList.remove('active');});
         btn.classList.add('active');
         IdarecManager.loadGecmis(filter);
+    },
+    loadMufettis: function() {
+        var list = document.getElementById('mufettisListesi');
+        if(!list) return;
+        list.innerHTML = '';
+        var all = usersData.filter(function(u){return u.rol==='mufettis';});
+        var extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        all = all.concat(extraMuf);
+        
+        all.forEach(function(u, idx) {
+            var isExtra = idx >= usersData.filter(u=>u.rol==='mufettis').length;
+            var c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
+            c.innerHTML = '<div><div class="fw-bold text-white">' + u.name + '</div><div class="x-small text-muted">İç Mesul | Şifre: ' + u.pass + '</div></div><button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.mufettisSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
+            list.appendChild(c);
+        });
+        lucide.createIcons();
+    },
+    mufettisEkle: function() {
+        var ad = document.getElementById('yeniMufettisAd').value.trim();
+        var sifre = document.getElementById('yeniMufettisSifre').value.trim();
+        if(!ad || !sifre) { Swal.fire({icon:'warning',title:'Eksik Bilgi',text:'Ad ve şifre girin.',timer:2000,showConfirmButton:false}); return; }
+        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        var newUser = {name:ad, pass:sifre, rol:'mufettis', kat:'Hepsi'};
+        extras.push(newUser);
+        localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
+        if (db) {
+            db.ref('users/' + newUser.name).set(newUser);
+        }
+        document.getElementById('yeniMufettisAd').value = '';
+        document.getElementById('yeniMufettisSifre').value = '';
+        Swal.fire({icon:'success',title:'Kaydedildi!',text:ad+' İç Mesul olarak eklendi.',timer:1800,showConfirmButton:false});
+        IdarecManager.loadMufettis();
+        initLoginSelect();
+    },
+    mufettisSil: function(idx) {
+        var fixed = usersData.filter(u => u.rol === 'mufettis');
+        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        var target;
+        if(idx < fixed.length) {
+            Swal.fire({icon:'error',title:'Hata',text:'Sistem admini silinemez.',timer:2000,showConfirmButton:false});
+            return;
+        } else {
+            target = extras[idx - fixed.length];
+            extras.splice(idx - fixed.length, 1);
+            localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
+        }
+        if (db && target) db.ref('users/' + target.name).remove();
+        Swal.fire({icon:'info',title:'Silindi',text:'İç Mesul kaldırıldı.',timer:1800,showConfirmButton:false});
+        IdarecManager.loadMufettis();
+        initLoginSelect();
     },
     loadPersonel: function() {
         var list = document.getElementById('personelListesi');
@@ -1374,7 +1426,7 @@ const IdarecManager = {
         var selectedDate = document.getElementById('raporDateSelector').value;
         var dayData = getData().filter(function(d){return toShortDate(d.tarih) === selectedDate;});
         if(dayData.length===0){Swal.fire({icon:'info',title:'Kayıt Yok',text:'Seçilen tarih için rapor bulunamadı.',timer:2000,showConfirmButton:false});return;}
-        var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,MufettisNotu\n";
+        var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,IcMesulNotu\n";
         csv += dayData.map(function(d){
             var saat = new Date(d.tarih).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
             return '"'+d.kat+'","'+d.bolum+'",'+d.secilen.length+','+saat+','+d.durum+',"'+(d.yorum||'')+'","'+(d.mufettis_yorum||'')+'"';
