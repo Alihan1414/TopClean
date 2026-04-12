@@ -198,7 +198,7 @@ function initLoginSelect() {
         if (!Array.isArray(extraUsers)) extraUsers = [];
         
         const activeFixed = usersData.filter(u => u && !deletedFixed.includes(u.name));
-        const allUsers = [...activeFixed, ...extraUsers].filter(u => u !== null && u !== undefined && typeof u === 'object');
+        const allUsers = [...activeFixed, ...extraUsers].filter(u => u && !deletedFixed.includes(u.name));
         
         allUsers.forEach(u => {
             if (u && u.name) {
@@ -434,10 +434,10 @@ function syncFromCloud() {
         const val = snapshot.val();
         if (val) {
             localStorage.setItem('topclean_users', JSON.stringify(Object.values(val)));
-            initLoginSelect();
         } else {
             localStorage.setItem('topclean_users', '[]');
         }
+        initLoginSelect();
     });
 
     db.ref('student_distribution').on('value', snapshot => {
@@ -451,10 +451,13 @@ function syncFromCloud() {
     db.ref('deleted_fixed_users').on('value', snapshot => {
         const val = snapshot.val();
         if (val) {
-            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(Object.values(val)));
-            initLoginSelect();
-            if(currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
+            var arr = Array.isArray(val) ? val : Object.values(val);
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(arr));
+        } else {
+            localStorage.setItem('topclean_deleted_fixed_users', '[]');
         }
+        initLoginSelect();
+        if(currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
     });
 
     db.ref('arizalar').on('value', snapshot => {
