@@ -603,6 +603,13 @@ function loadGorevliPanel(katAd) {
     const listeEl = document.getElementById('bolumListesi');
     listeEl.innerHTML = "";
 
+    // Stok butonu sadece 2. kat görevlisinde görünsün
+    const stokBtn = document.getElementById('btnStokIslemi');
+    if (stokBtn) {
+        if (katAd === "2. Kat") stokBtn.classList.remove('d-none');
+        else stokBtn.classList.add('d-none');
+    }
+
     const bolumler = katlar[katAd];
     const data = getData();
     const bugunStr = new Date().toLocaleDateString();
