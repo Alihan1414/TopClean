@@ -313,6 +313,8 @@
                         <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('gecmis', this)">📋 Geçmiş</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('rapor', this)">📥 Rapor</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('muf', this)">👮 İç Mesuller</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👨‍🏫 Personeller</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('ari', this)">🛠️ Arızalar</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('stok', this)">📦 Stok Takibi</button>
                     </div>
@@ -359,7 +361,22 @@
                         <div id="idarecGecmisList" class="d-flex flex-column gap-2 pb-5"></div>
                     </div>
 
-                    <!-- TAB 3: PERSONEL YÖNETİMİ -->
+                    <!-- TAB 3: İÇ MESUL YÖNETİMİ -->
+                    <div id="idarec-tab-muf" class="idarec-tab-content d-none">
+                        <div class="glass-card p-4 mb-4">
+                            <h6 class="fw-bold text-white mb-3">👮 Yeni İç Mesul Ekle</h6>
+                            <div class="d-flex flex-column gap-2">
+                                <input type="text" id="yeniMufettisAd" class="form-control custom-input" placeholder="Ad Soyad">
+                                <input type="password" id="yeniMufettisSifre" class="form-control custom-input" placeholder="Şifre">
+                                <button class="btn btn-emerald-lg w-100 py-2 fw-bold rounded-3" onclick="IdarecManager.mufettisEkle()">
+                                    <i data-lucide="user-check" size="16"></i> KAYDET
+                                </button>
+                            </div>
+                        </div>
+                        <div id="mufettisListesi" class="d-flex flex-column gap-2 pb-5"></div>
+                    </div>
+
+                    <!-- TAB 4: PERSONEL YÖNETİMİ -->
                     <div id="idarec-tab-personel" class="idarec-tab-content d-none">
                         <!-- Add form -->
                         <div class="glass-card p-4 mb-4">
@@ -369,8 +386,7 @@
                                 <input type="password" id="yeniPersonelSifre" class="form-control custom-input" placeholder="Şifre">
                                 <select id="yeniPersonelKat" class="form-select custom-input">
                                     <option value="">-- Kat Seç --</option>
-                                    <option>-1. Kat</option>
-                                    <option>0. Kat</option>
+                                    <option>Zemin Kat</option>
                                     <option>1. Kat</option>
                                     <option>2. Kat</option>
                                     <option>3. Kat</option>
