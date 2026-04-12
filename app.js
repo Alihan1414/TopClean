@@ -413,6 +413,8 @@ function showPanel(id) {
 // Firebase'den veri çekme (Realtime)
 let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
 let cachedArizalar = JSON.parse(localStorage.getItem('topclean_arizalar') || '[]');
+let cachedInventory = JSON.parse(localStorage.getItem('topclean_inventory') || '[]');
+let cachedInventoryLogs = JSON.parse(localStorage.getItem('topclean_inventory_logs') || '[]');
 let isSyncing = false;
 let syncTimeout = null;
 
@@ -463,12 +465,32 @@ function syncFromCloud() {
             refreshCurrentPanel();
         }
     });
+
+    db.ref('inventory').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedInventory = Object.values(val);
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (currentUser && currentUser.rol === "idareci") InventoryManager.render();
+        }
+    });
+
+    db.ref('inventory_logs').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedInventoryLogs = Object.values(val);
+            localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+        }
+    });
 }
 
 function refreshCurrentPanel() {
     if (!currentUser) return;
     if (currentUser.rol === "gorevli") loadGorevliPanel(currentUser.kat);
-    else if (currentUser.rol === "idareci") IdarecManager.loadBinaDurumu();
+    else if (currentUser.rol === "idareci") {
+        IdarecManager.loadBinaDurumu();
+        InventoryManager.render();
+    }
     else if (currentUser.rol === "mufettis") loadAdminPanel();
 }
 
@@ -1191,6 +1213,7 @@ const IdarecManager = {
             this.loadGecmis('hepsi');
             this.loadPersonel();
             this.loadArizalar('hepsi');
+            InventoryManager.render();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
             console.error("IdarecManager.load Error:", e);
@@ -1622,5 +1645,352 @@ const ListeManager = {
             });
         });
         lucide.createIcons();
+    }
+};
+
+// ---------- STOK (INVENTORY) MANAGER ----------
+const InventoryManager = {
+    render: function() {
+        const container = document.getElementById('stokListesi');
+        if (!container) return;
+        
+        const searchInput = document.getElementById('stokSearchInput');
+        const search = searchInput ? searchInput.value.toLowerCase() : "";
+        let items = cachedInventory;
+        
+        if (search) {
+            items = items.filter(i => i.name.toLowerCase().includes(search));
+        }
+
+        container.innerHTML = "";
+        
+        if (items.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted p-5 glass-card">Gösterilecek ürün bulunamadı.</div>';
+        }
+
+        items.forEach(item => {
+            const isCritical = item.threshold && item.amount <= item.threshold;
+            const div = document.createElement('div');
+            div.className = "col-12 col-md-6 col-lg-4";
+            div.innerHTML = `
+                <div class="glass-card p-3 h-100 position-relative ${isCritical ? 'border-danger shadow-danger-sm' : ''}" style="transition: all 0.3s ease;">
+                    ${isCritical ? '<span class="position-absolute top-0 end-0 m-2 badge bg-danger" style="font-size:0.6rem; animation: pulse-red 2s infinite;">KRİTİK</span>' : ''}
+                    <div class="small fw-bold text-dim mb-1 text-uppercase">${item.unit}</div>
+                    <h5 class="fw-bold text-white mb-3" style="font-size: 1.1rem;">${item.name}</h5>
+                    
+                    <div class="d-flex align-items-end justify-content-between mb-3">
+                        <div>
+                            <div class="stat-value ${isCritical ? 'text-danger' : 'text-emerald'}" style="font-size: 1.8rem;">${item.amount}</div>
+                            <div class="x-small text-muted">Limit: ${item.threshold || 'Söz Konusu Değil'}</div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-glass-round" onclick="InventoryManager.showLogs('${item.id}')" title="Geçmiş">
+                                <i data-lucide="list" size="14"></i>
+                            </button>
+                            <button class="btn btn-sm btn-glass-round" onclick="InventoryManager.setThreshold('${item.id}')" title="Limit Düzenle">
+                                <i data-lucide="bell-ring" size="14"></i>
+                            </button>
+                            <button class="btn btn-sm btn-glass-round text-danger-glow" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
+                                <i data-lucide="trash-2" size="14"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        this.checkCriticalLevels();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    checkCriticalLevels: function() {
+        const panel = document.getElementById('stokKritikPanel');
+        const list = document.getElementById('stokKritikListe');
+        if (!panel || !list) return;
+
+        const criticalItems = cachedInventory.filter(i => i.threshold && i.amount <= i.threshold);
+        
+        if (criticalItems.length > 0) {
+            panel.classList.remove('d-none');
+            list.innerHTML = criticalItems.map(i => `• <b>${i.name}</b> stoğu azaldı (${i.amount} ${i.unit} kaldı, limit: ${i.threshold})`).join('<br>');
+        } else {
+            panel.classList.add('d-none');
+        }
+    },
+
+    showAddProductForm: async function() {
+        const { value: formValues } = await Swal.fire({
+            title: 'Yeni Ürün Ekle',
+            html: `
+                <div class="text-start">
+                    <label class="small fw-bold text-white mb-1">Ürün İsmi</label>
+                    <input id="swal-input-name" class="form-control custom-input mb-3" placeholder="Örn: Sıvı Sabun">
+                    <label class="small fw-bold text-white mb-1">Birim</label>
+                    <select id="swal-input-unit" class="form-select custom-input mb-3">
+                        <option value="Litre">Litre</option>
+                        <option value="Adet">Adet</option>
+                        <option value="Paket">Paket</option>
+                        <option value="Rulo">Rulo</option>
+                        <option value="Koli">Koli</option>
+                    </select>
+                    <label class="small fw-bold text-white mb-1">Mevcut Miktar</label>
+                    <input id="swal-input-amount" type="number" class="form-control custom-input mb-3" placeholder="0">
+                </div>
+            `,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonText: 'Devam Et',
+            showCancelButton: true,
+            cancelButtonText: 'İptal',
+            preConfirm: () => {
+                const name = document.getElementById('swal-input-name').value.trim();
+                const unit = document.getElementById('swal-input-unit').value;
+                const amount = parseInt(document.getElementById('swal-input-amount').value) || 0;
+                if (!name) return Swal.showValidationMessage('Lütfen ürün ismi girin!');
+                return { name, unit, amount };
+            }
+        });
+
+        if (formValues) {
+            const { value: threshold } = await Swal.fire({
+                title: 'Bildirim Limiti',
+                text: `${formValues.name} miktarı kaça düştüğünde size bildirim gelsin?`,
+                input: 'number',
+                inputPlaceholder: 'Örn: 5',
+                background: 'var(--bg-main)',
+                color: '#fff',
+                confirmButtonText: 'Kaydet',
+                allowOutsideClick: false
+            });
+
+            const newItem = {
+                id: "PRD_" + new Date().getTime(),
+                name: formValues.name,
+                unit: formValues.unit,
+                amount: formValues.amount,
+                threshold: parseInt(threshold) || 0
+            };
+
+            cachedInventory.push(newItem);
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (db) db.ref('inventory/' + newItem.id).set(newItem);
+            
+            this.logMovement(newItem.id, formValues.amount, "ekleme", "İlk Stok Girişi");
+            
+            Swal.fire({ icon: 'success', title: 'Ürün Eklendi', timer: 1500, showConfirmButton: false });
+            this.render();
+        }
+    },
+
+    showMovementForm: async function() {
+        if (cachedInventory.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Önce idarecinin ürün eklemesi gerekiyor.' });
+        }
+
+        let options = {};
+        cachedInventory.forEach(i => options[i.id] = i.name);
+
+        const { value: productId } = await Swal.fire({
+            title: 'Malzeme İşlemi',
+            input: 'select',
+            inputOptions: options,
+            inputPlaceholder: '-- Malzeme Seçin --',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: '#fff'
+        });
+
+        if (productId) {
+            const item = cachedInventory.find(i => i.id === productId);
+            const { value: result } = await Swal.fire({
+                title: item.name,
+                html: `
+                    <div class="mb-3">Mevcut: <b>${item.amount} ${item.unit}</b></div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <button id="btn-in" class="btn btn-outline-success w-100 py-3 fw-bold" onclick="selectType('in')">📥 EKLE</button>
+                        </div>
+                        <div class="col-6">
+                            <button id="btn-out" class="btn btn-outline-danger w-100 py-3 fw-bold" onclick="selectType('out')">📤 KULLAN</button>
+                        </div>
+                    </div>
+                    <input type="number" id="swal-move-amount" class="form-control custom-input mt-4 text-center fs-4" placeholder="MİKTAR">
+                    <input type="text" id="swal-move-note" class="form-control custom-input mt-2" placeholder="Not (Opsiyonel)">
+                `,
+                background: 'var(--bg-main)',
+                color: '#fff',
+                showCancelButton: true,
+                didOpen: () => {
+                    window.selectedMoveType = null;
+                    window.selectType = (type) => {
+                        window.selectedMoveType = type;
+                        document.getElementById('btn-in').className = type === 'in' ? 'btn btn-success w-100 py-3 fw-bold' : 'btn btn-outline-success w-100 py-3 fw-bold';
+                        document.getElementById('btn-out').className = type === 'out' ? 'btn btn-danger w-100 py-3 fw-bold' : 'btn btn-outline-danger w-100 py-3 fw-bold';
+                    };
+                },
+                preConfirm: () => {
+                    const amountInput = document.getElementById('swal-move-amount');
+                    const amount = amountInput ? parseInt(amountInput.value) : 0;
+                    const noteInput = document.getElementById('swal-move-note');
+                    const note = noteInput ? noteInput.value.trim() : "";
+                    const type = window.selectedMoveType;
+                    if (!type) return Swal.showValidationMessage('Lütfen işlem tipini seçin (Ekle/Kullan)');
+                    if (!amount || amount <= 0) return Swal.showValidationMessage('Geçerli bir miktar girin!');
+                    return { type, amount, note };
+                }
+            });
+
+            if (result) {
+                const finalAmount = result.type === 'in' ? result.amount : -result.amount;
+                
+                if (result.type === 'out' && item.amount + finalAmount < 0) {
+                    return Swal.fire('Hata', 'Stok yetersiz! Mevcut miktardan fazla kullanım giremezsiniz.', 'error');
+                }
+
+                item.amount += finalAmount;
+                localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+                if (db) db.ref('inventory/' + item.id).update({ amount: item.amount });
+                
+                this.logMovement(item.id, result.amount, result.type, result.note);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'İşlem Başarılı',
+                    text: `${item.name} stoku güncellendi.`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+                
+                if (currentUser && currentUser.rol === "idareci") this.render();
+            }
+        }
+    },
+
+    logMovement: function(itemId, amount, type, note = "") {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const log = {
+            id: "LOG_" + new Date().getTime(),
+            itemId: itemId,
+            itemName: item ? item.name : "Bilinmeyen",
+            change: amount,
+            type: type, 
+            date: new Date().getTime(),
+            user: currentUser ? currentUser.name : "Personel",
+            note: note
+        };
+
+        cachedInventoryLogs.push(log);
+        localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+        if (db) db.ref('inventory_logs/' + log.id).set(log);
+    },
+
+    showLogs: function(itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const logs = cachedInventoryLogs.filter(l => l.itemId === itemId).sort((a,b) => b.date - a.date);
+        
+        let html = '<div class="text-start mt-3" style="max-height: 50vh; overflow-y: auto;">';
+        if (logs.length === 0) {
+            html += '<div class="text-center text-muted py-4">Hareket kaydı bulunamadı.</div>';
+        } else {
+            logs.forEach(l => {
+                const isAdd = l.type === 'in' || l.type === 'ekleme';
+                html += `
+                    <div class="p-2 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold ${isAdd ? 'text-success' : 'text-danger'}" style="font-size: 0.9rem;">
+                                ${isAdd ? '+' : '-'}${l.change} ${item.unit}
+                            </div>
+                            <div class="x-small text-muted">${new Date(l.date).toLocaleString()} | ${l.user}</div>
+                            ${l.note ? `<div class="x-small text-dim italic">"${l.note}"</div>` : ''}
+                        </div>
+                        <span class="x-small badge ${isAdd ? 'bg-success' : 'bg-danger'} bg-opacity-10">${l.type.toUpperCase()}</span>
+                    </div>
+                `;
+            });
+        }
+        html += '</div>';
+
+        Swal.fire({
+            title: `${item.name} Geçmişi`,
+            html: html,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonText: 'Kapat',
+            confirmButtonColor: '#6c757d'
+        });
+    },
+
+    showAllLogs: function() {
+        const logs = [...cachedInventoryLogs].sort((a,b) => b.date - a.date).slice(0, 50);
+        
+        let html = '<div class="text-start mt-3" style="max-height: 60vh; overflow-y: auto;">';
+        logs.forEach(l => {
+            const isAdd = l.type === 'in' || l.type === 'ekleme';
+            html += `
+                <div class="p-2 border-bottom border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold text-white small">${l.itemName}</span>
+                        <span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold small">${isAdd ? '+' : '-'}${l.change}</span>
+                    </div>
+                    <div class="x-small text-muted">${new Date(l.date).toLocaleString()} | ${l.user}</div>
+                    ${l.note ? `<div class="x-small text-dim italic">("${l.note}")</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'Son 50 Stok Hareketi',
+            html: html,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonText: 'Kapat'
+        });
+    },
+
+    setThreshold: async function(itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const { value: threshold } = await Swal.fire({
+            title: 'Limit Düzenle',
+            text: `${item.name} için bildirim limiti belirleyin:`,
+            input: 'number',
+            inputValue: item.threshold,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonText: 'Güncelle',
+            showCancelButton: true
+        });
+
+        if (threshold !== undefined) {
+            item.threshold = parseInt(threshold) || 0;
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (db) db.ref('inventory/' + item.id).update({ threshold: item.threshold });
+            this.render();
+            Swal.fire({ icon: 'success', title: 'Limit Güncellendi', timer: 1000, showConfirmButton: false });
+        }
+    },
+
+    deleteProduct: function(itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        Swal.fire({
+            title: 'Emin misiniz?',
+            text: `"${item.name}" ürünü ve tüm geçmişi silinecek!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Evet, Sil',
+            background: 'var(--bg-main)',
+            color: '#fff'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                cachedInventory = cachedInventory.filter(i => i.id !== itemId);
+                cachedInventoryLogs = cachedInventoryLogs.filter(l => l.itemId !== itemId);
+                localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+                localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+                if (db) db.ref('inventory/' + itemId).remove();
+                this.render();
+            }
+        });
     }
 };
