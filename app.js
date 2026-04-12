@@ -607,6 +607,13 @@ function loadGorevliPanel(katAd) {
     const stokBtn = document.getElementById('btnStokIslemi');
     if (stokBtn) stokBtn.classList.remove('d-none');
 
+    // Ürün tanımlama butonu sadece 2. kat görevlisinde görünsün
+    const tanimlaBtn = document.getElementById('btnUrunTanimla');
+    if (tanimlaBtn) {
+        if (katAd === "2. Kat") tanimlaBtn.classList.remove('d-none');
+        else tanimlaBtn.classList.add('d-none');
+    }
+
     const bolumler = katlar[katAd];
     const data = getData();
     const bugunStr = new Date().toLocaleDateString();
@@ -1691,10 +1698,10 @@ const InventoryManager = {
                             <button class="btn btn-sm btn-glass-round" onclick="InventoryManager.showLogs('${item.id}')" title="Geçmiş">
                                 <i data-lucide="list" size="14"></i>
                             </button>
-                            <button class="btn btn-sm btn-glass-round" onclick="InventoryManager.setThreshold('${item.id}')" title="Limit Düzenle">
+                            <button class="btn btn-sm btn-glass-round ${currentUser.rol === 'idareci' ? '' : 'd-none'}" onclick="InventoryManager.setThreshold('${item.id}')" title="Limit Düzenle">
                                 <i data-lucide="bell-ring" size="14"></i>
                             </button>
-                            <button class="btn btn-sm btn-glass-round text-danger-glow" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
+                            <button class="btn btn-sm btn-glass-round text-danger-glow ${currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat' ? '' : 'd-none'}" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
                                 <i data-lucide="trash-2" size="14"></i>
                             </button>
                         </div>
@@ -1724,9 +1731,9 @@ const InventoryManager = {
     },
 
     showAddProductForm: async function() {
-        const isEligible = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat');
+        const isEligible = currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat'; // Sadece Burak Hoca
         if (!isEligible) {
-            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Yeni ürün tanımlama yetkisi sadece Depo Sorumlusu (2. Kat) ve İdareciye aittir.' });
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Ürün tanımlama yetkisi Depo Sorumlusuna (2. Kat) aittir.' });
         }
         const { value: formValues } = await Swal.fire({
             title: 'Yeni Ürün Ekle',
