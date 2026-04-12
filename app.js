@@ -603,12 +603,9 @@ function loadGorevliPanel(katAd) {
     const listeEl = document.getElementById('bolumListesi');
     listeEl.innerHTML = "";
 
-    // Stok butonu sadece 2. kat görevlisinde görünsün
+    // Stok butonu tüm hocalarda görünsün
     const stokBtn = document.getElementById('btnStokIslemi');
-    if (stokBtn) {
-        if (katAd === "2. Kat") stokBtn.classList.remove('d-none');
-        else stokBtn.classList.add('d-none');
-    }
+    if (stokBtn) stokBtn.classList.remove('d-none');
 
     const bolumler = katlar[katAd];
     const data = getData();
@@ -1727,6 +1724,10 @@ const InventoryManager = {
     },
 
     showAddProductForm: async function() {
+        const isEligible = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat');
+        if (!isEligible) {
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Yeni ürün tanımlama yetkisi sadece Depo Sorumlusu (2. Kat) ve İdareciye aittir.' });
+        }
         const { value: formValues } = await Swal.fire({
             title: 'Yeni Ürün Ekle',
             html: `
@@ -1746,7 +1747,7 @@ const InventoryManager = {
                 </div>
             `,
             background: 'var(--bg-main)',
-            color: '#fff',
+            color: 'var(--text-primary)',
             confirmButtonText: 'Devam Et',
             showCancelButton: true,
             cancelButtonText: 'İptal',
@@ -1766,7 +1767,7 @@ const InventoryManager = {
                 input: 'number',
                 inputPlaceholder: 'Örn: 5',
                 background: 'var(--bg-main)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 confirmButtonText: 'Kaydet',
                 allowOutsideClick: false
             });
@@ -1790,11 +1791,41 @@ const InventoryManager = {
         }
     },
 
-    showMovementForm: async function() {
-        if (cachedInventory.length === 0) {
-            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Önce idarecinin ürün eklemesi gerekiyor.' });
+    showThresholdConfig: async function() {
+        if (currentUser.rol !== 'idareci') {
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Bildirim limitlerini sadece İdareci düzenleyebilir.' });
         }
 
+        if (cachedInventory.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Önce ürün eklemeniz gerekiyor.' });
+        }
+
+        let options = {};
+        cachedInventory.forEach(i => options[i.id] = i.name);
+
+        const { value: productId } = await Swal.fire({
+            title: 'Bildirim Ayarla',
+            text: 'Limitini belirlemek istediğiniz malzemeyi seçin:',
+            input: 'select',
+            inputOptions: options,
+            inputPlaceholder: '-- Malzeme Seç --',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        });
+
+        if (productId) {
+            this.setThreshold(productId);
+        }
+    },
+
+    showMovementForm: async function() {
+        if (cachedInventory.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Sistemde henüz ürün tanımlı değil.' });
+        }
+
+        const canAdd = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat');
+        
         let options = {};
         cachedInventory.forEach(i => options[i.id] = i.name);
 
@@ -1805,7 +1836,7 @@ const InventoryManager = {
             inputPlaceholder: '-- Malzeme Seçin --',
             showCancelButton: true,
             background: 'var(--bg-main)',
-            color: '#fff'
+            color: 'var(--text-primary)'
         });
 
         if (productId) {
@@ -1815,10 +1846,10 @@ const InventoryManager = {
                 html: `
                     <div class="mb-3">Mevcut: <b>${item.amount} ${item.unit}</b></div>
                     <div class="row g-2">
-                        <div class="col-6">
+                        <div class="col-6 ${canAdd ? '' : 'd-none'}">
                             <button id="btn-in" class="btn btn-outline-success w-100 py-3 fw-bold" onclick="selectType('in')">📥 EKLE</button>
                         </div>
-                        <div class="col-6">
+                        <div class="${canAdd ? 'col-6' : 'col-12'}">
                             <button id="btn-out" class="btn btn-outline-danger w-100 py-3 fw-bold" onclick="selectType('out')">📤 KULLAN</button>
                         </div>
                     </div>
@@ -1826,13 +1857,18 @@ const InventoryManager = {
                     <input type="text" id="swal-move-note" class="form-control custom-input mt-2" placeholder="Not (Opsiyonel)">
                 `,
                 background: 'var(--bg-main)',
-                color: '#fff',
+                color: 'var(--text-primary)',
                 showCancelButton: true,
                 didOpen: () => {
-                    window.selectedMoveType = null;
+                    window.selectedMoveType = canAdd ? null : 'out'; 
+                    if (!canAdd) {
+                        document.getElementById('btn-out').className = 'btn btn-danger w-100 py-3 fw-bold';
+                    }
                     window.selectType = (type) => {
                         window.selectedMoveType = type;
-                        document.getElementById('btn-in').className = type === 'in' ? 'btn btn-success w-100 py-3 fw-bold' : 'btn btn-outline-success w-100 py-3 fw-bold';
+                        if (document.getElementById('btn-in')) {
+                            document.getElementById('btn-in').className = type === 'in' ? 'btn btn-success w-100 py-3 fw-bold' : 'btn btn-outline-success w-100 py-3 fw-bold';
+                        }
                         document.getElementById('btn-out').className = type === 'out' ? 'btn btn-danger w-100 py-3 fw-bold' : 'btn btn-outline-danger w-100 py-3 fw-bold';
                     };
                 },
@@ -1922,7 +1958,7 @@ const InventoryManager = {
             title: `${item.name} Geçmişi`,
             html: html,
             background: 'var(--bg-main)',
-            color: '#fff',
+            color: 'var(--text-primary)',
             confirmButtonText: 'Kapat',
             confirmButtonColor: '#6c757d'
         });
@@ -1951,7 +1987,7 @@ const InventoryManager = {
             title: 'Son 50 Stok Hareketi',
             html: html,
             background: 'var(--bg-main)',
-            color: '#fff',
+            color: 'var(--text-primary)',
             confirmButtonText: 'Kapat'
         });
     },
@@ -1964,7 +2000,7 @@ const InventoryManager = {
             input: 'number',
             inputValue: item.threshold,
             background: 'var(--bg-main)',
-            color: '#fff',
+            color: 'var(--text-primary)',
             confirmButtonText: 'Güncelle',
             showCancelButton: true
         });
@@ -1988,7 +2024,7 @@ const InventoryManager = {
             confirmButtonColor: '#dc3545',
             confirmButtonText: 'Evet, Sil',
             background: 'var(--bg-main)',
-            color: '#fff'
+            color: 'var(--text-primary)'
         }).then((result) => {
             if (result.isConfirmed) {
                 cachedInventory = cachedInventory.filter(i => i.id !== itemId);
