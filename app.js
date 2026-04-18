@@ -1816,7 +1816,7 @@ const IdarecManager = {
     }
 };
 
-// ---------- LİSTE DAĞILIMI MANAGER V2 ----------
+// ---------- LİSTE DAĞILIMI MANAGER V3 (POSTER MODE) ----------
 const ListeManager = {
     load: function () {
         const saved = localStorage.getItem('topclean_talebe_listesi');
@@ -1826,16 +1826,24 @@ const ListeManager = {
             document.getElementById('listAstim').value = data.astim || "";
             document.getElementById('listSaglikli').value = data.saglikli || "";
             document.getElementById('listDiger').value = data.diger || "";
+            document.getElementById('cleaningPeriod').value = data.period || "";
+            
             if (data.sonuclar) {
                 this.renderSonuclar(data.sonuclar, data.baskanlar || {}, data.locks || {});
             } else {
-                document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. İsimleri girip yukarıdaki butona basın.</div>';
+                document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. "Dağıt" butonuna basın.</div>';
             }
         } else {
-            document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. İsimleri girip yukarıdaki butona basın.</div>';
+            document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. "Dağıt" butonuna basın.</div>';
         }
         this.updateStats();
         if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    toggleEdit: function() {
+        const area = document.getElementById('listeInputArea');
+        area.classList.toggle('d-none');
+        this.updateStats();
     },
 
     updateStats: function () {
@@ -1863,7 +1871,6 @@ const ListeManager = {
         if (talEl) talEl.innerText = tCount;
         if (bosEl) bosEl.innerText = Math.max(0, capacity - tCount);
 
-        // Heatmap
         const hTarget = document.getElementById('statsHeatmap');
         if (hTarget) {
             hTarget.innerHTML = "";
@@ -1879,7 +1886,7 @@ const ListeManager = {
         const { value: text } = await Swal.fire({
             title: 'Listeyi Yapıştır',
             input: 'textarea',
-            inputPlaceholder: 'Excel veya Wordden kopyaladığınız isimleri buraya yapıştırın...',
+            inputPlaceholder: 'İsimleri buraya yapıştırın...',
             showCancelButton: true,
             background: 'var(--bg-main)',
             color: 'var(--text-primary)'
@@ -1890,7 +1897,7 @@ const ListeManager = {
             const combined = current ? current + ", " + names.join(", ") : names.join(", ");
             document.getElementById(targetId).value = combined;
             this.updateStats();
-            Swal.fire({ icon: 'success', title: 'İşlendi', text: `${names.length} isim eklendi.` });
+            this.save();
         }
     },
 
@@ -1901,6 +1908,7 @@ const ListeManager = {
             astim: document.getElementById('listAstim').value,
             saglikli: document.getElementById('listSaglikli').value,
             diger: document.getElementById('listDiger').value,
+            period: document.getElementById('cleaningPeriod').value,
             sonuclar: sonuclar || currentData.sonuclar,
             baskanlar: baskanlar || currentData.baskanlar || {},
             locks: locks || currentData.locks || {}
@@ -1933,7 +1941,6 @@ const ListeManager = {
             diger: parseList('listDiger')
         };
 
-        // Kilitli isimleri havuzdan çıkar
         let allPool = [...studentsCategories.astim, ...studentsCategories.alerjik, ...studentsCategories.saglikli, ...studentsCategories.diger];
         const lockedInRooms = [];
         Object.keys(locks).forEach(key => lockedInRooms.push(locks[key]));
@@ -1950,22 +1957,18 @@ const ListeManager = {
                 
                 let capacity = type === "lavabo" ? 2 : 1;
                 let assigned = [];
-                // Kilitliyi yerleştir
                 for(let i=0; i<capacity; i++) {
                     const lockId = `${kat}-${oda}-${i}`;
-                    if (locks[lockId] && allPool.length > -1) assigned[i] = locks[lockId];
+                    if (locks[lockId]) assigned[i] = locks[lockId];
                 }
-
                 rooms.push({ kat, oda, type, capacity, assigned });
             });
         });
 
-        // Kalan Talebe Havuzları
         let pool_astim = allPool.filter(n => studentsCategories.astim.includes(n));
         let pool_alerjik = allPool.filter(n => studentsCategories.alerjik.includes(n));
         let pool_genel = allPool.filter(n => studentsCategories.saglikli.includes(n) || studentsCategories.diger.includes(n));
 
-        // Dağıtım Mantığı V2 (Dengeli)
         const fill = (pool, condition) => {
             rooms.forEach(r => {
                 if (condition(r)) {
@@ -1984,7 +1987,6 @@ const ListeManager = {
         fill(pool_astim, () => true);
         fill(pool_alerjik, () => true);
 
-        // Başkanları Dağıtımdan Temizle (Eğer başkan kilitli değilse)
         const baskanNames = Object.values(baskanlar);
         rooms.forEach(r => {
             r.assigned = r.assigned.map((n, i) => {
@@ -1994,7 +1996,6 @@ const ListeManager = {
             }).filter(n => n !== undefined);
         });
 
-        // Grupla
         rooms.forEach(r => {
             if (!distribution[r.kat]) distribution[r.kat] = {};
             distribution[r.kat][r.oda] = r.assigned;
@@ -2010,12 +2011,8 @@ const ListeManager = {
         const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
         const locks = data.locks || {};
         const lockId = `${kat}-${oda}-${index}`;
-
-        if (locks[lockId]) {
-            delete locks[lockId];
-        } else {
-            locks[lockId] = name;
-        }
+        if (locks[lockId]) delete locks[lockId];
+        else locks[lockId] = name;
         this.save(null, null, locks);
         this.renderSonuclar(data.sonuclar, data.baskanlar, locks);
     },
@@ -2023,20 +2020,17 @@ const ListeManager = {
     setBaskan: function (kat, isim) {
         const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
         const baskanlar = data.baskanlar || {};
-
         if (isim.trim() === "") {
             delete baskanlar[kat];
             this.save(null, baskanlar);
             this.dagit();
             return;
         }
-
         const havuz = this.getPoolNames();
         if (!havuz.includes(isim)) {
             Swal.fire('Hata', 'İsim listede bulunamadı!', 'error');
             return;
         }
-
         baskanlar[kat] = isim;
         this.save(null, baskanlar);
         this.dagit();
@@ -2125,35 +2119,48 @@ const ListeManager = {
     },
 
     exportPDF: async function () {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('p', 'mm', 'a4');
-        const element = document.getElementById('listeSonuclari');
+        const area = document.getElementById('listeDisaAktarimAlani');
+        const period = document.getElementById('cleaningPeriod').value;
+        const posterPeriodEl = document.getElementById('posterPeriod');
+        if (posterPeriodEl) posterPeriodEl.innerText = period || new Date().toLocaleDateString();
         
+        area.classList.add('is-exporting');
         Swal.fire({ title: 'PDF Hazırlanıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-        const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#000', useCORS: true });
+        const { jsPDF } = window.jspdf;
+        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#000', useCORS: true });
         const imgData = canvas.toDataURL('image/png');
-        const imgProps = doc.getImageProperties(imgData);
+        const doc = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
         doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        doc.save(`TopClean_Liste_${new Date().toLocaleDateString()}.pdf`);
+        doc.save(`TopClean_Liste_${period ? period.replace(/\s+/g, '_') : 'Guncel'}.pdf`);
+        
+        area.classList.remove('is-exporting');
         Swal.close();
     },
 
     exportImage: async function () {
-        const element = document.getElementById('listeSonuclari');
+        const area = document.getElementById('listeDisaAktarimAlani');
+        const period = document.getElementById('cleaningPeriod').value;
+        const posterPeriodEl = document.getElementById('posterPeriod');
+        if (posterPeriodEl) posterPeriodEl.innerText = period || new Date().toLocaleDateString();
+
+        area.classList.add('is-exporting');
         Swal.fire({ title: 'Resim Oluşturuluyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
-        const canvas = await html2canvas(element, { scale: 2, backgroundColor: '#000', useCORS: true });
+        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#000', useCORS: true });
         const link = document.createElement('a');
         link.download = `TopClean_Liste_${new Date().getTime()}.png`;
         link.href = canvas.toDataURL();
         link.click();
+
+        area.classList.remove('is-exporting');
         Swal.close();
     }
 };
+
 
 
 // ---------- STOK (INVENTORY) MANAGER ----------
