@@ -743,3 +743,7 @@ select.custom-input option {
     50% { transform: scale(1.05); opacity: 0.8; }
     100% { transform: scale(1); opacity: 1; }
 }
+
+.mw-800 { max-width: 800px; margin: 0 auto; }
+.mw-900 { max-width: 900px; margin: 0 auto; }
+
