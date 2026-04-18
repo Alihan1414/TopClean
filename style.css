@@ -747,3 +747,53 @@ select.custom-input option {
 .mw-800 { max-width: 800px; margin: 0 auto; }
 .mw-900 { max-width: 900px; margin: 0 auto; }
 
+/* Liste V2 - Isı Haritası ve Kilit Stilleri */
+.heatmap-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    transition: all 0.5s ease;
+}
+.heatmap-dot.low { background: #10b981; box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
+.heatmap-dot.med { background: #f59e0b; box-shadow: 0 0 8px rgba(245, 158, 11, 0.5); }
+.heatmap-dot.high { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+
+.btn-lock {
+    opacity: 0.3;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+.btn-lock:hover { opacity: 1; transform: scale(1.1); }
+.btn-lock.active {
+    opacity: 1;
+    color: var(--accent-primary) !important;
+}
+
+@keyframes magicShuffle {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.95) rotate(-1deg); opacity: 0.5; filter: blur(2px); }
+    100% { transform: scale(1); opacity: 1; }
+}
+.magic-shuffle-active {
+    animation: magicShuffle 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+}
+
+.stagger-item {
+    animation: fadeInSlideUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+@keyframes fadeInSlideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* PDF/Print Layout Overrides */
+@media print {
+    body { background: white !important; color: black !important; overflow: visible !important; }
+    .glass-card { background: white !important; border: 1px solid #ddd !important; color: black !important; }
+    .view-panel { display: block !important; }
+    .btn, .side-branding, #app-header { display: none !important; }
+}
+
