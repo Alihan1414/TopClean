@@ -334,21 +334,24 @@ select.custom-input option {
 
 .view-panel.active {
     display: flex;
-    animation: reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    z-index: 10;
+    /* Hafif giriş animasyonu - opacity 0 ile BAŞLAMAZ, sadece yukarı kayar */
+    animation: reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes reveal {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { transform: translateY(5px); opacity: 0.8; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 .stagger-item {
-    animation: staggerReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Varsayılan olarak görünür, animasyon sadece bir görsel efekt */
+    animation: staggerReveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes staggerReveal {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    from { transform: translateY(8px); opacity: 0.9; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 /* --- Scrollbar --- */
