@@ -726,3 +726,20 @@ select.custom-input option {
 .panel-transition-next {
     animation: slideInNext 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Stok Kartı Ekstra Efektler */
+#stokListesi .glass-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1);
+    border-color: var(--accent-emerald) !important;
+}
+
+.shadow-danger-sm {
+    box-shadow: 0 0 15px rgba(225, 29, 72, 0.2);
+}
+
+@keyframes pulse-red {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
