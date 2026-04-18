@@ -610,10 +610,10 @@ function loadGorevliPanel(katAd) {
     const stokBtn = document.getElementById('btnStokIslemi');
     if (stokBtn) stokBtn.classList.remove('d-none');
 
-    // Ürün tanımlama butonu sadece 2. kat görevlisinde görünsün
+    // Ürün tanımlama butonu sadece Ara Kat görevlisinde görünsün
     const tanimlaBtn = document.getElementById('btnUrunTanimla');
     if (tanimlaBtn) {
-        if (katAd === "2. Kat") tanimlaBtn.classList.remove('d-none');
+        if (katAd === "Ara Kat") tanimlaBtn.classList.remove('d-none');
         else tanimlaBtn.classList.add('d-none');
     }
 
@@ -636,42 +636,83 @@ function loadGorevliPanel(katAd) {
         arizaKutu.classList.remove('d-flex');
     }
 
+    // --- SON GÖNDERİM ÖZETİ ---
+    const bugunVeriler = data.filter(d => d.kat === katAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+    const gonderilen = new Set(bugunVeriler.map(d => d.bolum));
+    const toplamBolum = Object.keys(bolumler).length;
+    const sonGonderim = bugunVeriler.length > 0 ? bugunVeriler[bugunVeriler.length - 1] : null;
+    const sonZaman = sonGonderim ? new Date(parseInt(sonGonderim.id)).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}) : null;
+    
+    const ozetDiv = document.createElement('div');
+    ozetDiv.className = 'glass-card p-3 mb-4 d-flex align-items-center gap-3';
+    ozetDiv.style.borderLeft = '4px solid var(--accent-emerald)';
+    const yuzde = toplamBolum > 0 ? Math.round((gonderilen.size / toplamBolum) * 100) : 0;
+    ozetDiv.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(16,185,129,0.15);flex-shrink:0;">
+            <span style="font-size:1.4rem;">${yuzde === 100 ? '✨' : '📊'}</span>
+        </div>
+        <div class="flex-grow-1">
+            <div class="fw-bold text-white" style="font-size:0.95rem;">Bugün ${gonderilen.size}/${toplamBolum} bölüm gönderildi</div>
+            <div class="x-small text-muted">${sonGonderim ? 'Son: ' + sonZaman + ' - ' + sonGonderim.bolum : 'Henüz gönderim yapılmadı'}</div>
+            <div class="progress mt-2" style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;">
+                <div class="progress-bar bg-emerald" style="width:${yuzde}%;"></div>
+            </div>
+        </div>
+    `;
+    listeEl.appendChild(ozetDiv);
+
+    // --- BÖLÜM KARTLARI ---
+    const kartContainer = document.createElement('div');
+    kartContainer.className = 'row g-3';
+
     for (const [bolumAd, kriterler] of Object.entries(bolumler)) {
         const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
         let badgeYazi = "Bekliyor";
         let badgeClass = "badge-idle";
+        let statusIcon = '⏳';
+        let cardBorder = 'rgba(255,255,255,0.06)';
 
         if (gecmis.length > 0) {
             const son = gecmis[gecmis.length - 1];
-
             if (son.durum === "reddedildi") {
                 reddedilenCount++;
                 badgeClass = "badge-danger";
                 badgeYazi = "REDDEDİLDİ";
+                statusIcon = '❌';
+                cardBorder = 'rgba(239, 68, 68, 0.4)';
             } else if (son.durum === "onaylandi") {
                 badgeClass = "badge-success";
                 badgeYazi = "ONAYLANDI ✨";
+                statusIcon = '✅';
+                cardBorder = 'rgba(16, 185, 129, 0.4)';
             } else {
                 const isaretli = son.secilen.length;
                 const toplam = kriterler.length;
                 const oran = Math.floor((isaretli / toplam) * 100);
                 badgeClass = "badge-warning";
-                badgeYazi = `%${oran} İNCELENİYOR`;
+                badgeYazi = `%${oran} İNCELENYOR`;
+                statusIcon = '🔍';
+                cardBorder = 'rgba(245, 158, 11, 0.4)';
             }
         }
 
-        // Kat ve bölüme ait aktif bir arıza var mı?
         const aktifAriza = cachedArizalar.find(a => a.kat === katAd && a.bolum === bolumAd && a.durum === "bekliyor");
-
-        // Reddedilen raporu referanslayalım
         const sonRapor = gecmis.length > 0 ? gecmis[gecmis.length - 1] : null;
         const isRejected = sonRapor && sonRapor.durum === "reddedildi";
         const rejectionNote = isRejected ? (sonRapor.mufettis_yorum || "Not belirtilmedi.") : "";
 
-        const div = document.createElement('div');
-        div.className = "action-card stagger-item d-flex flex-column gap-3";
-        div.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.1}s`;
-        div.onclick = () => {
+        const col = document.createElement('div');
+        col.className = 'col-6';
+        
+        const kart = document.createElement('div');
+        kart.className = 'glass-card stagger-item d-flex flex-column align-items-center text-center p-3 h-100 cursor-pointer';
+        kart.style.cssText = `border: 2px solid ${cardBorder}; border-radius: 20px; transition: all 0.3s ease;`;
+        kart.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.08}s`;
+        
+        kart.onmouseenter = () => { kart.style.transform = 'translateY(-4px)'; kart.style.boxShadow = '0 8px 25px rgba(16,185,129,0.15)'; };
+        kart.onmouseleave = () => { kart.style.transform = ''; kart.style.boxShadow = ''; };
+        
+        kart.onclick = () => {
             if (isRejected) {
                 Swal.fire({
                     icon: 'warning',
@@ -685,30 +726,24 @@ function loadGorevliPanel(katAd) {
                     cancelButtonText: 'Geri Dön',
                     cancelButtonColor: '#6c757d'
                 }).then(res => {
-                    if (res.isConfirmed) {
-                        KriterManager.ac(katAd, bolumAd, kriterler);
-                    }
+                    if (res.isConfirmed) KriterManager.ac(katAd, bolumAd, kriterler);
                 });
             } else {
                 KriterManager.ac(katAd, bolumAd, kriterler);
             }
         };
-        div.innerHTML = `
-            <div class="d-flex justify-content-between align-items-center w-100">
-                <div class="fw-bold text-white d-flex align-items-center gap-2" style="font-size: 1.1rem; letter-spacing: 0.5px;">
-                    📍 ${bolumAd}
-                    ${aktifAriza ? '<span class="badge bg-warning text-dark px-2 py-1 rounded-pill ms-2" style="font-size:0.7rem;"><i data-lucide="wrench" size="12"></i> Arızalı</span>' : ''}
-                </div>
-                <button class="btn btn-sm btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 32px; height: 32px; border-color: var(--glass-border); opacity: 0.8;" onclick="event.stopPropagation(); KriterManager.rehberBilgi('${bolumAd}')">
-                    <i data-lucide="alert-circle" size="14"></i>
-                </button>
-            </div>
-            <div class="badge-status ${badgeClass} text-center justify-content-center w-100 py-2" style="font-weight: 800;">
-                ${badgeYazi}
-            </div>
+        
+        kart.innerHTML = `
+            <div style="font-size:2rem;margin-bottom:8px;">${statusIcon}</div>
+            <div class="fw-bold text-white" style="font-size:0.85rem;line-height:1.2;margin-bottom:6px;">${bolumAd}</div>
+            ${aktifAriza ? '<span class="badge bg-warning text-dark rounded-pill" style="font-size:0.55rem;">🔧 Arızalı</span>' : ''}
+            <div class="badge-status ${badgeClass} mt-auto w-100 py-1" style="font-weight:700;font-size:0.6rem;">${badgeYazi}</div>
         `;
-        listeEl.appendChild(div);
+        col.appendChild(kart);
+        kartContainer.appendChild(col);
     }
+    listeEl.appendChild(kartContainer);
+
     if (typeof lucide !== 'undefined') lucide.createIcons();
 
     if (reddedilenCount > 0) {
@@ -734,14 +769,48 @@ const KriterManager = {
         const listEl = document.getElementById('kriterListesi');
         listEl.innerHTML = "";
 
+        // --- HEPSİNİ SEÇ BUTONU ---
+        const hepsiBtn = document.createElement('div');
+        hepsiBtn.className = 'p-2 d-flex justify-content-end';
+        hepsiBtn.innerHTML = `<button class="btn btn-sm btn-emerald-outline rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="KriterManager.hepsiniSec()" style="font-size:0.75rem;"><i data-lucide="check-check" size="14"></i> Hepsini Seç</button>`;
+        listEl.appendChild(hepsiBtn);
+
         kriterler.forEach((k, idx) => {
-            const div = document.createElement('label');
-            div.className = "custom-checkbox-wrapper p-3 border-bottom d-flex align-items-center gap-3 mb-0";
-            div.style.borderColor = "var(--glass-border) !important";
+            const div = document.createElement('div');
+            div.className = 'kriter-kart p-3 d-flex align-items-center gap-3 cursor-pointer';
+            div.style.cssText = 'border-bottom: 1px solid var(--glass-border); transition: all 0.25s ease;';
+            div.setAttribute('data-kriter', k);
+            div.setAttribute('data-selected', 'false');
+            
             div.innerHTML = `
-                <input type="checkbox" class="chk-kriter" value="${k}" onchange="KriterManager.guncelleBar()">
-                <span class="fs-6 d-block text-white-50">${k}</span>
+                <div class="kriter-ikon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:36px;height:36px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.15);transition:all 0.25s ease;">
+                    <i data-lucide="circle" size="16" class="text-muted"></i>
+                </div>
+                <span class="fs-6 text-white-50" style="transition:color 0.25s ease;">${k}</span>
             `;
+            
+            div.onclick = () => {
+                const isSelected = div.getAttribute('data-selected') === 'true';
+                const ikon = div.querySelector('.kriter-ikon');
+                const txt = div.querySelector('span');
+                if (isSelected) {
+                    div.setAttribute('data-selected', 'false');
+                    div.style.background = '';
+                    ikon.style.background = 'rgba(255,255,255,0.05)';
+                    ikon.style.borderColor = 'rgba(255,255,255,0.15)';
+                    ikon.innerHTML = '<i data-lucide="circle" size="16" class="text-muted"></i>';
+                    txt.className = 'fs-6 text-white-50';
+                } else {
+                    div.setAttribute('data-selected', 'true');
+                    div.style.background = 'rgba(16, 185, 129, 0.08)';
+                    ikon.style.background = 'rgba(16, 185, 129, 0.2)';
+                    ikon.style.borderColor = '#10b981';
+                    ikon.innerHTML = '<i data-lucide="check" size="16" class="text-emerald"></i>';
+                    txt.className = 'fs-6 text-white fw-bold';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                KriterManager.guncelleBar();
+            };
             listEl.appendChild(div);
         });
 
@@ -749,10 +818,36 @@ const KriterManager = {
         showPanel('kriterPanel');
     },
 
+    hepsiniSec: function() {
+        const kartlar = document.querySelectorAll('.kriter-kart');
+        const tumSecili = Array.from(kartlar).every(k => k.getAttribute('data-selected') === 'true');
+        kartlar.forEach(div => {
+            const ikon = div.querySelector('.kriter-ikon');
+            const txt = div.querySelector('span');
+            if(tumSecili) {
+                div.setAttribute('data-selected', 'false');
+                div.style.background = '';
+                ikon.style.background = 'rgba(255,255,255,0.05)';
+                ikon.style.borderColor = 'rgba(255,255,255,0.15)';
+                ikon.innerHTML = '<i data-lucide="circle" size="16" class="text-muted"></i>';
+                txt.className = 'fs-6 text-white-50';
+            } else {
+                div.setAttribute('data-selected', 'true');
+                div.style.background = 'rgba(16, 185, 129, 0.08)';
+                ikon.style.background = 'rgba(16, 185, 129, 0.2)';
+                ikon.style.borderColor = '#10b981';
+                ikon.innerHTML = '<i data-lucide="check" size="16" class="text-emerald"></i>';
+                txt.className = 'fs-6 text-white fw-bold';
+            }
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        this.guncelleBar();
+    },
+
     guncelleBar: function () {
-        const checkboxes = document.querySelectorAll('.chk-kriter');
+        const kartlar = document.querySelectorAll('.kriter-kart');
         let isaretli = 0;
-        checkboxes.forEach(c => { if (c.checked) isaretli++; });
+        kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') isaretli++; });
         const toplam = currentKriterler.length;
         const oran = toplam > 0 ? (isaretli / toplam) : 0;
         const yuzde = Math.floor(oran * 100);
@@ -786,12 +881,36 @@ const KriterManager = {
     },
 
     veriyiKaydet: function () {
-        const checkboxes = document.querySelectorAll('.chk-kriter');
+        const kartlar = document.querySelectorAll('.kriter-kart');
         let secilenler = [];
-        checkboxes.forEach(c => { if (c.checked) secilenler.push(c.value); });
+        kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') secilenler.push(k.getAttribute('data-kriter')); });
 
         const yorum = document.getElementById('gorevliNot').value.trim();
 
+        // Fotoğraf teşviki
+        if (!fotoDataURL) {
+            Swal.fire({
+                icon: 'question',
+                title: '📸 Fotoğraf Eklenmedi',
+                text: 'Fotoğraflı raporlar daha hızlı onaylandığını biliyor muydunuz? Yine de göndermek istiyor musunuz?',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Gönder',
+                cancelButtonText: 'Fotoğraf Ekle',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                background: 'var(--bg-main)',
+                color: '#fff'
+            }).then(res => {
+                if(res.isConfirmed) {
+                    this._kaydetDevam(secilenler, yorum);
+                }
+            });
+            return;
+        }
+        this._kaydetDevam(secilenler, yorum);
+    },
+
+    _kaydetDevam: function(secilenler, yorum) {
         const item = {
             kat: currentKat,
             bolum: currentBolum,
