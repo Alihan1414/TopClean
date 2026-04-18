@@ -1219,12 +1219,11 @@ const IdarecManager = {
         try {
             const today = new Date().toISOString().split('T')[0];
             const dateSel = document.getElementById('idarecDateSelector');
-            const raporSel = document.getElementById('raporDateSelector');
             if(dateSel) { dateSel.value = today; dateSel.onchange = function(){ IdarecManager.loadBinaDurumu(); }; }
-            if(raporSel) raporSel.value = today;
             
+            this.currentBinaKat = 'Hepsi';
             this.loadBinaDurumu();
-            this.loadGecmis('hepsi');
+            this.loadBasari('haftalik');
             this.loadPersonel();
             this.loadMufettis();
             this.loadArizalar('hepsi');
@@ -1253,14 +1252,28 @@ const IdarecManager = {
         if(document.getElementById('idarecStatTotal')) document.getElementById('idarecStatTotal').innerText = dayData.length;
         if(document.getElementById('idarecStatSuccess')) document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
         if(document.getElementById('idarecStatDanger')) document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
+        
+        var totalGenel = dayData.length;
+        var onayGenel = dayData.filter(d=>d.durum==='onaylandi').length;
+        var yuzde = totalGenel > 0 ? Math.round((onayGenel / totalGenel) * 100) : 0;
+        var bar = document.getElementById('genelHijyenBar');
+        var txt = document.getElementById('genelHijyenText');
+        if(bar) bar.style.width = yuzde + '%';
+        if(txt) txt.innerText = '%' + yuzde;
+        
         var katKeys = Object.keys(katlar).reverse();
+        if (this.currentBinaKat && this.currentBinaKat !== 'Hepsi') {
+            katKeys = katKeys.filter(k => k === this.currentBinaKat);
+        }
         
         var buildingWrapper = document.createElement('div');
         buildingWrapper.className = 'bina-dis-cephe';
         
-        var roof = document.createElement('div');
-        roof.className = 'bina-cati';
-        buildingWrapper.appendChild(roof);
+        if(this.currentBinaKat === 'Hepsi') {
+            var roof = document.createElement('div');
+            roof.className = 'bina-cati';
+            buildingWrapper.appendChild(roof);
+        }
 
         katKeys.forEach(function(katAd, kIdx) {
             var w = document.createElement('div');
@@ -1316,36 +1329,97 @@ const IdarecManager = {
             buildingWrapper.appendChild(katZemin);
         });
         
-        var temel = document.createElement('div');
-        temel.className = 'bina-temel';
-        temel.innerHTML = '<div class="temel-yazi text-white fw-bold">ENDERUN BİNASI</div>';
-        buildingWrapper.appendChild(temel);
+        if(this.currentBinaKat === 'Hepsi') {
+            var temel = document.createElement('div');
+            temel.className = 'bina-temel';
+            temel.innerHTML = '<div class="temel-yazi text-white fw-bold">ENDERUN BİNASI</div>';
+            buildingWrapper.appendChild(temel);
+        }
 
         matris.appendChild(buildingWrapper);
         lucide.createIcons();
     },
-    loadGecmis: function(filter) {
-        var list = document.getElementById('idarecGecmisList');
-        if(!list) return;
-        list.innerHTML = '';
-        var data = getData().filter(function(d){return d.durum!=='bekliyor';});
-        if(filter !== 'hepsi') data = data.filter(function(d){return d.durum===filter;});
-        data.sort(function(a,b){return parseInt(b.id)-parseInt(a.id);});
-        if(data.length === 0) { list.innerHTML = '<div class="glass-card p-3 text-center text-muted small">Kayıt bulunamadı.</div>'; return; }
-        data.forEach(function(d) {
-            var isO = d.durum === 'onaylandi';
-            var c = document.createElement('div');
-            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            var yorumHtml = d.mufettis_yorum ? '<div class="x-small mt-1" style="color:var(--text-muted);">İç Mesul Notu: "' + d.mufettis_yorum + '"</div>' : '';
-            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + d.kat + ' – ' + d.bolum + '</div><div class="x-small text-muted">' + new Date(d.tarih).toLocaleString('tr-TR') + ' | ' + d.secilen.length + ' kriter</div>' + yorumHtml + '</div><span class="badge-status ' + (isO?'badge-success':'badge-danger') + '" style="font-size:0.6rem;padding:3px 8px;">' + (isO?'ONAYLANDI':'REDDEDİLDİ') + '</span>';
-            list.appendChild(c);
+    filterKat: function(katSecimi, btn) {
+        document.querySelectorAll('.kat-filter').forEach(b=>{
+            b.classList.remove('active', 'bg-emerald', 'text-white');
+            b.style.borderColor = "rgba(255,255,255,0.2)";
         });
-        lucide.createIcons();
+        btn.classList.add('active', 'bg-emerald', 'text-white');
+        btn.style.borderColor = "var(--accent-emerald)";
+        this.currentBinaKat = katSecimi;
+        this.loadBinaDurumu();
     },
-    filterGecmis: function(filter, btn) {
-        document.querySelectorAll('.gecmis-filter').forEach(function(b){b.classList.remove('active');});
-        btn.classList.add('active');
-        IdarecManager.loadGecmis(filter);
+    loadBasari: function(period, btn) {
+        if(btn) {
+            document.querySelectorAll('.basari-filter').forEach(b=>{
+                b.classList.remove('active');
+                b.style.border = "1px solid transparent";
+            });
+            btn.classList.add('active');
+            btn.style.border = "1px solid rgba(255,255,255,0.1)";
+        }
+        var allData = getData();
+        var now = new Date();
+        var filteredData = allData.filter(d => {
+            var dTarih = new Date(d.tarih);
+            if(period === 'haftalik') {
+                 var diff = now - dTarih;
+                 return diff <= 7 * 24 * 60 * 60 * 1000;
+            } else if(period === 'aylik') {
+                 return dTarih.getMonth() === now.getMonth() && dTarih.getFullYear() === now.getFullYear();
+            } else {
+                 return true;
+            }
+        });
+        
+        var katScores = {};
+        Object.keys(katlar).forEach(k => { katScores[k] = { total: 0, onay: 0 }; });
+        
+        filteredData.forEach(d => {
+            if(katScores[d.kat]) {
+                katScores[d.kat].total++;
+                if(d.durum === 'onaylandi') katScores[d.kat].onay++;
+            }
+        });
+        
+        var bestKat = "-";
+        var bestPercentage = -1;
+        var minTotalThreshold = period === 'haftalik' ? 1 : (period === 'aylik' ? 5 : 10);
+        
+        Object.keys(katScores).forEach(k => {
+            if(katScores[k].total >= minTotalThreshold || (filteredData.length < minTotalThreshold && katScores[k].total > 0)) {
+                var p = (katScores[k].onay / katScores[k].total) * 100;
+                if(p > bestPercentage) {
+                    bestPercentage = p;
+                    bestKat = k;
+                }
+            }
+        });
+        
+        var bIsim = document.getElementById('basariKatIsim');
+        var bPuan = document.getElementById('basariPuan');
+        var bGorevli = document.getElementById('basariGorevli');
+        var bBaskan = document.getElementById('basariBaskan');
+        
+        if(!bIsim) return;
+        
+        if(bestKat === "-") {
+            bIsim.innerText = "-";
+            bPuan.innerText = "Yeterli Veri Yok";
+            bGorevli.innerText = "-";
+            bBaskan.innerText = "-";
+        } else {
+            bIsim.innerText = bestKat;
+            bPuan.innerText = Math.round(bestPercentage) + "% Başarı Oranı";
+            
+            var allUsers = [...usersData, ...JSON.parse(localStorage.getItem('topclean_users') || '[]')];
+            var hoca = allUsers.find(u => u.kat === bestKat && u.rol === 'gorevli');
+            bGorevli.innerText = hoca ? hoca.name : "Atanmadı";
+            
+            var talebeData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+            var baskanlar = talebeData.baskanlar || {};
+            bBaskan.innerText = baskanlar[bestKat] || "Belirtilmedi";
+        }
     },
     loadMufettis: function() {
         var list = document.getElementById('mufettisListesi');
@@ -1467,7 +1541,7 @@ const IdarecManager = {
         initLoginSelect();
     },
     exportCSV: function() {
-        var selectedDate = document.getElementById('raporDateSelector').value;
+        var selectedDate = document.getElementById('idarecDateSelector').value;
         var dayData = getData().filter(function(d){return toShortDate(d.tarih) === selectedDate;});
         if(dayData.length===0){Swal.fire({icon:'info',title:'Kayıt Yok',text:'Seçilen tarih için rapor bulunamadı.',timer:2000,showConfirmButton:false});return;}
         var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,IcMesulNotu\n";
@@ -1480,6 +1554,21 @@ const IdarecManager = {
         var a = document.createElement('a');
         a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
         document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        
+        setTimeout(() => {
+             Swal.fire({
+                 title: 'Google Drive Yardımcısı',
+                 text: 'İndirilen dosyayı Google Drive klasörünüze taşıyabilirsiniz.',
+                 icon: 'info',
+                 showCancelButton: true,
+                 confirmButtonText: 'Driveı Aç',
+                 cancelButtonText: 'Kapat'
+             }).then((result) => {
+                 if (result.isConfirmed) {
+                     window.open("https://drive.google.com/drive/my-drive", "_blank");
+                 }
+             });
+        }, 1000);
     },
 
     loadArizalar: function(filterType) {
