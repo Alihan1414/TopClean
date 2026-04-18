@@ -21,11 +21,101 @@
 }
 
 [data-bs-theme="light"] {
-    --bg-main: #f8fafc;
-    --glass-bg: rgba(255, 255, 255, 0.8);
-    --glass-border: rgba(0, 0, 0, 0.05);
+    --bg-main: #f0f4f3;
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --glass-border-glow: rgba(16, 185, 129, 0.4);
     --text-primary: #0f172a;
     --text-secondary: #475569;
+    --text-dim: #64748b;
+}
+
+[data-bs-theme="light"] body {
+    color: #0f172a;
+}
+
+[data-bs-theme="light"] #app-header {
+    background: rgba(240, 244, 243, 0.85);
+}
+
+[data-bs-theme="light"] .main-title {
+    background: linear-gradient(to right, #0f172a, var(--accent-emerald));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+[data-bs-theme="light"] .text-white {
+    color: #0f172a !important;
+}
+
+[data-bs-theme="light"] .text-muted {
+    color: #64748b !important;
+}
+
+[data-bs-theme="light"] .text-dim,
+[data-bs-theme="light"] .x-small.text-muted {
+    color: #94a3b8 !important;
+}
+
+[data-bs-theme="light"] .glass-card {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+}
+
+[data-bs-theme="light"] .stat-card {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+[data-bs-theme="light"] .btn-glass-round {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #334155;
+}
+
+[data-bs-theme="light"] .custom-input {
+    background: rgba(0, 0, 0, 0.03) !important;
+    border-color: rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}
+
+[data-bs-theme="light"] select.custom-input option {
+    background: #fff !important;
+    color: #0f172a !important;
+}
+
+[data-bs-theme="light"] .header-user-badge {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-bs-theme="light"] .aurora-container {
+    background: #f0f4f3;
+}
+
+[data-bs-theme="light"] .blob { opacity: 0.08; }
+
+[data-bs-theme="light"] .kat-pasif {
+    background: rgba(0, 0, 0, 0.04) !important;
+    color: #64748b !important;
+}
+
+[data-bs-theme="light"] .kat-aktif {
+    color: #fff !important;
+}
+
+[data-bs-theme="light"] #focusOdaKarti {
+    background: linear-gradient(to bottom, rgba(16, 185, 129, 0.06), rgba(255, 255, 255, 0.9)) !important;
+    border-color: var(--accent-emerald) !important;
+}
+
+[data-bs-theme="light"] #mufettisHizliRetPanel {
+    background: #f0f4f3 !important;
+    border-top-color: var(--accent-emerald) !important;
+}
+
+[data-bs-theme="light"] .idarec-tab.active {
+    color: #0f172a !important;
 }
 
 * {
@@ -525,4 +615,56 @@ select.custom-input option {
     letter-spacing: 6px;
     opacity: 0.4;
     font-size: 0.8rem;
+}
+
+/* --- İç Mesul Kat Seçim Butonları --- */
+.kat-secim-btn {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.kat-aktif {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35);
+    animation: softPulseGlow 3s ease-in-out infinite;
+}
+
+.kat-aktif::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    animation: shimmerSlide 4s ease-in-out infinite;
+}
+
+.kat-aktif:hover {
+    box-shadow: 0 6px 30px rgba(16, 185, 129, 0.5);
+    transform: scale(1.02);
+}
+
+.kat-pasif {
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.45);
+    opacity: 0.6;
+}
+
+.kat-pasif:hover {
+    opacity: 0.85;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+@keyframes softPulseGlow {
+    0%, 100% { box-shadow: 0 4px 20px rgba(16, 185, 129, 0.35); }
+    50% { box-shadow: 0 4px 30px rgba(16, 185, 129, 0.55), 0 0 15px rgba(16, 185, 129, 0.2); }
+}
+
+@keyframes shimmerSlide {
+    0% { left: -100%; }
+    40% { left: 120%; }
+    100% { left: 120%; }
 }
