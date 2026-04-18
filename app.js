@@ -93,14 +93,14 @@ const katlar = {
 };
 
 const usersData = [
-    { name: "AbdülKadir Uysal", pass: "1234", kat: "-1. Kat", rol: "gorevli" },
+    { name: "Abdülkadir Uysal", pass: "1234", kat: "-1. Kat", rol: "gorevli" },
     { name: "Mehmet Ali Zabun", pass: "1234", kat: "0. Kat", rol: "gorevli" },
     { name: "Oğuz Erol", pass: "1234", kat: "1. Kat", rol: "gorevli" },
-    { name: "Burak Han Karaoğlan", pass: "1234", kat: "2. Kat", rol: "gorevli" },
-    { name: "Metin Durmuş", pass: "1234", kat: "3. Kat", rol: "gorevli" },
-    { name: "Emre Karabalık", pass: "1234", kat: "4. Kat", rol: "gorevli" },
-    { name: "Müfettiş", pass: "4321", kat: "", rol: "mufettis" },
-    { name: "İdareci", pass: "1111", kat: "", rol: "idareci" }
+    { name: "Burakhan Karaoğlan", pass: "1234", kat: "2. Kat", rol: "gorevli" },
+    { name: "3.KAT Görevlisi", pass: "1234", kat: "3. Kat", rol: "gorevli" },
+    { name: "Emre Karabalak", pass: "1234", kat: "4. Kat", rol: "gorevli" },
+    { name: "İç Mesul", pass: "4321", kat: "", rol: "İç Mesul" },
+    { name: "İdareci", pass: "1111", kat: "", rol: "İdareci" }
 ];
 
 // ---------- GLOBAL STATE ----------
