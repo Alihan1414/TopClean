@@ -759,6 +759,8 @@ const KriterManager = {
     ac: function (katAd, bolumAd, kriterler) {
         currentBolum = bolumAd;
         currentKriterler = kriterler;
+        currentKat = katAd;
+        
         document.getElementById('kriterKatAd').innerText = katAd;
         document.getElementById('kriterBolumAd').innerText = bolumAd;
 
@@ -769,115 +771,92 @@ const KriterManager = {
         const listEl = document.getElementById('kriterListesi');
         listEl.innerHTML = "";
 
-        // --- HEPSİNİ SEÇ BUTONU ---
-        const hepsiBtn = document.createElement('div');
-        hepsiBtn.className = 'p-2 d-flex justify-content-end';
-        hepsiBtn.innerHTML = `<button class="btn btn-sm btn-emerald-outline rounded-pill px-3 py-1 fw-bold d-flex align-items-center gap-1" onclick="KriterManager.hepsiniSec()" style="font-size:0.75rem;"><i data-lucide="check-check" size="14"></i> Hepsini Seç</button>`;
-        listEl.appendChild(hepsiBtn);
+        // Panel animasyonu
+        const panel = document.getElementById('kriterPanel');
+        panel.classList.remove('panel-transition-next');
+        void panel.offsetWidth; // Trigger reflow
+        panel.classList.add('panel-transition-next');
 
         kriterler.forEach((k, idx) => {
             const div = document.createElement('div');
             div.className = 'kriter-kart p-3 d-flex align-items-center gap-3 cursor-pointer';
-            div.style.cssText = 'border-bottom: 1px solid var(--glass-border); transition: all 0.25s ease;';
             div.setAttribute('data-kriter', k);
-            div.setAttribute('data-selected', 'false');
+            
+            // TERS MANTIK: Varsayılan olarak seçili (true)
+            div.setAttribute('data-selected', 'true');
             
             div.innerHTML = `
-                <div class="kriter-ikon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:36px;height:36px;background:rgba(255,255,255,0.05);border:2px solid rgba(255,255,255,0.15);transition:all 0.25s ease;">
-                    <i data-lucide="circle" size="16" class="text-muted"></i>
+                <div class="kriter-ikon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" 
+                     style="width:36px;height:36px;background:rgba(16, 185, 129, 0.2);border:2px solid var(--accent-emerald);transition:all 0.25s ease;">
+                    <i data-lucide="check" size="16" class="text-emerald"></i>
                 </div>
-                <span class="fs-6 text-white-50" style="transition:color 0.25s ease;">${k}</span>
+                <span class="fs-6 text-white fw-bold" style="transition:all 0.25s ease;">${k}</span>
             `;
             
             div.onclick = () => {
                 const isSelected = div.getAttribute('data-selected') === 'true';
                 const ikon = div.querySelector('.kriter-ikon');
                 const txt = div.querySelector('span');
+                
                 if (isSelected) {
                     div.setAttribute('data-selected', 'false');
                     div.style.background = '';
                     ikon.style.background = 'rgba(255,255,255,0.05)';
                     ikon.style.borderColor = 'rgba(255,255,255,0.15)';
                     ikon.innerHTML = '<i data-lucide="circle" size="16" class="text-muted"></i>';
-                    txt.className = 'fs-6 text-white-50';
+                    txt.className = 'fs-6 text-white-50 fw-normal';
                 } else {
                     div.setAttribute('data-selected', 'true');
                     div.style.background = 'rgba(16, 185, 129, 0.08)';
                     ikon.style.background = 'rgba(16, 185, 129, 0.2)';
-                    ikon.style.borderColor = '#10b981';
+                    ikon.style.borderColor = 'var(--accent-emerald)';
                     ikon.innerHTML = '<i data-lucide="check" size="16" class="text-emerald"></i>';
                     txt.className = 'fs-6 text-white fw-bold';
                 }
                 if (typeof lucide !== 'undefined') lucide.createIcons();
-                KriterManager.guncelleBar();
+                this.guncelleSayac();
             };
             listEl.appendChild(div);
         });
 
-        this.guncelleBar();
+        this.guncelleSayac();
         showPanel('kriterPanel');
+        this.initSwipe();
     },
 
-    hepsiniSec: function() {
-        const kartlar = document.querySelectorAll('.kriter-kart');
-        const tumSecili = Array.from(kartlar).every(k => k.getAttribute('data-selected') === 'true');
-        kartlar.forEach(div => {
-            const ikon = div.querySelector('.kriter-ikon');
-            const txt = div.querySelector('span');
-            if(tumSecili) {
-                div.setAttribute('data-selected', 'false');
-                div.style.background = '';
-                ikon.style.background = 'rgba(255,255,255,0.05)';
-                ikon.style.borderColor = 'rgba(255,255,255,0.15)';
-                ikon.innerHTML = '<i data-lucide="circle" size="16" class="text-muted"></i>';
-                txt.className = 'fs-6 text-white-50';
-            } else {
-                div.setAttribute('data-selected', 'true');
-                div.style.background = 'rgba(16, 185, 129, 0.08)';
-                ikon.style.background = 'rgba(16, 185, 129, 0.2)';
-                ikon.style.borderColor = '#10b981';
-                ikon.innerHTML = '<i data-lucide="check" size="16" class="text-emerald"></i>';
-                txt.className = 'fs-6 text-white fw-bold';
-            }
-        });
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        this.guncelleBar();
-    },
-
-    guncelleBar: function () {
+    guncelleSayac: function () {
         const kartlar = document.querySelectorAll('.kriter-kart');
         let isaretli = 0;
         kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') isaretli++; });
         const toplam = currentKriterler.length;
-        const oran = toplam > 0 ? (isaretli / toplam) : 0;
-        const yuzde = Math.floor(oran * 100);
+        
+        const badge = document.getElementById('kriterSayac');
+        badge.innerText = `${isaretli}/${toplam} ${isaretli === toplam ? '✅' : '⏳'}`;
+        badge.className = `badge rounded-pill px-3 py-2 fw-bold ${isaretli === toplam ? 'bg-emerald' : 'bg-warning text-dark'}`;
+    },
 
-        const bar = document.getElementById('kriterProgressBar');
-        const lbl = document.getElementById('kriterOranYazi');
+    fabFotoYukle: function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-        bar.style.width = `${yuzde}%`;
-
-        if (yuzde === 100) {
-            bar.style.background = "var(--success)";
-            lbl.style.color = "var(--success)";
-            lbl.innerText = `%${yuzde} Temiz ✔`;
-        } else if (yuzde === 0) {
-            bar.style.background = "var(--accent-glow)";
-            lbl.style.color = "var(--text-dim)";
-            lbl.innerText = `%0 Temiz`;
-        } else {
-            bar.style.background = "var(--warning)";
-            lbl.style.color = "var(--warning)";
-            lbl.innerText = `%${yuzde} Temiz (${isaretli}/${toplam})`;
-        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fotoDataURL = e.target.result;
+            document.getElementById('fotoOnizleme').src = fotoDataURL;
+            document.getElementById('fotoOnizlemeContainer').classList.remove('d-none');
+            document.getElementById('btnKameraFAB').classList.add('has-photo');
+            document.getElementById('fotoCheckBadge').classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
     },
 
     fotografiSil: function () {
         fotoDataURL = "";
-        document.getElementById('fotoUpload').value = "";
-        document.getElementById('fotoDurum').innerText = "Henüz görsel eklenmedi";
+        const input = document.getElementById('fotoUpload');
+        if(input) input.value = "";
         document.getElementById('fotoOnizlemeContainer').classList.add('d-none');
-        document.getElementById('fotoOnizleme').src = "";
+        document.getElementById('btnKameraFAB').classList.remove('has-photo');
+        document.getElementById('fotoCheckBadge').classList.add('d-none');
     },
 
     veriyiKaydet: function () {
@@ -892,7 +871,7 @@ const KriterManager = {
             Swal.fire({
                 icon: 'question',
                 title: '📸 Fotoğraf Eklenmedi',
-                text: 'Fotoğraflı raporlar daha hızlı onaylandığını biliyor muydunuz? Yine de göndermek istiyor musunuz?',
+                text: 'Fotoğraflı raporlar daha hızlı onaylanır. Yine de göndermek istiyor musun?',
                 showCancelButton: true,
                 confirmButtonText: 'Evet, Gönder',
                 cancelButtonText: 'Fotoğraf Ekle',
@@ -901,9 +880,7 @@ const KriterManager = {
                 background: 'var(--bg-main)',
                 color: '#fff'
             }).then(res => {
-                if(res.isConfirmed) {
-                    this._kaydetDevam(secilenler, yorum);
-                }
+                if(res.isConfirmed) this._kaydetDevam(secilenler, yorum);
             });
             return;
         }
@@ -924,20 +901,74 @@ const KriterManager = {
 
         saveData(item);
 
-        Swal.fire({
-            icon: 'success',
-            title: 'Kaydedildi',
-            text: `${currentBolum} kontrolü başarıyla tamamlandı.`,
-            timer: 1500,
-            showConfirmButton: false
-        }).then(() => {
-            this.geriDon();
-        });
+        // Bir sonraki bölümü bul
+        const sonraki = this.findNextSection();
+
+        if (sonraki) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Kaydedildi!',
+                text: `${currentBolum} tamamlandı. Sıradakine geçiliyor...`,
+                timer: 1200,
+                showConfirmButton: false
+            }).then(() => {
+                this.ac(currentKat, sonraki, katlar[currentKat][sonraki]);
+            });
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Tebrikler! ✨',
+                text: `Kattaki tüm bölümler tamamlandı!`,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                this.geriDon();
+            });
+        }
+    },
+
+    findNextSection: function() {
+        const bolumler = Object.keys(katlar[currentKat]);
+        const currentIndex = bolumler.indexOf(currentBolum);
+        const data = getData();
+        const bugunStr = new Date().toLocaleDateString();
+
+        // Mevcut indexten sonrasına bak
+        for(let i = 1; i < bolumler.length; i++) {
+            const nextIdx = (currentIndex + i) % bolumler.length;
+            const bName = bolumler[nextIdx];
+            
+            // Bugün raporu olmayan veya reddedilen var mı bak
+            const gecmis = data.filter(d => d.kat === currentKat && d.bolum === bName && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+            if (gecmis.length === 0 || (gecmis.length > 0 && gecmis[gecmis.length-1].durum === 'reddedildi')) {
+                return bName;
+            }
+        }
+        return null;
     },
 
     geriDon: function () {
         loadGorevliPanel(currentKat);
         showPanel('gorevliPanel');
+    },
+
+    // Swipe Desteği
+    initSwipe: function() {
+        const panel = document.getElementById('kriterPanel');
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        panel.ontouchstart = e => { touchstartX = e.changedTouches[0].screenX; };
+        panel.ontouchend = e => {
+            touchendX = e.changedTouches[0].screenX;
+            if (touchstartX - touchendX > 100) { // Sola kaydırma (Next)
+                const sonraki = this.findNextSection();
+                if (sonraki) this.ac(currentKat, sonraki, katlar[currentKat][sonraki]);
+            }
+            if (touchendX - touchstartX > 100) { // Sağa kaydırma (Back)
+                this.geriDon();
+            }
+        };
     },
 
     rehberBilgi: function (bolum) {
