@@ -123,6 +123,10 @@
                             <i data-lucide="arrow-right-circle" size="20"></i> OTURUMU AÇ
                         </button>
                     </form>
+
+                    <button id="toggleLoginMode" class="btn btn-link text-dim x-small mt-3 text-decoration-none" onclick="toggleAuthMode()">
+                        E-posta ile Giriş Yap
+                    </button>
                 </div>
             </div>
 
@@ -169,69 +173,56 @@
                 </div>
             </div>
 
-            <!-- 3. KRİTER / CHECKLIST PANELİ -->
-            <div id="kriterPanel" class="view-panel w-100 mw-800 flex-column" style="margin: 0 auto;">
-                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
-                    <div class="d-flex align-items-center gap-3">
-                        <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 40px; height: 40px; border-color: var(--border-color);" onclick="KriterManager.geriDon()">
-                            <i data-lucide="arrow-left" size="20" class="text-muted"></i>
-                        </button>
-                        <div>
-                            <div class="small fw-bold text-muted text-uppercase" id="kriterKatAd" style="letter-spacing: 1px;"></div>
-                            <h4 class="fw-bold m-0" style="color: var(--text-main);" id="kriterBolumAd"></h4>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Progress -->
-                <div class="mb-4">
-                    <div class="d-flex justify-content-between mb-2">
-                        <span id="kriterOranYazi" class="fw-bold" style="color: var(--text-muted);">%0 Temiz</span>
-                    </div>
-                    <div class="progress custom-progress-bg" style="height: 10px;">
-                        <div id="kriterProgressBar" class="progress-bar custom-progress-fill" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                </div>
-
-                <!-- Kanıt & Not Alanı -->
-                <div class="glass-card p-4 mb-4">
-                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2" style="color: var(--text-muted);">
-                        <i data-lucide="camera" size="18"></i> Kanıt Görseli
-                    </h5>
-                    <div class="d-flex flex-wrap gap-3 align-items-center mb-3">
-                        <label class="btn btn-emerald-outline fw-bold d-flex align-items-center gap-2 btn-sm px-4 py-2">
-                            <i data-lucide="aperture" size="18"></i> Kamera / Galeri
-                            <input type="file" accept="image/*" capture="environment" id="fotoUpload" class="d-none">
-                        </label>
-                        <span id="fotoDurum" class="small fst-italic" style="color: var(--text-muted);">Henüz görsel eklenmedi</span>
-                    </div>
-                    <div id="fotoOnizlemeContainer" class="mb-4 d-none position-relative" style="width: fit-content;">
-                        <img id="fotoOnizleme" src="" class="rounded-3 border" style="max-height: 150px; max-width: 100%; border-color: var(--border-color) !important;">
-                        <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-1" onclick="KriterManager.fotografiSil()" style="width: 24px; height: 24px; line-height: 1;">&times;</button>
-                    </div>
-
-                    <h5 class="fw-bold mt-4 mb-2 d-flex align-items-center gap-2" style="color: var(--text-muted);">
-                        <i data-lucide="file-edit" size="18"></i> Görevli Notu / Açıklama
-                    </h5>
-                    <input type="text" id="gorevliNot" class="form-control custom-input py-2" placeholder="Varsa eklemek istediğiniz not...">
-                </div>
-
-                <!-- Kriterler -->
-                <div class="glass-card overflow-hidden mb-4">
-                    <div class="p-3 border-bottom" style="border-color: var(--border-color) !important;">
-                        <h5 class="fw-bold m-0 d-flex align-items-center gap-2" style="color: var(--text-muted);">
-                            <i data-lucide="check-square" size="18"></i> Kontrol Kriterleri
-                        </h5>
-                    </div>
-                    <div id="kriterListesi" class="d-flex flex-column">
-                        <!-- Checklist items will be generated here -->
-                    </div>
-                </div>
-
-                <div class="d-flex justify-content-end mb-5 pb-4">
-                    <button id="btnKaydet" class="btn btn-emerald-lg px-5 py-3 fw-bold rounded-pill d-flex align-items-center gap-2 shadow" onclick="KriterManager.veriyiKaydet()">
-                        <i data-lucide="save" size="20"></i> BÖLÜMÜ KAYDET
+            <!-- 3. KRİTER / CHECKLIST PANELİ (Yeni Basit Tasarım) -->
+            <div id="kriterPanel" class="view-panel w-100 mw-800 flex-column" style="margin: 0 auto; padding-bottom: 100px;">
+                <!-- Üst Bar -->
+                <div class="d-flex align-items-center justify-content-between mb-3 px-1">
+                    <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 38px; height: 38px; border-color: var(--glass-border);" onclick="KriterManager.geriDon()">
+                        <i data-lucide="arrow-left" size="18" class="text-muted"></i>
                     </button>
+                    <div class="text-center flex-grow-1">
+                        <div class="x-small fw-bold text-muted text-uppercase" id="kriterKatAd" style="letter-spacing: 1px;"></div>
+                        <h4 class="fw-bold m-0 text-white" id="kriterBolumAd"></h4>
+                    </div>
+                    <div id="kriterSayac" class="badge bg-emerald rounded-pill px-3 py-2 fw-bold" style="font-size:0.75rem;">5/5 ✅</div>
+                </div>
+
+                <!-- Hızlı İpucu -->
+                <div class="text-center mb-3">
+                    <span class="x-small text-muted"><i data-lucide="info" size="12"></i> Yapamadığın varsa dokun kaldır, sonra GÖNDER</span>
+                </div>
+
+                <!-- Kriter Listesi -->
+                <div id="kriterListesi" class="d-flex flex-column rounded-4 overflow-hidden mb-3" style="border: 1px solid var(--glass-border); background: var(--glass-bg);">
+                    <!-- JS ile doldurulur -->
+                </div>
+
+                <!-- Fotoğraf Önizleme (gizli) -->
+                <div id="fotoOnizlemeContainer" class="d-none mb-3 text-center position-relative" style="width: fit-content; margin: 0 auto;">
+                    <img id="fotoOnizleme" src="" class="rounded-3" style="max-height: 100px; max-width: 200px; border: 2px solid var(--accent-emerald);">
+                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-1" onclick="KriterManager.fotografiSil()" style="width: 22px; height: 22px; line-height: 1; font-size: 0.7rem;">&times;</button>
+                </div>
+
+                <!-- Gizli file input -->
+                <input type="file" accept="image/*" capture="environment" id="fotoUpload" class="d-none">
+                <span id="fotoDurum" class="d-none"></span>
+
+                <!-- Yapışkan Alt Çubuk -->
+                <div id="kriterStickyBar" style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--bg-main);border-top:1px solid var(--glass-border);padding:12px 16px;backdrop-filter:blur(20px);">
+                    <div class="d-flex align-items-center gap-2 justify-content-center" style="max-width:800px;margin:0 auto;">
+                        <!-- Kamera -->
+                        <label class="btn btn-glass-round d-flex align-items-center justify-content-center position-relative" style="width:46px;height:46px;border-radius:50%;cursor:pointer;" id="btnKameraFAB">
+                            <i data-lucide="camera" size="20"></i>
+                            <input type="file" accept="image/*" capture="environment" class="d-none" onchange="KriterManager.fabFotoYukle(event)">
+                            <span id="fotoCheckBadge" class="d-none position-absolute" style="top:-2px;right:-2px;width:16px;height:16px;background:#10b981;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;color:#fff;">✓</span>
+                        </label>
+                        <!-- Not -->
+                        <input type="text" id="gorevliNot" class="form-control custom-input py-2 flex-grow-1" placeholder="Not ekle..." style="border-radius:50px;font-size:0.85rem;height:46px;">
+                        <!-- Gönder -->
+                        <button class="btn btn-emerald-lg px-4 py-2 fw-bold rounded-pill d-flex align-items-center gap-2 shadow" onclick="KriterManager.veriyiKaydet()" style="height:46px;white-space:nowrap;font-size:0.85rem;letter-spacing:1px;">
+                            <i data-lucide="send" size="16"></i> GÖNDER
+                        </button>
+                    </div>
                 </div>
             </div>
 
