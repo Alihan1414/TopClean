@@ -346,7 +346,9 @@
                     </div>
 
                     <!-- İdareci Sekmeleri (Tabs) -->
+                    <div class="d-flex overflow-auto gap-2 mb-4 pb-2 border-bottom border-secondary border-opacity-25" style="white-space: nowrap;">
                         <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
+                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('poster', this)">📜 Liste Dağıtımı</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('muf', this)">👮 İç Mesuller</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👨‍🏫 Personeller</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('ari', this)">🛠️ Arızalar</button>
@@ -415,6 +417,76 @@
                                     <div class="d-flex flex-column gap-1 text-center mt-3">
                                         <div class="x-small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;"><i data-lucide="crown" size="12" class="text-warning"></i> KAT BAŞKANI</div>
                                         <h6 id="basariBaskan" class="text-white m-0 fw-bold">-</h6>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: LİSTE DAĞITIMI (POSTER MODU) -->
+                    <div id="idarec-tab-poster" class="idarec-tab-content d-none">
+                        <!-- Input Section -->
+                        <div class="glass-card p-4 mb-4">
+                            <div class="row g-3">
+                                <div class="col-12 col-md-6">
+                                    <label class="small-note text-white mb-1"><i data-lucide="calendar"></i> Dönem/Tarih</label>
+                                    <input type="text" id="cleaningPeriod" class="form-control custom-input" placeholder="Örn: 2024 Mart 1. Hafta" oninput="document.getElementById('posterPeriod').innerText=this.value">
+                                </div>
+                                <div class="col-12 col-md-6 d-flex align-items-end gap-2">
+                                    <button class="btn btn-emerald-lg flex-grow-1" onclick="ListeManager.dagit()"><i data-lucide="shuffle"></i> DAĞIT</button>
+                                    <button class="btn btn-outline-danger" style="color: #ef4444; border-color: #ef4444; width: 45px; height: 45px;" onclick="ListeManager.exportPDF()"><i data-lucide="file-text"></i></button>
+                                    <button class="btn btn-outline-success" style="color: #10b981; border-color: #10b981; width: 45px; height: 45px;" onclick="ListeManager.exportImage()"><i data-lucide="image"></i></button>
+                                </div>
+                                <div class="col-12 mt-3">
+                                    <div class="accordion" id="studentAccordion">
+                                        <div class="accordion-item bg-transparent border-0">
+                                            <h2 class="accordion-header">
+                                                <button class="accordion-button collapsed bg-glass-dark text-white rounded-3 small py-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStudents" style="font-size: 0.75rem;">
+                                                    <i data-lucide="users" size="14" class="me-2"></i> Talebe Giriş Alanları (Alerjik, Astım vb.)
+                                                </button>
+                                            </h2>
+                                            <div id="collapseStudents" class="accordion-collapse collapse" data-bs-parent="#studentAccordion">
+                                                <div class="accordion-body p-3 pt-4">
+                                                    <div class="row g-2">
+                                                        <div class="col-6"><label class="x-small text-muted mb-1">🤧 Alerjik</label><textarea id="listAlerjik" class="form-control bg-glass-dark border-secondary text-white small" rows="2" placeholder="İsimler virgülle..."></textarea></div>
+                                                        <div class="col-6"><label class="x-small text-muted mb-1">💨 Astım</label><textarea id="listAstim" class="form-control bg-glass-dark border-secondary text-white small" rows="2" placeholder="İsimler virgülle..."></textarea></div>
+                                                        <div class="col-6"><label class="x-small text-muted mb-1">💪 Sağlıklı</label><textarea id="listSaglikli" class="form-control bg-glass-dark border-secondary text-white small" rows="2" placeholder="İsimler virgülle..."></textarea></div>
+                                                        <div class="col-6"><label class="x-small text-muted mb-1">🌈 Diğer</label><textarea id="listDiger" class="form-control bg-glass-dark border-secondary text-white small" rows="2" placeholder="İsimler virgülle..."></textarea></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Poster Content -->
+                        <div id="listeDisaAktarimAlani" class="poster-container shadow-2xl animate-in">
+                            <div class="poster-overlay"></div>
+                            
+                            <!-- Header Section -->
+                            <div class="poster-header-section mb-5">
+                                <div class="badge bg-emerald-glow mb-2">TEMİZLİK LİSTESİ</div>
+                                <h1 class="poster-main-title">HİJYEN & DÜZEN</h1>
+                                <div class="poster-period-box" id="posterPeriod">GENEL DÖNEM</div>
+                            </div>
+
+                            <!-- List Section -->
+                            <div id="listeSonuclari" class="liste-matris-grid pb-5">
+                                <!-- Results injected here -->
+                            </div>
+
+                            <!-- Footer Section -->
+                            <div class="poster-footer-section">
+                                <div class="d-flex align-items-center justify-content-between border-top border-secondary border-opacity-25 pt-4">
+                                    <div class="text-start">
+                                        <div class="x-small text-muted fw-bold">KURUM</div>
+                                        <div class="small fw-black text-white">ENDERUN YÜKSEKÖĞRETİM YURDU</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="x-small text-muted fw-bold">GÜNCELLEME</div>
+                                        <div class="small fw-black text-emerald" id="posterLastUpdate">--.--.----</div>
                                     </div>
                                 </div>
                             </div>
