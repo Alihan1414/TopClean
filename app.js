@@ -1253,34 +1253,75 @@ const IdarecManager = {
         if(document.getElementById('idarecStatTotal')) document.getElementById('idarecStatTotal').innerText = dayData.length;
         if(document.getElementById('idarecStatSuccess')) document.getElementById('idarecStatSuccess').innerText = dayData.filter(function(d){return d.durum==='onaylandi';}).length;
         if(document.getElementById('idarecStatDanger')) document.getElementById('idarecStatDanger').innerText = dayData.filter(function(d){return d.durum==='reddedildi';}).length;
-        var katKeys = Object.keys(katlar);
+        var katKeys = Object.keys(katlar).reverse();
+        
+        var buildingWrapper = document.createElement('div');
+        buildingWrapper.className = 'bina-dis-cephe';
+        
+        var roof = document.createElement('div');
+        roof.className = 'bina-cati';
+        buildingWrapper.appendChild(roof);
+
         katKeys.forEach(function(katAd, kIdx) {
             var w = document.createElement('div');
-            w.className = 'stagger-item';
-            w.style.animationDelay = (kIdx * 0.08) + 's';
-            w.innerHTML = '<div class="d-flex align-items-center gap-2 mb-3"><div class="flex-grow-1 bg-glass-border" style="height:1px;"></div><span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold">' + katAd.toUpperCase() + '</span><div class="flex-grow-1 bg-glass-border" style="height:1px;"></div></div><div class="row g-2 mx-0" id="idarec-rooms-' + kIdx + '"></div>';
-            matris.appendChild(w);
-            var roomRow = document.getElementById('idarec-rooms-' + kIdx);
+            w.className = 'bina-kat d-flex align-items-stretch';
+            
+            var leftSide = document.createElement('div');
+            leftSide.className = 'kat-kanat left-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
+            leftSide.style.width = '45%';
+            
+            var middleSide = document.createElement('div');
+            middleSide.className = 'kat-asansor d-flex align-items-center justify-content-center flex-column text-center px-1';
+            middleSide.style.width = '10%';
+            middleSide.innerHTML = '<div class="kat-numarasi fw-bold text-white shadow-sm">' + katAd.replace('. Kat', '') + '</div>';
+            
+            var rightSide = document.createElement('div');
+            rightSide.className = 'kat-kanat right-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
+            rightSide.style.width = '45%';
+
             var bolumKeys = Object.keys(katlar[katAd]);
-            bolumKeys.forEach(function(bolumAd) {
+            var half = Math.ceil(bolumKeys.length / 2);
+            
+            bolumKeys.forEach(function(bolumAd, bIdx) {
                 var recs = dayData.filter(function(d){ return d.kat===katAd && d.bolum===bolumAd; });
                 recs.sort(function(a,b){ return parseInt(b.id)-parseInt(a.id); });
                 var rec = recs[0];
                 var hasReport = !!rec;
-                var sc = 'badge-idle', sy = 'BEKLİYOR';
+                var sc = 'cam-bekliyor', sy = '⏳';
                 if(rec) {
-                    if(rec.durum==='onaylandi'){sc='badge-success';sy='ONAYLANDI';}
-                    else if(rec.durum==='reddedildi'){sc='badge-danger';sy='REDDEDİLDİ';}
-                    else {sc='badge-warning';sy='ONAY BEKLİ';}
+                    if(rec.durum==='onaylandi'){sc='cam-onayli';sy='✅';}
+                    else if(rec.durum==='reddedildi'){sc='cam-red';sy='❌';}
+                    else {sc='cam-onay-bekliyor';sy='🔍';}
                 }
-                var col = document.createElement('div');
-                col.className = 'col-12 col-md-6 px-1';
-                var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) + ' | ' + rec.secilen.length + ' kriter' : 'Kaydı yok';
+                
+                var roomDiv = document.createElement('div');
+                roomDiv.className = 'bina-oda ' + sc + (hasReport ? ' cursor-pointer' : '');
+                var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}) : '--:--';
                 var clickAttr = hasReport ? 'onclick="AdminManager.showDetail(\'' + rec.id + '\')"' : '';
-                col.innerHTML = '<div class="glass-card p-3 d-flex align-items-center justify-content-between mb-2 ' + (hasReport ? 'cursor-pointer' : '') + '" ' + clickAttr + '><div><div class="fw-bold text-white" style="font-size:0.9rem; letter-spacing:0.5px;">' + bolumAd + '</div><div class="x-small text-dim">' + timeStr + '</div></div><span class="badge-status ' + sc + '" style="font-size:0.65rem;">' + sy + '</span></div>';
-                roomRow.appendChild(col);
+                
+                roomDiv.innerHTML = '<div class="oda-ic" ' + clickAttr + '><div class="oda-durum-ikoni">'+sy+'</div><div class="oda-baslik text-truncate" title="'+bolumAd+'">' + bolumAd + '</div></div>';
+                
+                if(bIdx < half) leftSide.appendChild(roomDiv);
+                else rightSide.appendChild(roomDiv);
             });
+            
+            w.appendChild(leftSide);
+            w.appendChild(middleSide);
+            w.appendChild(rightSide);
+            
+            buildingWrapper.appendChild(w);
+            
+            var katZemin = document.createElement('div');
+            katZemin.className = 'kat-zemin';
+            buildingWrapper.appendChild(katZemin);
         });
+        
+        var temel = document.createElement('div');
+        temel.className = 'bina-temel';
+        temel.innerHTML = '<div class="temel-yazi text-white fw-bold">ENDERUN BİNASI</div>';
+        buildingWrapper.appendChild(temel);
+
+        matris.appendChild(buildingWrapper);
         lucide.createIcons();
     },
     loadGecmis: function(filter) {
