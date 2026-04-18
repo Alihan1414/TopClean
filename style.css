@@ -330,26 +330,24 @@ select.custom-input option {
 /* --- Views & Animations --- */
 .view-panel {
     display: none;
-    opacity: 0;
-    transform: translateY(40px);
 }
 
 .view-panel.active {
     display: flex;
-    animation: reveal 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: reveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes reveal {
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .stagger-item {
-    opacity: 0;
-    transform: translateY(25px);
-    animation: staggerReveal 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    animation: staggerReveal 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes staggerReveal {
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
