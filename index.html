@@ -237,61 +237,100 @@
 
 
             <!-- 4. ADMIN / MÜFETTİŞ PANELİ -->
-            <div id="adminPanel" class="view-panel w-100 flex-column align-items-stretch">
-                <div class="w-100" style="max-width: 800px; margin: 0 auto; padding: 0;">
-
-                    <!-- Panel Title -->
-                    <div class="text-center mb-3">
-                        <div class="d-inline-block px-4 py-2 glass-card" style="border-radius: 50px;">
-                            <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 0.9rem;">DENETİM MERKEZİ</h4>
+            <div id="adminPanel" class="view-panel w-100 flex-column align-items-stretch position-relative h-100">
+                <div class="w-100 h-100 d-flex flex-column" style="max-width: 600px; margin: 0 auto; padding: 0;">
+                    
+                    <!-- ADIM 1: KAT SEÇİM EKRANI -->
+                    <div id="mufettisKatSecim" class="d-flex flex-column h-100">
+                        <div class="text-center mb-4 mt-2">
+                            <h4 class="fw-black text-white m-0" style="letter-spacing: 2px;">DENETİM MERKEZİ</h4>
+                            <div class="x-small text-emerald mt-1">Lütfen denetlemek istediğiniz katı seçin</div>
                         </div>
-                    </div>
-
-                    <!-- Action Bar: Tarih + Excel -->
-                    <div class="d-flex flex-column gap-2 mb-3">
-                        <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill w-100" style="border: 1px solid var(--accent-primary) !important; height: 44px;">
+                        
+                        <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill w-100 mb-4" style="border: 1px solid var(--accent-primary) !important; height: 44px;">
                             <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
                             <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1" style="outline: none; font-size: 0.85rem;">
                         </div>
-                        <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
-                            <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
-                        </button>
-                        <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.showArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
-                            <i data-lucide="wrench" size="14"></i> BEKLEYEN ARIZALAR (<span id="adminArizaCount">0</span>)
-                        </button>
-                    </div>
-
-                    <!-- Stats Grid -->
-                    <div class="row g-3 mb-4 mx-0">
-                        <div class="col-6 col-md-3">
-                            <div class="stat-card">
-                                <div class="small text-dim mb-1">TOPLAM</div>
-                                <div id="adminStatTotal" class="stat-value text-white">0</div>
-                            </div>
+                        
+                        <!-- Kat Butonları Container -->
+                        <div id="mufettisKatButonlari" class="d-flex flex-column gap-3 pb-4 overflow-auto flex-grow-1">
+                            <!-- JS tarafından doldurulacak -->
                         </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stat-card" style="border-bottom: 3px solid var(--success);">
-                                <div class="small text-dim mb-1">ONAY</div>
-                                <div id="adminStatSuccess" class="stat-value text-emerald">0</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stat-card" style="border-bottom: 3px solid var(--warning);">
-                                <div class="small text-dim mb-1">BEKLEME</div>
-                                <div id="adminStatPending" class="stat-value text-warning">0</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <div class="stat-card" style="border-bottom: 3px solid var(--danger);">
-                                <div class="small text-dim mb-1">RED</div>
-                                <div id="adminStatDanger" class="stat-value text-danger">0</div>
-                            </div>
+                        
+                        <div class="mt-auto pb-4">
+                            <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
+                                <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
+                            </button>
+                            <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.showArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
+                                <i data-lucide="wrench" size="14"></i> BEKLEYEN ARIZALAR (<span id="adminArizaCount">0</span>)
+                            </button>
                         </div>
                     </div>
 
-                    <!-- Denetim Matrisi -->
-                    <div id="denetimMatrisi" class="d-flex flex-column gap-4 pb-5 w-100">
-                        <!-- Kat ve Mahal ızgarası JS tarafından doldurulur -->
+                    <!-- ADIM 2: ODAKLI DENETİM MODU (Başlangıçta Gizli) -->
+                    <div id="mufettisOdakModu" class="d-none flex-column flex-grow-1 h-100 pb-3">
+                        <!-- Üst Bar: Geri Dönüş ve İlerleme -->
+                        <div class="d-flex align-items-center mb-4">
+                            <button class="btn btn-sm btn-glass-round me-3" onclick="MufettisFocus.cikisYAP()">
+                                <i data-lucide="arrow-left" size="18"></i>
+                            </button>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between x-small text-muted fw-bold mb-1">
+                                    <span id="focusKatIsim">1. Kat</span>
+                                    <span id="focusYuzdeMetin">%0 (0/5)</span>
+                                </div>
+                                <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">
+                                    <div id="focusIlerlemeBar" class="progress-bar bg-emerald" role="progressbar" style="width: 0%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Ortada Koca Oda Kartı -->
+                        <div class="glass-card flex-grow-1 d-flex flex-column align-items-center justify-content-center p-4 text-center position-relative overflow-hidden mb-4" id="focusOdaKarti" style="border: 2px solid var(--accent-emerald); background: linear-gradient(to bottom, rgba(16, 185, 129, 0.05), rgba(0,0,0,0.5)); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; transform-origin: center;">
+                            
+                            <!-- İkon -->
+                            <div class="mb-4 bg-emerald-glow p-4 rounded-circle d-inline-flex" style="background: rgba(16,185,129,0.1);">
+                                <i data-lucide="door-open" size="48" class="text-emerald"></i>
+                            </div>
+                            
+                            <!-- Oda Adı -->
+                            <h2 id="focusOdaAdi" class="fw-black text-white mb-3" style="font-size: 2rem;">Lavabolar</h2>
+                            
+                            <!-- Görevli Bilgisi -->
+                            <div class="x-small text-muted text-uppercase fw-bold mb-1">GÖREVLİ İŞLEMİ</div>
+                            <div id="focusGorevliZaman" class="badge-status badge-idle px-3 py-1 mb-3" style="font-size: 0.8rem;">14:30 - Bekleniyor</div>
+                            
+                            <!-- Görevli Notu -->
+                            <div id="focusGorevliNotContainer" class="d-none w-100 p-3 rounded-3" style="background: rgba(0,0,0,0.3); border-left: 3px solid rgba(255,255,255,0.2);">
+                                <div class="x-small text-dim mb-1"><i data-lucide="message-square" size="12"></i> Mesaj:</div>
+                                <div id="focusGorevliNot" class="text-white small fw-bold fst-italic">Her şey tamam</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Dev Butonlar (Alt Kısım) -->
+                        <div class="d-flex gap-3 mt-auto">
+                            <button class="btn btn-danger flex-grow-1 rounded-4 py-4 d-flex flex-column align-items-center justify-content-center gap-2 fw-black shadow-lg" onclick="MufettisFocus.onBtnReddet()" style="font-size: 1.1rem; border: none; background: linear-gradient(135deg, #ef4444, #991b1b);">
+                                <i data-lucide="x-circle" size="28"></i> KUSURLU
+                            </button>
+                            <button class="btn btn-emerald flex-grow-1 rounded-4 py-4 d-flex flex-column align-items-center justify-content-center gap-2 fw-black shadow-lg" onclick="MufettisFocus.onayVer()" style="font-size: 1.1rem; border: none;">
+                                <i data-lucide="check-circle" size="28"></i> TERTEMİZ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- ADIM 3: HIZLI ETİKET AÇILIR MENÜSÜ (Başlangıçta Gizli) -->
+                    <div id="mufettisHizliRetPanel" class="position-absolute bottom-0 start-0 w-100 p-3 z-3" style="background: var(--bg-main); border-top: 2px solid var(--accent-primary); border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.8); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); transform: translateY(100%); display:flex; flex-direction:column; pointer-events:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="text-white fw-bold m-0"><i data-lucide="alert-triangle" class="text-danger me-2" size="16"></i> Neden Kusurlu?</h6>
+                            <button class="btn btn-sm btn-glass-round" onclick="MufettisFocus.iptalRet()"><i data-lucide="x" size="16"></i></button>
+                        </div>
+                        <div class="row g-2 mb-3">
+                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Çöp Kutusu Dolu')">🗑️ Çöp Dolu</button></div>
+                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Zemin Kirli')">🧹 Zemin Kirli</button></div>
+                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Eşyalar Dağınık')">📦 Dağınık</button></div>
+                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Lavabo Pis')">🚰 Lavabo Pis</button></div>
+                            <div class="col-12"><button class="btn btn-outline-light w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.acKlavyeRet()">✍️ Diğer Neden (Yaz)</button></div>
+                        </div>
                     </div>
 
                 </div>
