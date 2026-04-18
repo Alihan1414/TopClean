@@ -779,10 +779,36 @@ select.custom-input option {
     animation: magicShuffle 0.8s cubic-bezier(0.45, 0.05, 0.55, 0.95);
 }
 
-.stagger-item {
-    animation: fadeInSlideUp 0.5s ease forwards;
-    opacity: 0;
+/* Poster & Export Stilleri */
+#listeDisaAktarimAlani {
+    transition: all 0.3s ease;
+    border-radius: 20px;
 }
+
+.export-only { display: none !important; }
+
+/* html2canvas/PDF çıktısında görülecek sınıflar */
+.is-exporting .export-only { display: block !important; }
+.is-exporting .btn-lock, 
+.is-exporting .btn-glass-round,
+.is-exporting input::placeholder { display: none !important; }
+.is-exporting .glass-card { 
+    background: rgba(0,0,0,0.8) !important; 
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+#listeInputArea:not(.d-none) {
+    animation: slideDown 0.4s ease forwards;
+}
+
+.fw-black { font-weight: 900 !important; }
+.text-emerald { color: #10b981 !important; }
+.bg-emerald { background-color: #10b981 !important; color: white !important; }
 
 @keyframes fadeInSlideUp {
     from { opacity: 0; transform: translateY(20px); }
