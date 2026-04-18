@@ -713,6 +713,7 @@ function loadGorevliPanel(katAd) {
         kart.onmouseleave = () => { kart.style.transform = ''; kart.style.boxShadow = ''; };
         
         kart.onclick = () => {
+            console.log("Kart tıklandı:", bolumAd);
             if (isRejected) {
                 Swal.fire({
                     icon: 'warning',
