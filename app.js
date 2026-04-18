@@ -172,12 +172,15 @@ function initTheme() {
     });
 }
 function updateThemeIcon(theme) {
-    const btn = document.getElementById('themeToggleBtn');
-    if (theme === 'dark') {
-        btn.innerHTML = `<i data-lucide="sun" size="18"></i>`;
-    } else {
-        btn.innerHTML = `<i data-lucide="moon" size="18"></i>`;
-    }
+    const btns = document.querySelectorAll('#themeToggleBtn, #themeToggleBtnLogin');
+    btns.forEach(btn => {
+        if (!btn) return;
+        if (theme === 'dark') {
+            btn.innerHTML = `<i data-lucide="sun" size="18"></i>`;
+        } else {
+            btn.innerHTML = `<i data-lucide="moon" size="18"></i>`;
+        }
+    });
     lucide.createIcons();
 }
 
@@ -2048,16 +2051,20 @@ const InventoryManager = {
 
         const searchInput = document.getElementById('stokSearchInput');
         const search = searchInput ? searchInput.value.toLowerCase() : "";
-        let items = cachedInventory;
+        
+        let items = [];
+        try {
+            items = Array.isArray(cachedInventory) ? cachedInventory : Object.values(cachedInventory || {});
+        } catch(e) { items = []; }
 
         if (search) {
-            items = items.filter(i => i.name.toLowerCase().includes(search));
+            items = items.filter(i => i && i.name && i.name.toLowerCase().includes(search));
         }
 
         container.innerHTML = "";
 
         if (items.length === 0) {
-            container.innerHTML = '<div class="col-12 text-center text-muted p-5 glass-card">Gösterilecek ürün bulunamadı.</div>';
+            container.innerHTML = '<div class="col-12 text-center text-muted p-5 glass-card border-dashed" style="border: 2px dashed var(--glass-border);">📦 Gösterilecek ürün bulunamadı.</div>';
         }
 
         items.forEach(item => {
@@ -2082,7 +2089,7 @@ const InventoryManager = {
                             <button class="btn btn-sm btn-glass-round ${currentUser.rol === 'idareci' ? '' : 'd-none'}" onclick="InventoryManager.setThreshold('${item.id}')" title="Limit Düzenle">
                                 <i data-lucide="bell-ring" size="14"></i>
                             </button>
-                            <button class="btn btn-sm btn-glass-round text-danger-glow ${currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat' ? '' : 'd-none'}" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
+                            <button class="btn btn-sm btn-glass-round text-danger-glow ${currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) ? '' : 'd-none'}" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
                                 <i data-lucide="trash-2" size="14"></i>
                             </button>
                         </div>
@@ -2112,9 +2119,9 @@ const InventoryManager = {
     },
 
     showAddProductForm: async function () {
-        const isEligible = currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat'; // Sadece Burak Hoca
+        const isEligible = (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) || currentUser.rol === 'idareci'; 
         if (!isEligible) {
-            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Ürün tanımlama yetkisi Depo Sorumlusuna (2. Kat) aittir.' });
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Ürün tanımlama yetkisi Depo Sorumlusuna (Ara Kat) veya İdarecilere aittir.' });
         }
         const { value: formValues } = await Swal.fire({
             title: 'Yeni Ürün Ekle',
@@ -2212,7 +2219,7 @@ const InventoryManager = {
             return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Sistemde henüz ürün tanımlı değil.' });
         }
 
-        const canAdd = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && currentUser.kat === '2. Kat');
+        const canAdd = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat'));
 
         let options = {};
         cachedInventory.forEach(i => options[i.id] = i.name);
