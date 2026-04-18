@@ -26,7 +26,7 @@ try {
 
 // ---------- SABİT VERİLER ----------
 const katlar = {
-    "-1. Kat": {
+    "Bodrum Kat": {
         "-1 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Etraf Düzenli"],
         "Mescit": ["Etraf Süpürülmüş", "Kürsü Düzenli", "Koku yok", "Halılar temizlenmiş", "Camlar temiz"],
@@ -36,7 +36,7 @@ const katlar = {
         "Çalışma Odası": ["Zemin temiz", "Masalar düzenli", "Toz alınmış", "Çöp yok", "Koku yok"],
         "Donanım": ["Zemin temiz", "Cihazlar düzenli", "Kablo karmaşası yok", "Toz alınmış", "Çöp kutusu boş"]
     },
-    "0. Kat": {
+    "Zemin Kat": {
         "0 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Ayna Silinmiş"],
         "Çalışma Odası": ["Masa düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
@@ -46,7 +46,7 @@ const katlar = {
         "Wc 2": ["Lavabolar temiz", "Zemin temiz", "Sabun var", "Kağıt var", "Koku yok"],
         "İdareci Odası": ["Masa düzenli", "Zemin temiz", "Koku yok", "Koltuklar Temiz", "Çöp kutusu boş"]
     },
-    "1. Kat": {
+    "Akademik Kat": {
         "1 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
         "Hocaların Odası": ["Masa düzenli", "Zemin temiz", "Koku yok", "Eşyalar düzenlenmiş", "Çöp kutusu boş"],
@@ -58,7 +58,7 @@ const katlar = {
         "Talebe Çayhanesi": ["Zemin temiz", "Masalar silinmiş", "Çöp yok", "Koku yok", "Tezgah temiz"],
         "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
     },
-    "2. Kat": {
+    "Ara Kat": {
         "2 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
         "Hoca Çalışma Odası": ["Masa düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
@@ -72,7 +72,7 @@ const katlar = {
         "Temizlik Deposu": ["Raflar düzenli", "Zemin temiz", "Kimyasallar kapalı", "Etraf derli toplu", "Çöp yok"],
         "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
     },
-    "3. Kat": {
+    "Yatakhane Katı": {
         "3 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
         "Misafir Yatakhanesi": ["Yataklar düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
@@ -83,7 +83,7 @@ const katlar = {
         "Yatakhane 6": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
         "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
     },
-    "4. Kat": {
+    "Sosyal Alan Katı": {
         "4 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
         "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
         "Sanat Odası": ["Zemin temiz", "Masalar silinmiş", "Malzemeler düzenli", "Toz alınmış", "Koku yok"],
@@ -93,12 +93,12 @@ const katlar = {
 };
 
 const usersData = [
-    { name: "Abdülkadir Uysal", pass: "1234", kat: "-1. Kat", rol: "gorevli" },
-    { name: "Mehmet Ali Zabun", pass: "1234", kat: "0. Kat", rol: "gorevli" },
-    { name: "Oğuz Erol", pass: "1234", kat: "1. Kat", rol: "gorevli" },
-    { name: "Burakhan Karaoğlan", pass: "1234", kat: "2. Kat", rol: "gorevli" },
-    { name: "3.KAT Görevlisi", pass: "1234", kat: "3. Kat", rol: "gorevli" },
-    { name: "Emre Karabalak", pass: "1234", kat: "4. Kat", rol: "gorevli" },
+    { name: "Abdülkadir Uysal", pass: "1234", kat: "Bodrum Kat", rol: "gorevli" },
+    { name: "Mehmet Ali Zabun", pass: "1234", kat: "Zemin Kat", rol: "gorevli" },
+    { name: "Oğuz Erol", pass: "1234", kat: "Akademik Kat", rol: "gorevli" },
+    { name: "Burakhan Karaoğlan", pass: "1234", kat: "Ara Kat", rol: "gorevli" },
+    { name: "3.KAT Görevlisi", pass: "1234", kat: "Yatakhane Katı", rol: "gorevli" },
+    { name: "Emre Karabalak", pass: "1234", kat: "Sosyal Alan Katı", rol: "gorevli" },
     { name: "İç Mesul", pass: "4321", kat: "", rol: "mufettis" },
     { name: "İdareci", pass: "1111", kat: "", rol: "idareci" }
 ];
@@ -177,9 +177,9 @@ function initTheme() {
 function updateThemeIcon(theme) {
     const btn = document.getElementById('themeToggleBtn');
     if (theme === 'dark') {
-        btn.innerHTML = `<i data-lucide="sun" size="16"></i> <span class="d-none d-sm-inline">Aydınlık</span>`;
+        btn.innerHTML = `<i data-lucide="sun" size="18"></i>`;
     } else {
-        btn.innerHTML = `<i data-lucide="moon" size="16"></i> <span class="d-none d-sm-inline">Karanlık</span>`;
+        btn.innerHTML = `<i data-lucide="moon" size="18"></i>`;
     }
     lucide.createIcons();
 }
@@ -981,12 +981,11 @@ function loadAdminPanel() {
             
             const btn = document.createElement('button');
             const isActive = bekleyenSayisi > 0;
-            btn.className = `btn d-flex justify-content-between align-items-center w-100 rounded-pill px-4 py-3 fw-bold shadow-sm ${isActive ? 'btn-emerald text-white border-0' : 'btn-glass-round text-muted'}`;
-            if(!isActive) btn.style.opacity = '0.7';
+            btn.className = `btn d-flex justify-content-between align-items-center w-100 rounded-4 px-4 py-3 fw-bold border-0 kat-secim-btn ${isActive ? 'kat-aktif' : 'kat-pasif'}`;
             
             btn.innerHTML = `
                 <span class="fs-6">${katAd}</span>
-                <span class="badge ${isActive ? 'bg-white text-emerald' : 'bg-secondary text-white'} rounded-pill px-3 py-2">${bekleyenSayisi} Bekleyen</span>
+                <span class="badge ${isActive ? 'bg-white text-success' : 'bg-secondary text-white'} rounded-pill px-3 py-2">${bekleyenSayisi} Bekleyen</span>
             `;
             
             btn.onclick = () => MufettisFocus.basla(katAd, dayData);
