@@ -618,6 +618,13 @@ function loadGorevliPanel(katAd) {
         else tanimlaBtn.classList.add('d-none');
     }
 
+    // Burakhan Karaoğlan için DEPO YÖNETİMİ butonu
+    const depoBtn = document.getElementById('btnEnvanterErisim');
+    if (depoBtn) {
+        if (currentUser.name === "Burakhan Karaoğlan") depoBtn.classList.remove('d-none');
+        else depoBtn.classList.add('d-none');
+    }
+
     const bolumler = katlar[katAd];
     const data = getData();
     const bugunStr = new Date().toLocaleDateString();
@@ -2022,6 +2029,19 @@ const ListeManager = {
 
 // ---------- STOK (INVENTORY) MANAGER ----------
 const InventoryManager = {
+    ac: function() {
+        showPanel('stokPanel');
+        this.render();
+    },
+
+    kapat: function() {
+        if (currentUser.rol === 'idareci') {
+            showPanel('idarecPanel');
+        } else {
+            showPanel('gorevliPanel');
+        }
+    },
+
     render: function () {
         const container = document.getElementById('stokListesi');
         if (!container) return;
