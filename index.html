@@ -383,12 +383,12 @@
                                 <!-- Kat Butonları -->
                                 <div class="d-flex flex-wrap gap-2 mb-3 justify-content-center" id="katFilterButtons">
                                     <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold active kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Hepsi', this)">Tümü</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('-1. Kat', this)">-1.</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('0. Kat', this)">Zemin</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('1. Kat', this)">1.</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('2. Kat', this)">2.</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('3. Kat', this)">3.</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('4. Kat', this)">4.</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Bodrum Kat', this)">Bodrum</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Zemin Kat', this)">Zemin</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Akademik Kat', this)">Akademik</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Ara Kat', this)">Ara</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Yatakhane Katı', this)">Yatakhane</button>
+                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Sosyal Alan Katı', this)">Sosyal Alan</button>
                                 </div>
                                 <div id="idarecBinaMatrisi" class="d-flex flex-column pb-2 w-100 align-items-center" style="transform-origin: top center; transform: scale(0.9);"></div>
                             </div>
@@ -448,11 +448,12 @@
                                 <input type="password" id="yeniPersonelSifre" class="form-control custom-input" placeholder="Şifre">
                                 <select id="yeniPersonelKat" class="form-select custom-input">
                                     <option value="">-- Kat Seç --</option>
+                                    <option>Bodrum Kat</option>
                                     <option>Zemin Kat</option>
-                                    <option>1. Kat</option>
-                                    <option>2. Kat</option>
-                                    <option>3. Kat</option>
-                                    <option>4. Kat</option>
+                                    <option>Akademik Kat</option>
+                                    <option>Ara Kat</option>
+                                    <option>Yatakhane Katı</option>
+                                    <option>Sosyal Alan Katı</option>
                                 </select>
                                 <button class="btn btn-emerald-lg w-100 py-2 fw-bold rounded-3" onclick="IdarecManager.personelEkle()">
                                     <i data-lucide="user-plus" size="16"></i> KAYDET
