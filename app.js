@@ -154,19 +154,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // ---------- TEMA (Theme) ----------
 function initTheme() {
-    const btn = document.getElementById('themeToggleBtn');
+    const btns = document.querySelectorAll('#themeToggleBtn, #themeToggleBtnLogin');
 
     // Check saved theme
     const savedTheme = localStorage.getItem('topclean_theme') || 'dark';
     document.documentElement.setAttribute('data-bs-theme', savedTheme);
     updateThemeIcon(savedTheme);
 
-    btn.addEventListener('click', () => {
-        let current = document.documentElement.getAttribute('data-bs-theme');
-        let newTheme = current === 'dark' ? 'light' : 'dark';
-        document.documentElement.setAttribute('data-bs-theme', newTheme);
-        localStorage.setItem('topclean_theme', newTheme);
-        updateThemeIcon(newTheme);
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            let current = document.documentElement.getAttribute('data-bs-theme');
+            let newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('topclean_theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
     });
 }
 function updateThemeIcon(theme) {
