@@ -957,81 +957,40 @@ function handleFotoUpload(e) {
 // ---------- İDARECİ / MÜFETTİŞ PANEL ----------
 function loadAdminPanel() {
     try {
-        const matris = document.getElementById('denetimMatrisi');
         const dateEl = document.getElementById('adminDateSelector');
-        if (!matris || !dateEl) return;
+        const katContainer = document.getElementById('mufettisKatButonlari');
+        if (!katContainer || !dateEl) return;
 
-        matris.innerHTML = "";
+        katContainer.innerHTML = "";
         const selectedDate = dateEl.value; // yyyy-mm-dd
         let allData = getData();
         const dayData = allData.filter(d => toShortDate(d.tarih) === selectedDate);
-
-        const total = dayData.length;
-        const success = dayData.filter(d => d.durum === "onaylandi").length;
-        const danger = dayData.filter(d => d.durum === "reddedildi").length;
-        const pending = dayData.filter(d => d.durum === "bekliyor").length;
-
-        if (document.getElementById('adminStatTotal')) document.getElementById('adminStatTotal').innerText = total;
-        if (document.getElementById('adminStatSuccess')) document.getElementById('adminStatSuccess').innerText = success;
-        if (document.getElementById('adminStatDanger')) document.getElementById('adminStatDanger').innerText = danger;
-        if (document.getElementById('adminStatPending')) document.getElementById('adminStatPending').innerText = pending;
 
         const arizaCtn = cachedArizalar.filter(a => a.durum === "bekliyor").length;
         if (document.getElementById('adminArizaCount')) document.getElementById('adminArizaCount').innerText = arizaCtn;
 
         // Loop through Building Structure (katlar)
-        Object.keys(katlar).forEach((katAd, kIdx) => {
-            const katWrapper = document.createElement('div');
-            katWrapper.className = "stagger-item";
-            katWrapper.style.animationDelay = `${kIdx * 0.1}s`;
-
-            katWrapper.innerHTML = `
-            <div class="d-flex align-items-center gap-2 mb-3">
-                <div class="flex-grow-1 h-px bg-glass-border"></div>
-                <span class="badge rounded-pill bg-emerald px-4 py-2 small fw-bold shadow-sm" style="letter-spacing:1px;">${katAd.toUpperCase()}</span>
-                <div class="flex-grow-1 h-px bg-glass-border"></div>
-            </div>
-            <div class="row g-2 justify-content-center" id="rooms-${kIdx}"></div>
-        `;
-            matris.appendChild(katWrapper);
-
-            const roomRow = document.getElementById(`rooms-${kIdx}`);
+        Object.keys(katlar).reverse().forEach(katAd => {
             const bolumler = katlar[katAd];
-
-            Object.keys(bolumler).forEach(bolumAd => {
-                // Find the LATEST report for this floor, section, and date
-                const sectionRecord = dayData.filter(d => d.kat === katAd && d.bolum === bolumAd)
-                    .sort((a, b) => parseInt(b.id) - parseInt(a.id))[0];
-
-                let statusClass = "badge-idle";
-                let statusYazi = "BEKLİYOR";
-                let hasReport = false;
-
-                if (sectionRecord) {
-                    hasReport = true;
-                    if (sectionRecord.durum === "onaylandi") {
-                        statusClass = "badge-success"; statusYazi = "ONAYLANDI";
-                    } else if (sectionRecord.durum === "reddedildi") {
-                        statusClass = "badge-danger"; statusYazi = "REDDEDİLDİ";
-                    } else {
-                        statusClass = "badge-warning"; statusYazi = "ONAY BEKLİYOR";
-                    }
-                }
-
-                const roomCol = document.createElement('div');
-                roomCol.className = "col-12 col-md-6";
-                roomCol.innerHTML = `
-                <div class="glass-card p-3 d-flex align-items-center justify-content-between shadow-hover ${hasReport ? 'cursor-pointer' : ''}" 
-                     ${hasReport ? `onclick="AdminManager.showDetail('${sectionRecord.id}')"` : ''}>
-                    <div>
-                        <div class="fw-bold text-white small mb-1">${bolumAd}</div>
-                        <div class="x-small text-muted">${hasReport ? new Date(sectionRecord.tarih).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + ' | ' + sectionRecord.secilen.length + ' Kriter' : 'Kaydı bulunmuyor'}</div>
-                    </div>
-                    <span class="badge-status ${statusClass}" style="font-size: 0.65rem; padding: 4px 10px;">${statusYazi}</span>
-                </div>
-            `;
-                roomRow.appendChild(roomCol);
+            let bekleyenSayisi = 0;
+            
+            Object.keys(bolumler).forEach(b => {
+                const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
+                if(rec && rec.durum === 'bekliyor') bekleyenSayisi++;
             });
+            
+            const btn = document.createElement('button');
+            const isActive = bekleyenSayisi > 0;
+            btn.className = `btn d-flex justify-content-between align-items-center w-100 rounded-pill px-4 py-3 fw-bold shadow-sm ${isActive ? 'btn-emerald text-white border-0' : 'btn-glass-round text-muted'}`;
+            if(!isActive) btn.style.opacity = '0.7';
+            
+            btn.innerHTML = `
+                <span class="fs-6">${katAd}</span>
+                <span class="badge ${isActive ? 'bg-white text-emerald' : 'bg-secondary text-white'} rounded-pill px-3 py-2">${bekleyenSayisi} Bekleyen</span>
+            `;
+            
+            btn.onclick = () => MufettisFocus.basla(katAd, dayData);
+            katContainer.appendChild(btn);
         });
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -1040,77 +999,143 @@ function loadAdminPanel() {
     }
 }
 
-const AdminManager = {
-    showDetail: function (reportId) {
-        const report = getData().find(d => d.id === reportId);
-        if (!report) return;
-        currentActiveReport = report;
-        document.getElementById('modalKatBolum').innerText = `${report.kat} - ${report.bolum}`;
-
-        // Foto
-        const img = document.getElementById('modalFoto');
-        if (report.foto) {
-            img.src = report.foto;
-            img.parentElement.classList.remove('d-none');
-        } else {
-            img.parentElement.classList.add('d-none');
-        }
-
-        // Kriter Listesi
-        const list = document.getElementById('modalKriterListesi');
-        list.innerHTML = "";
-
-        // Find the original list to show what's NOT cleaned too
-        const originalList = katlar[report.kat][report.bolum];
-        originalList.forEach(k => {
-            const isDone = report.secilen.includes(k);
-            const item = document.createElement('div');
-            item.className = `d-flex align-items-center gap-2 mb-1 ${isDone ? 'text-success' : 'text-danger opacity-50'}`;
-            item.innerHTML = `<i data-lucide="${isDone ? 'check-circle' : 'circle'}" size="14"></i> ${k}`;
-            list.appendChild(item);
+const MufettisFocus = {
+    odalar: [],
+    index: 0,
+    aktifKat: "",
+    basla: function(katAd, dayData) {
+        this.aktifKat = katAd;
+        this.odalar = [];
+        
+        Object.keys(katlar[katAd]).forEach(b => {
+            const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
+            if(rec && rec.durum === 'bekliyor') {
+                this.odalar.push(rec);
+            }
         });
-
-        document.getElementById('modalAdminNot').value = report.mufettis_yorum || "";
-
-        if (!bootstrapModal) {
-            bootstrapModal = new bootstrap.Modal(document.getElementById('adminDetailModal'));
+        
+        if(this.odalar.length === 0) {
+            Swal.fire({icon:'success', title:'Dört Dörtlük', text: katAd + ' için denetim bekleyen oda yok, ellerinize sağlık.', timer: 2000, showConfirmButton:false});
+            return;
         }
-        bootstrapModal.show();
-        lucide.createIcons();
+        
+        this.index = 0;
+        document.getElementById('mufettisKatSecim').classList.add('d-none');
+        document.getElementById('mufettisOdakModu').classList.remove('d-none');
+        document.getElementById('mufettisOdakModu').classList.add('d-flex');
+        
+        this.renderOda();
     },
-
-    processReport: function (status) {
-        const comment = document.getElementById('modalAdminNot').value.trim();
+    renderOda: function() {
+        if(this.index >= this.odalar.length) {
+            Swal.fire({icon:'success', title:'Tebrikler 🎊', text: this.aktifKat + ' denetimini tamamen bitirdiniz!', timer: 2500, showConfirmButton:false});
+            this.cikisYAP();
+            return;
+        }
+        
+        const oda = this.odalar[this.index];
+        document.getElementById('focusKatIsim').innerText = this.aktifKat;
+        
+        const yuzde = Math.round((this.index / this.odalar.length) * 100);
+        document.getElementById('focusYuzdeMetin').innerText = `%${yuzde} (${this.index}/${this.odalar.length})`;
+        document.getElementById('focusIlerlemeBar').style.width = `${yuzde}%`;
+        
+        document.getElementById('focusOdaAdi').innerText = oda.bolum;
+        
+        const timeStr = new Date(oda.tarih).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('focusGorevliZaman').innerText = `${timeStr} - Görevli Onaya Sundu`;
+        
+        const notContainer = document.getElementById('focusGorevliNotContainer');
+        if(oda.yorum) {
+            notContainer.classList.remove('d-none');
+            document.getElementById('focusGorevliNot').innerText = oda.yorum;
+        } else {
+            notContainer.classList.add('d-none');
+        }
+        
+        const kart = document.getElementById('focusOdaKarti');
+        kart.style.opacity = '1';
+        kart.style.transform = 'scale(1) rotate(0deg)';
+    },
+    cikisYAP: function() {
+        document.getElementById('mufettisOdakModu').classList.add('d-none');
+        document.getElementById('mufettisOdakModu').classList.remove('d-flex');
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisKatSecim').classList.remove('d-none');
+        loadAdminPanel();
+    },
+    gec: function(sonuc, neden) {
+        const oda = this.odalar[this.index];
+        
         let data = getData();
-        const idx = data.findIndex(d => d.id === currentActiveReport.id);
-
+        const idx = data.findIndex(d => d.id === oda.id);
         if (idx !== -1) {
-            data[idx].durum = status;
-            data[idx].mufettis_yorum = comment;
+            data[idx].durum = sonuc;
+            data[idx].mufettis_yorum = neden || "";
             data[idx].mufettis_tarih = new Date().getTime();
-
-            // Cloud update
             if (db) {
-                db.ref('reports/' + currentActiveReport.id).update({
-                    durum: status,
-                    mufettis_yorum: comment,
+                db.ref('reports/' + oda.id).update({
+                    durum: sonuc,
+                    mufettis_yorum: neden || "",
                     mufettis_tarih: data[idx].mufettis_tarih
                 });
             }
-
             localStorage.setItem('topclean_data', JSON.stringify(data));
-            cachedData = data; // Update cache
-
-            bootstrapModal.hide();
-            Swal.fire({
-                icon: status === 'onaylandi' ? 'success' : 'warning',
-                title: status === 'onaylandi' ? 'Onaylandı' : 'Reddedildi',
-                text: 'İşlem başarıyla tamamlandı.',
-                timer: 1500,
-                showConfirmButton: false
-            });
+            cachedData = data;
         }
+        
+        const kart = document.getElementById('focusOdaKarti');
+        kart.style.transform = sonuc === 'onaylandi' ? 'translateX(120%) rotate(15deg)' : 'translateX(-120%) rotate(-15deg)';
+        kart.style.opacity = '0';
+        
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
+        
+        setTimeout(() => {
+            kart.style.transition = 'none';
+            kart.style.transform = 'translateY(20px) scale(0.9)';
+            setTimeout(() => {
+                 kart.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s';
+                 this.index++;
+                 this.renderOda();
+            }, 50);
+        }, 300);
     },
+    onayVer: function() {
+        this.gec('onaylandi', "");
+    },
+    onBtnReddet: function() {
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(0)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'auto';
+    },
+    iptalRet: function() {
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
+    },
+    hizliRet: function(neden) {
+        this.gec('reddedildi', neden);
+    },
+    acKlavyeRet: async function() {
+        const { value: neden } = await Swal.fire({
+            title: 'Kusur Nedeni',
+            input: 'text',
+            inputPlaceholder: 'Varsa yazınız...',
+            showCancelButton: true,
+            confirmButtonText: 'Reddet',
+            cancelButtonText: 'İptal',
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonColor: '#ef4444'
+        });
+        if(neden) {
+            this.hizliRet(neden);
+        } else {
+            this.iptalRet();
+        }
+    }
+};
+
+const AdminManager = {
 
     exportCSV: function () {
         let data = getData();
