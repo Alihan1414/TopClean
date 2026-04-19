@@ -11,9 +11,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
+    // TOPCLEAN v3.0.3 - FORCE RESET SCRIPT
+    if (localStorage.getItem('tc_v3_pushed') !== 'true') {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) { registration.unregister(); }
+                localStorage.setItem('tc_v3_pushed', 'true');
+                window.location.reload(true);
+            });
+        } else {
+            localStorage.setItem('tc_v3_pushed', 'true');
+        }
+    }
+    
     window.onerror = function(msg, url, line, col, error) {
         var err = "MSG:" + msg + " LINE:" + line + " COL:" + col;
-        fetch("http://localhost:5555/?error=" + encodeURIComponent(err));
+        console.error("Critical Runtime Error:", err);
     };
     </script>
 
@@ -52,7 +65,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.2">
+    <link rel="stylesheet" href="style.css?v=3.0.3">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -86,7 +99,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.2</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.3</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -720,7 +733,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.2"></script>
+    <script src="app.js?v=3.0.3"></script>
 
     <!-- PWA Service Worker Registration -->
     <script>
