@@ -9,6 +9,9 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
+// ---------- TOPCLEAN V3.0.1 (Fail-Safe Recovery Active) ----------
+console.log("%c TOPCLEAN V3.0.1 - OK ", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+
 let db = null;
 let auth = null;
 
@@ -1411,12 +1414,12 @@ const IdarecManager = {
             if (dateSel) { dateSel.value = today; dateSel.onchange = function () { IdarecManager.loadBinaDurumu(); }; }
 
             this.currentBinaKat = 'Hepsi';
-            this.loadBinaDurumu();
-            this.loadBasari('haftalik');
-            this.loadPersonel();
-            this.loadMufettis();
-            this.loadArizalar('hepsi');
-            InventoryManager.render();
+            try { this.loadBinaDurumu(); } catch(err) { console.error("Load Bina Error:", err); }
+            try { this.loadBasari('haftalik'); } catch(err) { console.error("Load Basari Error:", err); }
+            try { this.loadPersonel(); } catch(err) { console.error("Load Personel Error:", err); }
+            try { this.loadMufettis(); } catch(err) { console.error("Load Mufettis Error:", err); }
+            try { this.loadArizalar('hepsi'); } catch(err) { console.error("Load Arizalar Error:", err); }
+            try { if(typeof InventoryManager !== 'undefined') InventoryManager.render(); } catch(err) { console.error("Render Inventory Error:", err); }
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
             console.error("IdarecManager.load Error:", e);
