@@ -209,11 +209,14 @@ function initLoginSelect() {
             }
         });
 
-        // Liste Dağılımı seçeneği (İdareci girişi)
-        const opt = document.createElement('option');
-        opt.value = "Liste Dağılımı";
-        opt.textContent = "Liste Dağılımı (Demo)";
-        select.appendChild(opt);
+        allUsers.forEach(u => {
+            if (u && u.name) {
+                const opt = document.createElement('option');
+                opt.value = u.name;
+                opt.textContent = u.name;
+                select.appendChild(opt);
+            }
+        });
     } catch (err) {
         console.error("initLoginSelect Error:", err);
     }
@@ -243,10 +246,7 @@ function checkSession() {
             } else if (currentUser.rol === "idareci") {
                 IdarecManager.load();
                 showPanel("idarecPanel");
-            } else if (currentUser.rol === "liste") {
-                ListeManager.load();
-                showPanel("listePanel");
-            } else {
+            } else if (currentUser.rol === "mufettis") {
                 loadAdminPanel();
                 showPanel("adminPanel");
             }
@@ -360,7 +360,7 @@ function loginSuccess() {
     } else if (currentUser.rol === "idareci") {
         IdarecManager.load();
         showPanel("idarecPanel");
-    } else {
+    } else if (currentUser.rol === "mufettis") {
         loadAdminPanel();
         showPanel("adminPanel");
     }
@@ -1413,6 +1413,7 @@ const IdarecManager = {
             this.loadPersonel();
             this.loadMufettis();
             this.loadArizalar('hepsi');
+            ListeManager.load(); // Load student data silently
             InventoryManager.render();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
@@ -1422,8 +1423,19 @@ const IdarecManager = {
     switchTab: function (tab, btn) {
         document.querySelectorAll('.idarec-tab-content').forEach(function (el) { el.classList.add('d-none'); });
         document.querySelectorAll('.idarec-tab').forEach(function (el) { el.classList.remove('active'); });
-        document.getElementById('idarec-tab-' + tab).classList.remove('d-none');
-        btn.classList.add('active');
+        
+        const content = document.getElementById('idarec-tab-' + tab);
+        if (content) content.classList.remove('d-none');
+        
+        if (btn) btn.classList.add('active');
+
+        // Extra logic for specific tabs
+        if (tab === 'stok') InventoryManager.render();
+        if (tab === 'liste') {
+            ListeManager.load();
+            ListeManager.updateStats();
+        }
+
         lucide.createIcons();
     },
     loadBinaDurumu: function () {
@@ -2166,7 +2178,24 @@ const ListeManager = {
 // ---------- STOK (INVENTORY) MANAGER ----------
 const InventoryManager = {
     ac: function() {
-        showPanel('stokPanel');
+        if (currentUser.rol === 'idareci') {
+            IdarecManager.switchTab('stok', document.querySelector('[onclick*="switchTab(\'stok\'"]'));
+        } else {
+            showPanel('stokPanel');
+            this.render();
+        }
+    },
+
+    acExplicit: function() {
+        // Specifically for the "Integrated" button to open detailed management
+        Swal.fire({
+            title: 'Depo Yönetimi',
+            text: 'Ürün eklemek veya miktar düzenlemek için ürün kartlarını kullanın.',
+            icon: 'info',
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonColor: '#10b981'
+        });
         this.render();
     },
 
