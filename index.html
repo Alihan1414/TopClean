@@ -11,21 +11,29 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-    // TOPCLEAN v3.0.6 - NUCLEAR RESTORATION SCRIPT
-    if (localStorage.getItem('tc_v3_pushed_v6') !== 'true') {
+    // TOPCLEAN v3.0.7 - SYSTEM DIAGNOSTIC SCRIPT
+    window.TC_REPORT = {
+        firebaseInit: false,
+        dbInit: false,
+        authStatus: "UNKNOWN",
+        errors: []
+    };
+    
+    window.onerror = function(msg, url, line, col, error) {
+        var err = "MSG:" + msg + " LINE:" + line + " COL:" + col;
+        window.TC_REPORT.errors.push(err);
+        console.error("Critical Error:", err);
+    };
+
+    if (localStorage.getItem('tc_v3_pushed_v7') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
-                localStorage.setItem('tc_v3_pushed_v6', 'true');
+                localStorage.setItem('tc_v3_pushed_v7', 'true');
                 window.location.reload(true);
             });
         }
     }
-    
-    window.onerror = function(msg, url, line, col, error) {
-        var err = "MSG:" + msg + " LINE:" + line + " COL:" + col;
-        console.error("Critical Runtime Error:", err);
-    };
     </script>
 
     <!-- Bootstrap 5.3 -->
@@ -94,7 +102,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.6">
+    <link rel="stylesheet" href="style.css?v=3.0.7">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -128,7 +136,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.6</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.7</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -762,35 +770,40 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.6"></script>
+    <script src="app.js?v=3.0.7"></script>
 
-    <!-- v3.0.6 NUCLEAR EMERGENCY SCRIPT -->
+    <!-- v3.0.7 DETECTIVE (SYSTEM REPORT) SCRIPT -->
+    <div id="tcSystemReport" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:99999; color:white; padding:40px; font-family:monospace; overflow-y:auto;">
+        <h1 style="color:#ef4444; border-bottom:2px solid #ef4444; padding-bottom:10px;">TOPCLEAN SİSTEM RAPORU (V3.0.7)</h1>
+        <div id="reportContent" style="margin-top:20px; font-size:16px; line-height:1.6;"></div>
+        <button onclick="location.reload(true)" style="margin-top:30px; background:#10b981; color:white; border:none; padding:15px 30px; border-radius:10px; font-weight:bold; cursor:pointer;">SİSTEMİ YENİDEN YÜKLE</button>
+    </div>
+
     <script>
-        (function() {
-            function forceManifest() {
-                console.log("NUCLEAR: Force manifesting dashboard...");
-                const login = document.getElementById('loginPanel');
-                const main = document.getElementById('mainContainer');
-                const idarec = document.getElementById('idarecPanel');
-                const header = document.getElementById('app-header');
+        setTimeout(() => {
+            const report = document.getElementById('reportContent');
+            const overlay = document.getElementById('tcSystemReport');
+            const idarec = document.getElementById('idarecPanel');
+            const session = localStorage.getItem('topclean_session');
+
+            // Eğer dashboard açılmadıysa raporu göster
+            if (session && (!idarec || !idarec.classList.contains('active'))) {
+                overlay.style.display = 'block';
+                let html = '<h3>DURUM ANALİZİ:</h3>';
+                html += '<li><b>Firebase SDK:</b> ' + (typeof firebase !== 'undefined' ? '✅ YÜKLENDİ' : '❌ EKSİK') + '</li>';
+                html += '<li><b>Veritabanı:</b> ' + (window.TC_REPORT.dbInit ? '✅ BAĞLANDI' : '❌ BAĞLANAMADI') + '</li>';
+                html += '<li><b>Oturum:</b> ' + (session ? '✅ AKTİF' : '❌ YOK') + '</li>';
+                html += '<li><b>Panel DOM:</b> ' + (idarec ? '✅ VAR' : '❌ KAYIP') + '</li>';
                 
-                if (localStorage.getItem('topclean_session')) {
-                    if(login) login.style.display = 'none';
-                    if(header) header.classList.remove('d-none');
-                    if(main) { main.style.display = 'flex'; main.style.opacity = '1'; }
-                    if(idarec) { 
-                        idarec.classList.add('active'); 
-                        idarec.style.display = 'flex';
-                        idarec.style.opacity = '1';
-                        // Default tab force
-                        const tab1 = document.getElementById('idarec-tab-durum');
-                        if(tab1) tab1.classList.remove('d-none');
-                    }
+                if (window.TC_REPORT.errors.length > 0) {
+                    html += '<h3 style="color:#ef4444; margin-top:20px;">SİSTEM HATALARI:</h3>';
+                    window.TC_REPORT.errors.forEach(err => {
+                        html += '<div style="background:rgba(255,0,0,0.1); padding:10px; border-left:4px solid red; margin-bottom:5px;">' + err + '</div>';
+                    });
                 }
+                report.innerHTML = html;
             }
-            window.addEventListener('load', () => setTimeout(forceManifest, 800));
-            setTimeout(forceManifest, 2500); // Fail-safe
-        })();
+        }, 5000); // 5 saniye bekle, açılmazsa raporu patlat
     </script>
 
     <!-- PWA Service Worker Registration -->
