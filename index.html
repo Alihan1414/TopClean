@@ -11,12 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-    // TOPCLEAN v3.0.5 - FINAL RESTORATION SCRIPT
-    if (localStorage.getItem('tc_v3_pushed_v5') !== 'true') {
+    // TOPCLEAN v3.0.6 - NUCLEAR RESTORATION SCRIPT
+    if (localStorage.getItem('tc_v3_pushed_v6') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
-                localStorage.setItem('tc_v3_pushed_v5', 'true');
+                localStorage.setItem('tc_v3_pushed_v6', 'true');
                 window.location.reload(true);
             });
         }
@@ -40,32 +40,61 @@
 
     <!-- Firebase SDKs -->
     <style>
-        /* v3.0.5 Zorunlu Görünürlük & Restorasyon */
+        /* v3.0.6 NUCLEAR VISIBILITY - Dış CSS'e bağımlılığı öldürür */
+        :root {
+            --tc-bg: #030807;
+            --tc-emerald: #10b981;
+            --tc-glass: rgba(255, 255, 255, 0.03);
+            --tc-border: rgba(255, 255, 255, 0.1);
+        }
+        body, html { background-color: var(--tc-bg) !important; color: white !important; }
         #mainContainer {
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
-            z-index: 100 !important;
             min-height: 100vh !important;
+            z-index: 100 !important;
+            background: var(--tc-bg) !important;
         }
-        #idarecPanel, #adminPanel, #stokPanel, #gorevliPanel {
-            min-height: 400px !important;
-            visibility: visible !important;
-            opacity: 1 !important;
+        #idarecPanel, #stokPanel, #gorevliPanel, #adminPanel {
+            width: 100% !important;
+            max-width: 1200px !important;
+            margin: 0 auto !important;
+            display: none; /* JS ile açılır */
         }
         .view-panel.active {
             display: flex !important;
+            flex-direction: column !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
-        /* Logolar ve efektler için z-index koruması */
-        .side-branding { z-index: 50 !important; }
-        .aurora-container { z-index: -10 !important; }
-        #app-header { z-index: 1000 !important; }
+        .glass-card {
+            background: var(--tc-glass) !important;
+            border: 1px solid var(--tc-border) !important;
+            backdrop-filter: blur(10px) !important;
+            border-radius: 20px !important;
+        }
+        .text-emerald { color: var(--tc-emerald) !important; }
+        .bg-emerald { background-color: var(--tc-emerald) !important; }
+        .idarec-tab {
+            background: rgba(255,255,255,0.05) !important;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            color: #94a3b8 !important;
+            transition: 0.3s !important;
+        }
+        .idarec-tab.active {
+            background: var(--tc-emerald) !important;
+            color: white !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
+        }
+        /* Gizli Logo Temizliği */
+        .side-branding { opacity: 0.05 !important; pointer-events: none !important; }
     </style>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.5">
+    <link rel="stylesheet" href="style.css?v=3.0.6">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -99,7 +128,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.5</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.6</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -733,28 +762,35 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.5"></script>
+    <script src="app.js?v=3.0.6"></script>
 
-    <!-- v3.0.5 Acil Durum Kurtarma Scripti -->
+    <!-- v3.0.6 NUCLEAR EMERGENCY SCRIPT -->
     <script>
-        setTimeout(() => {
-            console.log("FINAL RECOVERY: Forcing panel manifestations...");
-            const main = document.getElementById('mainContainer');
-            const target = document.getElementById('idarecPanel');
-            
-            if(main) { main.classList.remove('d-none'); main.style.display = 'flex'; }
-            if(target) { 
-                target.classList.add('active'); 
-                target.style.setProperty('display', 'flex', 'important'); 
-                target.style.opacity = '1';
-                // Tabları da zorla göster
-                const activeTab = target.querySelector('.idarec-tab-content:not(.d-none)');
-                if(!activeTab) {
-                    const firstTab = document.getElementById('idarec-tab-durum');
-                    if(firstTab) firstTab.classList.remove('d-none');
+        (function() {
+            function forceManifest() {
+                console.log("NUCLEAR: Force manifesting dashboard...");
+                const login = document.getElementById('loginPanel');
+                const main = document.getElementById('mainContainer');
+                const idarec = document.getElementById('idarecPanel');
+                const header = document.getElementById('app-header');
+                
+                if (localStorage.getItem('topclean_session')) {
+                    if(login) login.style.display = 'none';
+                    if(header) header.classList.remove('d-none');
+                    if(main) { main.style.display = 'flex'; main.style.opacity = '1'; }
+                    if(idarec) { 
+                        idarec.classList.add('active'); 
+                        idarec.style.display = 'flex';
+                        idarec.style.opacity = '1';
+                        // Default tab force
+                        const tab1 = document.getElementById('idarec-tab-durum');
+                        if(tab1) tab1.classList.remove('d-none');
+                    }
                 }
             }
-        }, 1500);
+            window.addEventListener('load', () => setTimeout(forceManifest, 800));
+            setTimeout(forceManifest, 2500); // Fail-safe
+        })();
     </script>
 
     <!-- PWA Service Worker Registration -->
