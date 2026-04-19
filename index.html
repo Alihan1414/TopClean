@@ -345,13 +345,13 @@
                         </div>
                     </div>
 
+                    <!-- İdareci Sekmeleri (Tabs) -->
                     <div class="d-flex overflow-auto gap-2 mb-4">
                         <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('muf', this)">👮 İç Mesuller</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👨‍🏫 Personeller</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('ari', this)">🛠️ Arızalar</button>
                         <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('stok', this)">📦 Stok Takibi</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('liste', this)">📝 Liste Dağıtımı</button>
                     </div>
 
                     <!-- TAB 1: BİNA DURUMU -->
@@ -476,79 +476,191 @@
                         <div id="idarecArizaList" class="d-flex flex-column gap-2 pb-5"></div>
                     </div>
 
-                    <!-- TAB 6: STOK TAKİBİ (Integrated) -->
+                    <!-- TAB 6: STOK TAKİBİ (İçerik stokPanel'e taşındı) -->
                     <div id="idarec-tab-stok" class="idarec-tab-content d-none">
-                        <!-- Critical Alerts -->
-                        <div id="stokKritikPanel" class="alert alert-danger d-none d-flex flex-column gap-2 p-3 rounded-4 mb-4" style="background: rgba(225, 29, 72, 0.1); border: 1px solid var(--danger-color);">
-                            <div class="d-flex align-items-center gap-2">
-                                <i data-lucide="alert-triangle" class="text-danger"></i>
-                                <div class="fw-bold text-danger">⚠️ KRİTİK STOK UYARISI</div>
-                            </div>
-                            <div id="stokKritikListe" class="small" style="color: #fca5a5;"></div>
-                        </div>
-
-                        <!-- Actions bar -->
-                        <div class="d-flex gap-2 mb-4">
-                            <button class="btn btn-warning flex-grow-1 py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.showThresholdConfig()" title="Bildirim Ayarla" style="background: var(--warning-color); color: #000; border: none;">
-                                <i data-lucide="bell" size="20"></i> BİLDİRİM AYARLA
-                            </button>
-                            <button class="btn btn-emerald-lg flex-grow-1 py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.acExplicit()">
-                                <i data-lucide="layout-grid" size="20"></i> ENVANTERİ YÖNET
-                            </button>
-                            <button class="btn btn-glass-round py-3 shadow-lg" onclick="InventoryManager.showAllLogs()" title="Tüm Hareket Geçmişi" style="width: 60px;">
-                                <i data-lucide="history" size="20"></i>
+                        <div class="glass-card p-5 text-center mt-4">
+                            <i data-lucide="package" size="48" class="text-emerald mb-4"></i>
+                            <h4 class="text-white fw-bold mb-3">Stok ve Envanter</h4>
+                            <p class="text-muted mb-4 text-sm">Ürünleri görüntülemek, limit ayarlamak ve geçmiş hareketleri incelemek için yönetim panelini açın.</p>
+                            <button class="btn btn-emerald-lg px-5 py-3 rounded-pill fw-bold" onclick="InventoryManager.ac()">
+                                ENVANTER PANELİNİ AÇ
                             </button>
                         </div>
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Search -->
-                        <div class="glass-card px-4 rounded-pill mb-4" style="border: 1px solid var(--glass-border) !important; height: 54px; display: flex; align-items: center; background: rgba(0,0,0,0.3);">
-                            <i data-lucide="search" size="18" class="text-muted me-3"></i>
-                            <input type="text" id="stokSearchInput" class="bg-transparent border-0 text-white shadow-none w-100" placeholder="Ürün ismi ile ara..." oninput="InventoryManager.render()">
-                        </div>
+            <!-- 6. STOK / ENVANTER PANELİ (YENİ - BAĞIMSIZ) -->
+            <div id="stokPanel" class="view-panel w-100 flex-column align-items-stretch mw-800" style="margin: 0 auto; padding-bottom: 20px;">
+                <!-- Üst Bar -->
+                <div class="d-flex align-items-center justify-content-between mb-4 mt-2 px-1">
+                    <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 38px; height: 38px; border-color: var(--glass-border);" onclick="InventoryManager.kapat()">
+                        <i data-lucide="arrow-left" size="18" class="text-muted"></i>
+                    </button>
+                    <div class="text-center flex-grow-1">
+                        <div class="x-small fw-bold text-muted text-uppercase" style="letter-spacing: 1px;">ENVANTER YÖNETİMİ</div>
+                        <h4 class="fw-bold m-0 text-white">📦 Ürün Listesi</h4>
+                    </div>
+                    <div style="width:38px;"></div>
+                </div>
 
-                        <!-- Stock List -->
-                        <div id="stokListesi" class="row g-3 pb-5">
-                            <!-- Items will be rendered here -->
+                <!-- Critical Alerts -->
+                <div id="stokKritikPanel" class="alert alert-danger d-none d-flex flex-column gap-2 p-3 rounded-4 mb-4" style="background: rgba(225, 29, 72, 0.1); border: 1px solid var(--danger-color);">
+                    <div class="d-flex align-items-center gap-2">
+                        <i data-lucide="alert-triangle" class="text-danger"></i>
+                        <div class="fw-bold text-danger">⚠️ KRİTİK STOK UYARISI</div>
+                    </div>
+                    <div id="stokKritikListe" class="small" style="color: #fca5a5;"></div>
+                </div>
+
+                <!-- Actions bar -->
+                <div class="d-flex gap-2 mb-4">
+                    <button class="btn btn-warning flex-grow-1 py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.showThresholdConfig()" title="Bildirim Ayarla" style="background: var(--warning-color); color: #000; border: none;">
+                        <i data-lucide="bell" size="20"></i> BİLDİRİM AYARLA
+                    </button>
+                    <button class="btn btn-glass-round py-3 shadow-lg" onclick="InventoryManager.showAllLogs()" title="Tüm Hareket Geçmişi" style="width: 60px;">
+                        <i data-lucide="history" size="20"></i>
+                    </button>
+                </div>
+
+                <!-- Search -->
+                <div class="glass-card px-4 rounded-pill mb-4" style="border: 1px solid var(--glass-border) !important; height: 54px; display: flex; align-items: center; background: rgba(0,0,0,0.3);">
+                    <i data-lucide="search" size="18" class="text-muted me-3"></i>
+                    <input type="text" id="stokSearchInput" class="bg-transparent border-0 text-white shadow-none w-100" placeholder="Ürün ismi ile ara..." oninput="InventoryManager.render()">
+                </div>
+
+                <!-- Stock List -->
+                <div id="stokListesi" class="row g-3 pb-5">
+                    <!-- Items will be rendered here -->
+                </div>
+            </div>
+
+            <!-- 6. LİSTE DAĞILIMI PANELİ -->
+            <div id="listePanel" class="view-panel w-100 flex-column align-items-stretch">
+                <div class="w-100" style="max-width: 900px; margin: 0 auto; padding: 0;">
+
+                    <!-- Panel Title -->
+                    <div class="text-center mb-3">
+                        <div class="d-inline-block px-4 py-2 glass-card" style="border-radius: 50px;">
+                            <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 0.9rem;">📝 TALEBE TEMİZLİK DAĞILIMI</h4>
                         </div>
                     </div>
 
-                    <!-- TAB 7: LİSTE DAĞILIMI (Integrated) -->
-                    <div id="idarec-tab-liste" class="idarec-tab-content d-none">
-                        <!-- Same structure as old listePanel but simplified for tab -->
-                        <div id="listeDisaAktarimAlani" class="poster-container p-4 rounded-4 shadow-2xl position-relative overflow-hidden" style="background: #000; border: 1px solid var(--glass-border);">
-                            <div class="poster-grid-bg"></div>
-                            
-                            <!-- Poster Header (Visible only on Export) -->
-                            <div class="export-only text-center mb-5 mt-2">
-                                <h1 style="font-size: 2.5rem; font-weight: 900; color: #fff; letter-spacing: 2px;">TOPCLEAN ÖĞRENCİ TEMİZLİK LİSTESİ</h1>
-                                <div id="posterPeriod" style="font-size: 1.2rem; color: #10b981; font-weight: bold; border: 2px solid #10b981; display: inline-block; padding: 5px 20px; border-radius: 50px; margin-top: 10px;"></div>
-                            </div>
+                    <!-- Period & Quick Actions -->
+                    <div class="glass-card p-3 mb-4 d-flex align-items-center justify-content-between gap-3">
+                        <div class="flex-grow-1">
+                            <label class="x-small text-muted fw-bold mb-1 d-block">LİSTE DÖNEMİ / TARİH</label>
+                            <input type="text" id="cleaningPeriod" class="form-control bg-transparent border-0 text-white p-0 shadow-none fw-bold" placeholder="Örn: 2026 Bahar Dönemi" oninput="ListeManager.save()">
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-glass-round" onclick="ListeManager.toggleEdit()" title="Kişi Listesini Düzenle">
+                                <i data-lucide="users" size="18"></i>
+                            </button>
+                            <button id="btnDagitMain" class="btn btn-emerald-lg px-4" onclick="ListeManager.dagit()">
+                                <i data-lucide="shuffle" size="18" class="me-1"></i> DAĞIT
+                            </button>
+                        </div>
+                    </div>
 
-                            <!-- Distribution Cards (The stuff that generates) -->
-                            <div id="dagitimSonucu" class="row g-3 dagitim-sonucu-poster">
-                                <div class="col-12 text-center py-5 opacity-50">
-                                    <i data-lucide="shuffle" size="48" class="mb-3"></i>
-                                    <p>Dağıtmak için yukarıdaki "DAĞIT" butonuna basın.</p>
+                    <!-- Input Boxes (Collapsed by Default) -->
+                    <div id="listeInputArea" class="d-none animate__animated animate__fadeIn">
+                        <div class="row g-3 mb-4">
+                            <div class="col-12 col-md-6">
+                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #ffc107 !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-warning small m-0">🤧 Alerjik Rahatsızlık</h6>
+                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listAlerjik')"><i data-lucide="clipboard-copy" size="12"></i></button>
+                                    </div>
+                                    <textarea id="listAlerjik" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #0dcaf0 !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-info small m-0">🫁 Astım Hastası</h6>
+                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listAstim')"><i data-lucide="clipboard-copy" size="12"></i></button>
+                                    </div>
+                                    <textarea id="listAstim" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #198754 !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-success small m-0">💪 Sağlıklı Olanlar</h6>
+                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listSaglikli')"><i data-lucide="clipboard-copy" size="12"></i></button>
+                                    </div>
+                                    <textarea id="listSaglikli" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <div class="glass-card p-3 h-100" style="border-left: 4px solid var(--text-muted) !important;">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="fw-bold text-secondary small m-0">📋 Diğer</h6>
+                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listDiger')"><i data-lucide="clipboard-copy" size="12"></i></button>
+                                    </div>
+                                    <textarea id="listDiger" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Sticky Action Bar for List -->
-                        <div class="d-flex justify-content-center gap-4 mt-4 pb-5">
-                            <div class="text-center">
-                                <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(225, 29, 72, 0.4) !important;" onclick="ListeManager.exportPDF()" title="PDF Olarak Kaydet">
-                                    <i data-lucide="file-text" size="28" style="color: #e11d48;"></i>
-                                </button>
-                                <div class="x-small text-muted fw-bold">PDF</div>
+                        <!-- Stats Bar & Heatmap (Inside Edit Mode) -->
+                        <div class="row g-2 mb-4">
+                            <div class="col-8">
+                                <div class="glass-card p-3 d-flex align-items-center justify-content-around h-100">
+                                    <div class="text-center">
+                                        <div class="x-small text-muted fw-bold">KAPASİTE</div>
+                                        <div id="statsKapasite" class="fw-black text-white">0</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="x-small text-muted fw-bold">TALEBE</div>
+                                        <div id="statsTalebe" class="fw-black text-white">0</div>
+                                    </div>
+                                    <div class="text-center">
+                                        <div class="x-small text-muted fw-bold">BOŞ</div>
+                                        <div id="statsBos" class="fw-black text-emerald">0</div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="text-center">
-                                <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(16, 185, 129, 0.4) !important;" onclick="ListeManager.exportImage()" title="WhatsApp İçin Resim Al">
-                                    <i data-lucide="image" size="28" style="color: #10b981;"></i>
-                                </button>
-                                <div class="x-small text-muted fw-bold">RESİM</div>
+                            <div class="col-4">
+                                <div class="glass-card p-3 h-100 d-flex flex-column align-items-center justify-content-center">
+                                    <div id="statsHeatmap" class="d-flex gap-1"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                    <div id="listeDisaAktarimAlani" class="p-0">
+                        <div id="posterHeader" class="text-center mb-4 d-none export-only">
+                            <h2 class="fw-black text-white mb-0">TOPCLEAN</h2>
+                            <h5 class="fw-bold text-emerald mb-2">TALEBE TEMİZLİK GÖREV ÇİZELGESİ</h5>
+                            <div id="posterPeriod" class="badge bg-emerald rounded-pill px-3 py-1"></div>
+                            <hr class="border-secondary opacity-25 mt-3">
+                        </div>
+
+                        <div id="listeSonuclari" class="d-flex flex-column gap-3 pb-5" style="min-height: 200px;">
+                            <!-- Kat kat dağılım sonuçları buraya gelecek -->
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-4 mb-5 justify-content-center">
+                        <!-- PDF Export -->
+                        <div class="text-center">
+                            <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(239, 68, 68, 0.4) !important;" onclick="ListeManager.exportPDF()" title="PDF Olarak Yazdır">
+                                <i data-lucide="file-text" size="28" style="color: #ef4444;"></i>
+                            </button>
+                            <div class="x-small text-muted fw-bold">PDF</div>
+                        </div>
+                        
+                        <!-- WhatsApp/Image Export -->
+                        <div class="text-center">
+                            <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(16, 185, 129, 0.4) !important;" onclick="ListeManager.exportImage()" title="WhatsApp İçin Resim Al">
+                                <i data-lucide="image" size="28" style="color: #10b981;"></i>
+                            </button>
+                            <div class="x-small text-muted fw-bold">RESİM</div>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
 
