@@ -59,14 +59,17 @@
                 </div>
                 
                 <div class="d-flex align-items-center gap-3">
-                    <div id="headerUserBadge" class="header-user-badge d-flex align-items-center gap-2 px-3 py-2 rounded-pill d-none">
-                        <div class="user-avatar-small bg-emerald-glow">
+                    <div id="headerUserBadge" class="p-1 px-3 glass-card rounded-pill d-none align-items-center gap-2" style="border: 1px solid var(--accent-emerald) !important;">
+                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:24px; height:24px; background: rgba(16, 185, 129, 0.2);">
                             <i data-lucide="user" size="14" class="text-emerald"></i>
                         </div>
-                        <span id="headerName" class="small fw-bold text-white"></span>
+                        <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
+                    
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.1</div>
+                    
                     <div class="header-actions d-flex gap-2">
-                        <button id="themeToggleBtn" class="btn btn-glass-round" title="Tema Değiştir">
+                        <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
                             <i data-lucide="moon" size="18"></i>
                         </button>
                         <button id="logoutBtn" class="btn btn-glass-round text-danger-glow" title="Çıkış Yap">
@@ -78,7 +81,7 @@
         </header>
 
         <!-- MAIN CONTENT AREA -->
-        <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4">
+        <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4" style="z-index: 100 !important;">
             <!-- Side Branding Layer (Black Background + Screen Blend for Perfect Logo) -->
             <img src="assets/logo_enderun_black.png" class="side-branding branding-left" alt="Enderun Logo">
             <img src="assets/logo_cleaning_black.png" class="side-branding branding-right" alt="Cleaning Logo">
