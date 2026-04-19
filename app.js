@@ -137,18 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (db) syncFromCloud();
 
         initLoginSelect();
-        checkSession(); // Restore session if exists
-
-        // Migration Disabled for Demo
-        // if (db) migrateLocalToCloud();
-
-        const dateSel = document.getElementById('adminDateSelector');
-        if (dateSel) {
-            dateSel.valueAsDate = new Date();
-            dateSel.addEventListener('change', loadAdminPanel);
-        }
     } catch (err) {
-        console.error("App Init Error:", err);
+        console.error("Theme Init Error:", err);
     }
 });
 
@@ -209,14 +199,11 @@ function initLoginSelect() {
             }
         });
 
-        allUsers.forEach(u => {
-            if (u && u.name) {
-                const opt = document.createElement('option');
-                opt.value = u.name;
-                opt.textContent = u.name;
-                select.appendChild(opt);
-            }
-        });
+        // Liste Dağılımı seçeneği (İdareci girişi)
+        const opt = document.createElement('option');
+        opt.value = "Liste Dağılımı";
+        opt.textContent = "Liste Dağılımı (Demo)";
+        select.appendChild(opt);
     } catch (err) {
         console.error("initLoginSelect Error:", err);
     }
@@ -246,7 +233,10 @@ function checkSession() {
             } else if (currentUser.rol === "idareci") {
                 IdarecManager.load();
                 showPanel("idarecPanel");
-            } else if (currentUser.rol === "mufettis") {
+            } else if (currentUser.rol === "liste") {
+                ListeManager.load();
+                showPanel("listePanel");
+            } else {
                 loadAdminPanel();
                 showPanel("adminPanel");
             }
@@ -360,7 +350,7 @@ function loginSuccess() {
     } else if (currentUser.rol === "idareci") {
         IdarecManager.load();
         showPanel("idarecPanel");
-    } else if (currentUser.rol === "mufettis") {
+    } else {
         loadAdminPanel();
         showPanel("adminPanel");
     }
@@ -1413,7 +1403,6 @@ const IdarecManager = {
             this.loadPersonel();
             this.loadMufettis();
             this.loadArizalar('hepsi');
-            ListeManager.load(); // Load student data silently
             InventoryManager.render();
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
@@ -1423,19 +1412,8 @@ const IdarecManager = {
     switchTab: function (tab, btn) {
         document.querySelectorAll('.idarec-tab-content').forEach(function (el) { el.classList.add('d-none'); });
         document.querySelectorAll('.idarec-tab').forEach(function (el) { el.classList.remove('active'); });
-        
-        const content = document.getElementById('idarec-tab-' + tab);
-        if (content) content.classList.remove('d-none');
-        
-        if (btn) btn.classList.add('active');
-
-        // Extra logic for specific tabs
-        if (tab === 'stok') InventoryManager.render();
-        if (tab === 'liste') {
-            ListeManager.load();
-            ListeManager.updateStats();
-        }
-
+        document.getElementById('idarec-tab-' + tab).classList.remove('d-none');
+        btn.classList.add('active');
         lucide.createIcons();
     },
     loadBinaDurumu: function () {
@@ -2178,24 +2156,7 @@ const ListeManager = {
 // ---------- STOK (INVENTORY) MANAGER ----------
 const InventoryManager = {
     ac: function() {
-        if (currentUser.rol === 'idareci') {
-            IdarecManager.switchTab('stok', document.querySelector('[onclick*="switchTab(\'stok\'"]'));
-        } else {
-            showPanel('stokPanel');
-            this.render();
-        }
-    },
-
-    acExplicit: function() {
-        // Specifically for the "Integrated" button to open detailed management
-        Swal.fire({
-            title: 'Depo Yönetimi',
-            text: 'Ürün eklemek veya miktar düzenlemek için ürün kartlarını kullanın.',
-            icon: 'info',
-            background: 'var(--bg-main)',
-            color: '#fff',
-            confirmButtonColor: '#10b981'
-        });
+        showPanel('stokPanel');
         this.render();
     },
 
@@ -2594,3 +2555,20 @@ const InventoryManager = {
         });
     }
 };
+
+// ---------- INITIALIZATION (Moved to Bottom to avoid ReferenceError) ----------
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        initTheme();
+        initLoginSelect();
+        checkSession(); // Artık tüm Manager'lar tanımlı olduğu için ReferenceError vermez
+
+        const dateSel = document.getElementById('adminDateSelector');
+        if (dateSel) {
+            dateSel.valueAsDate = new Date();
+            dateSel.addEventListener('change', loadAdminPanel);
+        }
+    } catch (err) {
+        console.error("General Init Error:", err);
+    }
+});
