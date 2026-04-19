@@ -360,7 +360,15 @@ function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
 
+    const mainContainer = document.getElementById('mainContainer');
+    const loginPanel = document.getElementById('loginPanel');
     const headerEl = document.getElementById('app-header');
+
+    if (mainContainer) mainContainer.classList.add('d-none');
+    if (loginPanel) {
+        loginPanel.classList.remove('d-none');
+        loginPanel.classList.add('active');
+    }
     if (headerEl) headerEl.classList.add('d-none');
 
     const badgeEl = document.getElementById('headerUserBadge');
@@ -369,8 +377,7 @@ function handleLogout() {
         badgeEl.classList.remove('d-flex');
     }
 
-    initLoginSelect(); // Yenilenmiş personel listesini ana ekrana yükle
-    showPanel("loginPanel");
+    initLoginSelect();
     updateHeader();
 }
 
@@ -399,6 +406,12 @@ function updateHeader() {
 }
 
 function showPanel(id) {
+    const mainContainer = document.getElementById('mainContainer');
+    const loginPanel = document.getElementById('loginPanel');
+
+    if (mainContainer) mainContainer.classList.remove('d-none');
+    if (loginPanel) loginPanel.classList.add('d-none');
+
     document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
     document.getElementById(id).classList.add('active');
 }
