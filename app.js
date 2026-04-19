@@ -9,9 +9,8 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// ---------- TOPCLEAN v3.0.4 (Diagnostic Mode Active) ----------
-console.log("%c TOPCLEAN v3.0.4 - DIAGNOSTIC ACTIVE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
-console.log("INITIAL DOM STATE:", document.getElementById('mainContainer') ? "OK" : "MISSING MAIN");
+// ---------- TOPCLEAN v3.0.5 (Final Restoration Active) ----------
+console.log("%c TOPCLEAN v3.0.5 - RESTORATION ACTIVE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
 let db = null;
 let auth = null;
