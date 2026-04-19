@@ -11,12 +11,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-    // TOPCLEAN v3.0.4 - FORCE RESET & DIAGNOSTIC SCRIPT
-    if (localStorage.getItem('tc_v3_pushed_v4') !== 'true') {
+    // TOPCLEAN v3.0.5 - FINAL RESTORATION SCRIPT
+    if (localStorage.getItem('tc_v3_pushed_v5') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
-                localStorage.setItem('tc_v3_pushed_v4', 'true');
+                localStorage.setItem('tc_v3_pushed_v5', 'true');
                 window.location.reload(true);
             });
         }
@@ -40,19 +40,20 @@
 
     <!-- Firebase SDKs -->
     <style>
-        /* v3.0.4 Teşhis Modu (Neon Çerçeveler) */
+        /* v3.0.5 Zorunlu Görünürlük & Restorasyon */
         #mainContainer {
-            outline: 2px solid #10b981 !important;
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
             z-index: 100 !important;
+            min-height: 100vh !important;
         }
         #idarecPanel, #adminPanel, #stokPanel, #gorevliPanel {
-            outline: 2px dashed #f59e0b !important;
+            min-height: 400px !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }
         .view-panel.active {
-            outline: 3px solid #ef4444 !important;
             display: flex !important;
         }
         /* Logolar ve efektler için z-index koruması */
@@ -64,7 +65,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.4">
+    <link rel="stylesheet" href="style.css?v=3.0.5">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -98,7 +99,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.4</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.5</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -370,8 +371,8 @@
                 </div>
 
             <!-- 5. İDAREC PANELİ -->
-            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch">
-                <div class="w-100" style="max-width: 860px; margin: 0 auto; padding: 0;">
+            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch" style="display: none;">
+                <div class="w-100" style="max-width: 860px; margin: 0 auto; padding: 0; display: block !important;">
 
                     <!-- Panel Title -->
                     <div class="text-center mb-3">
@@ -732,20 +733,28 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.4"></script>
+    <script src="app.js?v=3.0.5"></script>
 
-    <!-- v3.0.4 Acil Durum Teşhis Scripti -->
+    <!-- v3.0.5 Acil Durum Kurtarma Scripti -->
     <script>
         setTimeout(() => {
-            console.log("DIAGNOSTIC: Starting forced visibility check...");
+            console.log("FINAL RECOVERY: Forcing panel manifestations...");
             const main = document.getElementById('mainContainer');
             const target = document.getElementById('idarecPanel');
-            console.log("DIAGNOSTIC: mainContainer status ->", main ? "EXISTS" : "MISSING");
-            console.log("DIAGNOSTIC: idarecPanel status ->", target ? "EXISTS" : "MISSING");
             
             if(main) { main.classList.remove('d-none'); main.style.display = 'flex'; }
-            if(target) { target.classList.add('active'); target.style.display = 'flex'; }
-        }, 2000);
+            if(target) { 
+                target.classList.add('active'); 
+                target.style.setProperty('display', 'flex', 'important'); 
+                target.style.opacity = '1';
+                // Tabları da zorla göster
+                const activeTab = target.querySelector('.idarec-tab-content:not(.d-none)');
+                if(!activeTab) {
+                    const firstTab = document.getElementById('idarec-tab-durum');
+                    if(firstTab) firstTab.classList.remove('d-none');
+                }
+            }
+        }, 1500);
     </script>
 
     <!-- PWA Service Worker Registration -->
