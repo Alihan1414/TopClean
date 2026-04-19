@@ -9,8 +9,8 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// ---------- TOPCLEAN v3.0.6 (Nuclear Protection Active) ----------
-console.log("%c TOPCLEAN v3.0.6 - NUCLEAR ACTIVE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+// ---------- TOPCLEAN v3.0.7 (Detective Mode Active) ----------
+console.log("%c TOPCLEAN v3.0.7 - DETECTIVE ACTIVE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
 let db = null;
 let auth = null;
@@ -18,9 +18,11 @@ let auth = null;
 // Initialize Firebase Safely
 try {
     if (typeof firebase !== 'undefined') {
+        window.TC_REPORT.firebaseInit = true;
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         auth = firebase.auth();
+        window.TC_REPORT.dbInit = true;
         console.log("Firebase initialized successfully.");
     }
 } catch (e) {
