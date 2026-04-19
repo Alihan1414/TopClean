@@ -11,16 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-    // TOPCLEAN v3.0.3 - FORCE RESET SCRIPT
-    if (localStorage.getItem('tc_v3_pushed') !== 'true') {
+    // TOPCLEAN v3.0.4 - FORCE RESET & DIAGNOSTIC SCRIPT
+    if (localStorage.getItem('tc_v3_pushed_v4') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
-                localStorage.setItem('tc_v3_pushed', 'true');
+                localStorage.setItem('tc_v3_pushed_v4', 'true');
                 window.location.reload(true);
             });
-        } else {
-            localStorage.setItem('tc_v3_pushed', 'true');
         }
     }
     
@@ -42,19 +40,20 @@
 
     <!-- Firebase SDKs -->
     <style>
-        /* v3.0.2 Zorunlu Görünürlük Garantisi (Estetik Koruma) */
+        /* v3.0.4 Teşhis Modu (Neon Çerçeveler) */
         #mainContainer {
+            outline: 2px solid #10b981 !important;
             display: flex !important;
             visibility: visible !important;
             opacity: 1 !important;
             z-index: 100 !important;
-            min-height: 100vh !important;
+        }
+        #idarecPanel, #adminPanel, #stokPanel, #gorevliPanel {
+            outline: 2px dashed #f59e0b !important;
         }
         .view-panel.active {
+            outline: 3px solid #ef4444 !important;
             display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 101 !important;
         }
         /* Logolar ve efektler için z-index koruması */
         .side-branding { z-index: 50 !important; }
@@ -65,7 +64,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.3">
+    <link rel="stylesheet" href="style.css?v=3.0.4">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -99,7 +98,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.3</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.4</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -733,7 +732,21 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.3"></script>
+    <script src="app.js?v=3.0.4"></script>
+
+    <!-- v3.0.4 Acil Durum Teşhis Scripti -->
+    <script>
+        setTimeout(() => {
+            console.log("DIAGNOSTIC: Starting forced visibility check...");
+            const main = document.getElementById('mainContainer');
+            const target = document.getElementById('idarecPanel');
+            console.log("DIAGNOSTIC: mainContainer status ->", main ? "EXISTS" : "MISSING");
+            console.log("DIAGNOSTIC: idarecPanel status ->", target ? "EXISTS" : "MISSING");
+            
+            if(main) { main.classList.remove('d-none'); main.style.display = 'flex'; }
+            if(target) { target.classList.add('active'); target.style.display = 'flex'; }
+        }, 2000);
+    </script>
 
     <!-- PWA Service Worker Registration -->
     <script>
