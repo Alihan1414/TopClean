@@ -9,8 +9,8 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// ---------- TOPCLEAN V3.0.2 (Fail-Safe Recovery Active) ----------
-console.log("%c TOPCLEAN V3.0.2 - OK ", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+// ---------- TOPCLEAN v3.0.3 (Fail-Safe Recovery Active) ----------
+console.log("%c TOPCLEAN v3.0.3 - OK ", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
 let db = null;
 let auth = null;
