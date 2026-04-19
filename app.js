@@ -1,736 +1,2590 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TopClean - Cleaning App Yönetimi</title>
-    
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script>
-    window.onerror = function(msg, url, line, col, error) {
-        var err = "MSG:" + msg + " LINE:" + line + " COL:" + col;
-        fetch("http://localhost:5555/?error=" + encodeURIComponent(err));
-    };
-    </script>
+// ---------- FIREBASE CONFIGURATION ----------
+const firebaseConfig = {
+    apiKey: "AIzaSyCO88ONQpL3vFRMSY-jyhRImbsNC1ngcmQ",
+    authDomain: "topclean-ce4e6.firebaseapp.com",
+    databaseURL: "https://topclean-ce4e6-default-rtdb.firebaseio.com",
+    projectId: "topclean-ce4e6",
+    storageBucket: "topclean-ce4e6.firebaseastorage.app",
+    messagingSenderId: "413118182506",
+    appId: "1:413118182506:web:4e1897da948b8348030613"
+};
 
-    <!-- Bootstrap 5.3 -->
+// ---------- TOPCLEAN V3.0.2 (Fail-Safe Recovery Active) ----------
+console.log("%c TOPCLEAN V3.0.2 - OK ", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+let db = null;
+let auth = null;
 
-    <!-- Firebase SDKs -->
-    <style>
-        /* v3.0.2 Zorunlu Görünürlük Garantisi (Estetik Koruma) */
-        #mainContainer {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 100 !important;
-            min-height: 100vh !important;
+// Initialize Firebase Safely
+try {
+    if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.database();
+        auth = firebase.auth();
+        console.log("Firebase initialized successfully.");
+    }
+} catch (e) {
+    console.error("Firebase Init Error:", e);
+}
+
+// ---------- SABİT VERİLER ----------
+const katlar = {
+    "Bodrum Kat": {
+        "-1 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Etraf Düzenli"],
+        "Mescit": ["Etraf Süpürülmüş", "Kürsü Düzenli", "Koku yok", "Halılar temizlenmiş", "Camlar temiz"],
+        "Kütüphane": ["Zemin temiz", "Kitaplar düzenli", "Masalar temiz", "Çöp yok", "Rafların tozu alınmış"],
+        "Wc": ["Zemin temiz", "Lavabolar temiz", "Koku yok", "Kağıt var", "Sabun var"],
+        "Muhasebe Odası": ["Masa düzenli", "Zemin temiz", "Koku yok", "Toz alınmış", "Çöp kutusu boş"],
+        "Çalışma Odası": ["Zemin temiz", "Masalar düzenli", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Donanım": ["Zemin temiz", "Cihazlar düzenli", "Kablo karmaşası yok", "Toz alınmış", "Çöp kutusu boş"]
+    },
+    "Zemin Kat": {
+        "0 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Ayna Silinmiş"],
+        "Çalışma Odası": ["Masa düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Toplantı Odası": ["Masalar düzenli", "Zemin temiz", "Sandalyeler dizili", "Toz alınmış", "Çöp yok"],
+        "Çayhane": ["Zemin temiz", "Masalar silinmiş", "Çöp yok", "Koku yok", "Çay Demlikleri Temiz"],
+        "Wc 1": ["Lavabolar temiz", "Zemin temiz", "Sabun var", "Kağıt var", "Koku yok"],
+        "Wc 2": ["Lavabolar temiz", "Zemin temiz", "Sabun var", "Kağıt var", "Koku yok"],
+        "İdareci Odası": ["Masa düzenli", "Zemin temiz", "Koku yok", "Koltuklar Temiz", "Çöp kutusu boş"]
+    },
+    "Akademik Kat": {
+        "1 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
+        "Hocaların Odası": ["Masa düzenli", "Zemin temiz", "Koku yok", "Eşyalar düzenlenmiş", "Çöp kutusu boş"],
+        "Lab": ["Zemin temiz", "Cihazlar düzenli", "Masalar silinmiş", "Toz alınmış", "Çöp yok"],
+        "Etüt 1": ["Masa temiz", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Etüt 2": ["Masa temiz", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Etüt 3": ["Masa temiz", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Etüt 4": ["Masa temiz", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Talebe Çayhanesi": ["Zemin temiz", "Masalar silinmiş", "Çöp yok", "Koku yok", "Tezgah temiz"],
+        "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
+    },
+    "Ara Kat": {
+        "2 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
+        "Hoca Çalışma Odası": ["Masa düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Misafir Yatakhanesi": ["Yataklar düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Yatakhane 1": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 2": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 3": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Tüzder": ["Zemin temiz", "Masalar düzenli", "Toz alınmış", "Eşyalar yerinde", "Çöp yok"],
+        "Etüt": ["Masa temiz", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Robotik": ["Zemin temiz", "Eşyalar düzenli", "Cihazlar korunmuş", "Toz alınmış", "Çöp yok"],
+        "Temizlik Deposu": ["Raflar düzenli", "Zemin temiz", "Kimyasallar kapalı", "Etraf derli toplu", "Çöp yok"],
+        "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
+    },
+    "Yatakhane Katı": {
+        "3 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
+        "Misafir Yatakhanesi": ["Yataklar düzenli", "Zemin temiz", "Toz alınmış", "Çöp yok", "Koku yok"],
+        "Yatakhane 1": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 2": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 3": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 4": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Yatakhane 6": ["Yatak düzenli", "Zemin temiz", "Çöp yok", "Koku yok", "Süpürülmüş ve paspas atılmış"],
+        "Wc": ["Zemin temiz", "Lavabolar temiz", "Sabun var", "Kağıt var", "Koku yok"]
+    },
+    "Sosyal Alan Katı": {
+        "4 Merdiven": ["Zemin süpürülmüş ve temiz", "Korkuluklar silinmiş ve tozsuz", "Çöp kutuları boşaltılmış", "Etraf düzenli", "Lekeler silinmiş"],
+        "Koridor": ["Zemin temiz", "Camlar silinmiş", "Çöp yok", "Koku yok", "Paspas atılmış"],
+        "Sanat Odası": ["Zemin temiz", "Masalar silinmiş", "Malzemeler düzenli", "Toz alınmış", "Koku yok"],
+        "Kantin": ["Zemin temiz", "Masalar temiz", "Çöp yok", "Eşyalar düzenli", "Hijyen kontrol"],
+        "Teras": ["Zemin temiz", "Çöp yok", "Korkuluklar silinmiş", "Bitki düzenli", "Yer yıkandı"]
+    }
+};
+
+const usersData = [
+    { name: "Abdülkadir Uysal", pass: "1234", kat: "Bodrum Kat", rol: "gorevli" },
+    { name: "Mehmet Ali Zabun", pass: "1234", kat: "Zemin Kat", rol: "gorevli" },
+    { name: "Oğuz Erol", pass: "1234", kat: "Akademik Kat", rol: "gorevli" },
+    { name: "Burakhan Karaoğlan", pass: "1234", kat: "Ara Kat", rol: "gorevli" },
+    { name: "3.KAT Görevlisi", pass: "1234", kat: "Yatakhane Katı", rol: "gorevli" },
+    { name: "Emre Karabalak", pass: "1234", kat: "Sosyal Alan Katı", rol: "gorevli" },
+    { name: "İç Mesul", pass: "4321", kat: "", rol: "mufettis" },
+    { name: "İdareci", pass: "1111", kat: "", rol: "idareci" }
+];
+
+// ---------- GLOBAL STATE ----------
+let currentUser = null;
+let currentKat = "";
+let currentBolum = "";
+// Let's add a global reference for the modal
+let bootstrapModal = null;
+let currentActiveReport = null;
+
+// Base64 fotoğraf encode
+let fotoDataURL = "";
+
+document.addEventListener("DOMContentLoaded", () => {
+    try {
+        // Event Listeners (Guaranteed Bind)
+        const lForm = document.getElementById('loginForm');
+        if (lForm) lForm.addEventListener('submit', handleLogin);
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+        const uSel = document.getElementById('userSelect');
+        if (uSel) uSel.addEventListener('change', checkLoginType);
+
+        const fUp = document.getElementById('fotoUpload');
+        if (fUp) fUp.addEventListener('change', handleFotoUpload);
+
+        // State Init
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initTheme();
+
+        // 1. Cloud Sync
+        if (db) syncFromCloud();
+
+        initLoginSelect();
+    } catch (err) {
+        console.error("Theme Init Error:", err);
+    }
+});
+
+// ---------- TEMA (Theme) ----------
+function initTheme() {
+    const btns = document.querySelectorAll('#themeToggleBtn, #themeToggleBtnLogin');
+
+    // Check saved theme
+    const savedTheme = localStorage.getItem('topclean_theme') || 'dark';
+    document.documentElement.setAttribute('data-bs-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+
+    btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            let current = document.documentElement.getAttribute('data-bs-theme');
+            let newTheme = current === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('topclean_theme', newTheme);
+            updateThemeIcon(newTheme);
+        });
+    });
+}
+function updateThemeIcon(theme) {
+    const btns = document.querySelectorAll('#themeToggleBtn, #themeToggleBtnLogin');
+    btns.forEach(btn => {
+        if (!btn) return;
+        if (theme === 'dark') {
+            btn.innerHTML = `<i data-lucide="sun" size="18"></i>`;
+        } else {
+            btn.innerHTML = `<i data-lucide="moon" size="18"></i>`;
         }
-        .view-panel.active {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            z-index: 101 !important;
+    });
+    lucide.createIcons();
+}
+
+// ---------- GİRİŞ (Login) ----------
+function initLoginSelect() {
+    try {
+        const select = document.getElementById('userSelect');
+        if (!select) return;
+        select.innerHTML = "";
+
+        let deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        if (!Array.isArray(deletedFixed)) deletedFixed = [];
+
+        let extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        if (!Array.isArray(extraUsers)) extraUsers = [];
+
+        const activeFixed = usersData.filter(u => u && !deletedFixed.includes(u.name));
+        const allUsers = [...activeFixed, ...extraUsers].filter(u => u && !deletedFixed.includes(u.name));
+
+        allUsers.forEach(u => {
+            if (u && u.name) {
+                const opt = document.createElement('option');
+                opt.value = u.name;
+                opt.textContent = u.name;
+                select.appendChild(opt);
+            }
+        });
+
+        // Liste Dağılımı seçeneği (İdareci girişi)
+        const opt = document.createElement('option');
+        opt.value = "Liste Dağılımı";
+        opt.textContent = "Liste Dağılımı (Demo)";
+        select.appendChild(opt);
+    } catch (err) {
+        console.error("initLoginSelect Error:", err);
+    }
+}
+
+function checkLoginType() {
+    const val = document.getElementById('userSelect').value;
+    const pInput = document.getElementById('passInput');
+    if (val === "Liste Dağılımı") {
+        pInput.disabled = true;
+        pInput.placeholder = "Şifre Gerekmez";
+    } else {
+        pInput.disabled = false;
+        pInput.placeholder = "Mevcut Şifreniz";
+    }
+}
+
+function checkSession() {
+    const saved = localStorage.getItem('topclean_session');
+    if (saved) {
+        try {
+            currentUser = JSON.parse(saved);
+            updateHeader();
+            if (currentUser.rol === "gorevli") {
+                loadGorevliPanel(currentUser.kat);
+                showPanel("gorevliPanel");
+            } else if (currentUser.rol === "idareci") {
+                IdarecManager.load();
+                showPanel("idarecPanel");
+            } else if (currentUser.rol === "liste") {
+                ListeManager.load();
+                showPanel("listePanel");
+            } else {
+                loadAdminPanel();
+                showPanel("adminPanel");
+            }
+        } catch (e) {
+            localStorage.removeItem('topclean_session');
         }
-        /* Logolar ve efektler için z-index koruması */
-        .side-branding { z-index: 50 !important; }
-        .aurora-container { z-index: -10 !important; }
-        #app-header { z-index: 1000 !important; }
-    </style>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    
-    <link rel="stylesheet" href="style.css?v=3.0.2">
-    
-    <!-- PWA / Mobile Meta Tags -->
-    <meta name="theme-color" content="#030807">
-    <link rel="manifest" href="manifest.json">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TopClean">
-    <link rel="apple-touch-icon" href="icon-512.png">
-</head>
-<body>
-    <!-- Dynamic Aurora Background -->
-    <div class="aurora-container">
-        <div class="blob blob-1"></div>
-        <div class="blob blob-2"></div>
-        <div class="blob blob-3"></div>
-    </div>
+    }
+}
 
-    <div class="app-container">
-        <!-- HEADER -->
-        <header id="app-header" class="d-none">
-            <div class="header-content container-fluid d-flex justify-content-between align-items-center">
-                <div class="header-brand">
-                    <h1 class="main-title mb-0">TopClean</h1>
-                </div>
-                
-                <div class="d-flex align-items-center gap-3">
-                    <div id="headerUserBadge" class="p-1 px-3 glass-card rounded-pill d-none align-items-center gap-2" style="border: 1px solid var(--accent-emerald) !important;">
-                        <div class="rounded-circle d-flex align-items-center justify-content-center" style="width:24px; height:24px; background: rgba(16, 185, 129, 0.2);">
-                            <i data-lucide="user" size="14" class="text-emerald"></i>
-                        </div>
-                        <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
-                    </div>
-                    
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.2</div>
-                    
-                    <div class="header-actions d-flex gap-2">
-                        <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
-                            <i data-lucide="moon" size="18"></i>
-                        </button>
-                        <button id="logoutBtn" class="btn btn-glass-round text-danger-glow" title="Çıkış Yap">
-                            <i data-lucide="log-out" size="18"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </header>
+let authMode = "quick"; // "quick" or "email"
 
-        <!-- MAIN CONTENT AREA -->
-        <main id="mainContainer" class="flex-grow-1 position-relative d-flex flex-column align-items-center p-3 p-md-4" style="z-index: 100 !important;">
-            <!-- Side Branding Layer (Black Background + Screen Blend for Perfect Logo) -->
-            <img src="assets/logo_enderun_black.png" class="side-branding branding-left" alt="Enderun Logo">
-            <img src="assets/logo_cleaning_black.png" class="side-branding branding-right" alt="Cleaning Logo">
-            
-            <!-- 1. LOGIN PANEL -->
-            <div id="loginPanel" class="view-panel active">
-                <div class="glass-card text-center p-5 mw-100 position-relative" style="width: 480px; margin: auto;">
-                    <!-- Login Theme Toggle -->
-                    <button id="themeToggleBtnLogin" class="btn btn-glass-round position-absolute top-0 end-0 m-3" title="Tema Değiştir">
-                        <i data-lucide="moon" size="18"></i>
-                    </button>
-                    <div class="mb-4">
-                        <div class="d-inline-flex p-3 rounded-circle bg-emerald-glow mb-3">
-                            <i data-lucide="shield-check" class="text-emerald" size="48"></i>
-                        </div>
-                        <h2 class="fw-black mb-2 text-white">Sisteme Giriş</h2>
-                        <p class="text-secondary">Bulut tabanlı yönetim paneli</p>
-                    </div>
-                    
-                    <form id="loginForm" class="d-flex flex-column gap-3">
-                        <div id="quickLoginSection">
-                            <div class="text-start mb-3">
-                                <label class="small fw-bold text-dim mb-2 ms-2">PERSONEL SEÇİMİ</label>
-                                <select id="userSelect" class="form-select custom-input select-dark py-3">
-                                    <!-- Populated via JS -->
-                                </select>
-                            </div>
-                            <div class="text-start">
-                                <label class="small fw-bold text-dim mb-2 ms-2">GÜVENLİK ŞİFRESİ</label>
-                                <input type="password" id="passInput" class="form-control custom-input py-3 text-center" placeholder="••••" autocomplete="current-password">
-                            </div>
-                        </div>
+function toggleAuthMode() {
+    const qSec = document.getElementById('quickLoginSection');
+    const eSec = document.getElementById('emailLoginSection');
+    const btn = document.getElementById('toggleLoginMode');
 
-                        <div id="emailLoginSection" class="d-none">
-                            <div class="text-start mb-3">
-                                <label class="small fw-bold text-dim mb-2 ms-2">E-POSTA ADRESİ</label>
-                                <input type="email" id="emailInput" class="form-control custom-input py-3" placeholder="admin@topclean.com">
-                            </div>
-                            <div class="text-start">
-                                <label class="small fw-bold text-dim mb-2 ms-2">ŞİFRE</label>
-                                <input type="password" id="emailPassInput" class="form-control custom-input py-3" placeholder="••••••••">
-                            </div>
-                        </div>
-                        
-                        <button type="submit" class="btn btn-emerald-lg w-100 py-3 mt-4 d-flex align-items-center justify-content-center gap-2">
-                            <i data-lucide="arrow-right-circle" size="20"></i> OTURUMU AÇ
-                        </button>
-                    </form>
+    if (!qSec || !eSec || !btn) return;
 
-                    <button id="toggleLoginMode" class="btn btn-link text-dim x-small mt-3 text-decoration-none" onclick="toggleAuthMode()">
-                        E-posta ile Giriş Yap
-                    </button>
-                </div>
-            </div>
+    if (authMode === "quick") {
+        authMode = "email";
+        qSec.classList.add('d-none');
+        eSec.classList.remove('d-none');
+        btn.innerText = "Personel Seçimi ile Giriş";
+    } else {
+        authMode = "quick";
+        qSec.classList.remove('d-none');
+        eSec.classList.add('d-none');
+        btn.innerText = "E-posta ile Giriş Yap";
+    }
+}
 
-            <!-- 2. GÖREVLİ PANELİ (KAT/BÖLÜM SEÇİMİ) -->
-            <div id="gorevliPanel" class="view-panel w-100 mw-800">
-                <div class="w-100 mb-4 text-center">
-                    <div class="d-inline-block px-4 py-2 glass-card mb-2" style="border-radius: 50px;">
-                        <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 1rem;">
-                            GÖREVLİ PANELİ
-                        </h4>
-                    </div>
-                    <h2 class="fw-bold m-0" style="color: var(--accent-primary);">
-                        📍<span id="gorevliKatAd" class="ms-2"></span>
-                    </h2>
-                </div>
+function handleLogin(e) {
+    e.preventDefault();
 
-                <div id="reddedilenUyari" class="alert alert-danger d-none d-flex align-items-center gap-3 p-3 rounded-3" style="background-color: rgba(225, 29, 72, 0.1); border-color: var(--danger-color);">
-                    <i data-lucide="alert-circle" class="text-danger" size="24"></i>
-                    <div class="fw-bold flex-grow-1" style="color: #fca5a5;">🚨 İçin reddedilen <span id="reddedilenSayi"></span> bölüm var — müfettiş notlarını inceleyin!</div>
-                </div>
-
-                <div id="onarilanArizaUyari" class="alert alert-success d-none flex-column gap-2 p-3 rounded-3 mb-3 w-100" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success-color);">
-                    <div class="d-flex align-items-center gap-3">
-                        <i data-lucide="wrench" class="text-emerald" size="24"></i>
-                        <div class="fw-bold flex-grow-1 text-emerald">✅ Onarılan Arızalarınız Var!</div>
-                    </div>
-                    <div id="onarilanArizaList" class="small mt-2" style="color: #a7f3d0;"></div>
-                </div>
-                
-                <div class="d-flex gap-2 mb-4">
-                    <button class="btn btn-warning flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="showArizaForm()" style="background-color: #f59e0b; color: #1e1e1e; border: none; font-size: 1.1rem;">
-                        <i data-lucide="wrench" size="22"></i> ARIZA BİLDİR
-                    </button>
-                    <!-- Sadece Burakhan (Depo Sorumlusu) için özel buton -->
-                    <button id="btnEnvanterErisim" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg d-none" onclick="InventoryManager.ac()" style="font-size: 1.1rem; background: linear-gradient(135deg, #10b981, #059669);">
-                        <i data-lucide="package" size="22"></i> DEPO YÖNETİMİ
-                    </button>
-                    <button id="btnStokIslemi" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.showMovementForm()" style="font-size: 1.1rem;">
-                        <i data-lucide="package" size="22"></i> STOK İŞLEMİ
-                    </button>
-                    <button id="btnUrunTanimla" class="btn btn-glass-round py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg d-none" onclick="InventoryManager.showAddProductForm()" style="font-size: 1.1rem; border: 1px solid var(--accent-emerald) !important;">
-                        <i data-lucide="plus-circle" size="22"></i> YENİ ÜRÜN TANIMLA
-                    </button>
-                </div>
-
-                <div id="bolumListesi" class="d-flex flex-column gap-3 overflow-auto" style="padding-bottom: 80px;">
-                    <!-- Bölüm kartları buraya eklenecek -->
-                </div>
-            </div>
-
-            <!-- 3. KRİTER / CHECKLIST PANELİ (Yeni Basit Tasarım) -->
-            <div id="kriterPanel" class="view-panel w-100 mw-800">
-                <!-- Üst Bar -->
-                <div class="d-flex align-items-center justify-content-between mb-3 px-1">
-                    <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 38px; height: 38px; border-color: var(--glass-border);" onclick="KriterManager.geriDon()">
-                        <i data-lucide="arrow-left" size="18" class="text-muted"></i>
-                    </button>
-                    <div class="text-center flex-grow-1">
-                        <div class="x-small fw-bold text-muted text-uppercase" id="kriterKatAd" style="letter-spacing: 1px;"></div>
-                        <h4 class="fw-bold m-0 text-white" id="kriterBolumAd"></h4>
-                    </div>
-                    <div id="kriterSayac" class="badge bg-emerald rounded-pill px-3 py-2 fw-bold" style="font-size:0.75rem;">5/5 ✅</div>
-                </div>
-
-                <!-- Hızlı İpucu -->
-                <div class="text-center mb-3">
-                    <span class="x-small text-muted"><i data-lucide="info" size="12"></i> Yapamadığın varsa dokun kaldır, sonra GÖNDER</span>
-                </div>
-
-                <!-- Kriter Listesi -->
-                <div id="kriterListesi" class="d-flex flex-column rounded-4 overflow-hidden mb-3" style="border: 1px solid var(--glass-border); background: var(--glass-bg);">
-                    <!-- JS ile doldurulur -->
-                </div>
-
-                <!-- Fotoğraf Önizleme (gizli) -->
-                <div id="fotoOnizlemeContainer" class="d-none mb-3 text-center position-relative" style="width: fit-content; margin: 0 auto;">
-                    <img id="fotoOnizleme" src="" class="rounded-3" style="max-height: 100px; max-width: 200px; border: 2px solid var(--accent-emerald);">
-                    <button class="btn btn-sm btn-danger position-absolute top-0 end-0 m-1 rounded-circle p-1" onclick="KriterManager.fotografiSil()" style="width: 22px; height: 22px; line-height: 1; font-size: 0.7rem;">&times;</button>
-                </div>
-
-                <!-- Gizli file input -->
-                <input type="file" accept="image/*" capture="environment" id="fotoUpload" class="d-none">
-                <span id="fotoDurum" class="d-none"></span>
-
-                <!-- Yapışkan Alt Çubuk -->
-                <div id="kriterStickyBar" style="position:fixed;bottom:0;left:0;right:0;z-index:999;background:var(--bg-main);border-top:1px solid var(--glass-border);padding:12px 16px;backdrop-filter:blur(20px);">
-                    <div class="d-flex align-items-center gap-2 justify-content-center" style="max-width:800px;margin:0 auto;">
-                        <!-- Kamera -->
-                        <label class="btn btn-glass-round d-flex align-items-center justify-content-center position-relative" style="width:46px;height:46px;border-radius:50%;cursor:pointer;" id="btnKameraFAB">
-                            <i data-lucide="camera" size="20"></i>
-                            <input type="file" accept="image/*" capture="environment" class="d-none" onchange="KriterManager.fabFotoYukle(event)">
-                            <span id="fotoCheckBadge" class="d-none position-absolute" style="top:-2px;right:-2px;width:16px;height:16px;background:#10b981;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;color:#fff;">✓</span>
-                        </label>
-                        <!-- Not -->
-                        <input type="text" id="gorevliNot" class="form-control custom-input py-2 flex-grow-1" placeholder="Not ekle..." style="border-radius:50px;font-size:0.85rem;height:46px;">
-                        <!-- Gönder -->
-                        <button class="btn btn-emerald-lg px-4 py-2 fw-bold rounded-pill d-flex align-items-center gap-2 shadow" onclick="KriterManager.veriyiKaydet()" style="height:46px;white-space:nowrap;font-size:0.85rem;letter-spacing:1px;">
-                            <i data-lucide="send" size="16"></i> GÖNDER
-                        </button>
-                    </div>
-                </div>
-            </div>
+    // Email auth disabled for demo
+    /*
+    if (authMode === "email") {
+        ...
+    }
+    */
 
 
-            <!-- 4. ADMIN / MÜFETTİŞ PANELİ -->
-            <div id="adminPanel" class="view-panel w-100 flex-column align-items-stretch position-relative h-100">
-                <div class="w-100 h-100 d-flex flex-column" style="max-width: 600px; margin: 0 auto; padding: 0;">
-                    
-                    <!-- ADIM 1: KAT SEÇİM EKRANI -->
-                    <div id="mufettisKatSecim" class="d-flex flex-column h-100">
-                        <div class="text-center mb-4 mt-2">
-                            <h4 class="fw-black text-white m-0" style="letter-spacing: 2px;">DENETİM MERKEZİ</h4>
-                            <div class="x-small text-emerald mt-1">Lütfen denetlemek istediğiniz katı seçin</div>
-                        </div>
-                        
-                        <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill w-100 mb-4" style="border: 1px solid var(--accent-primary) !important; height: 44px;">
-                            <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
-                            <input type="date" id="adminDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1" style="outline: none; font-size: 0.85rem;">
-                        </div>
-                        
-                        <!-- Kat Butonları Container -->
-                        <div id="mufettisKatButonlari" class="d-flex flex-column gap-3 pb-4 overflow-auto flex-grow-1">
-                            <!-- JS tarafından doldurulacak -->
-                        </div>
-                        
-                        <div class="mt-auto pb-4">
-                            <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
-                                <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
-                            </button>
-                            <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.showArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
-                                <i data-lucide="wrench" size="14"></i> BEKLEYEN ARIZALAR (<span id="adminArizaCount">0</span>)
-                            </button>
-                        </div>
-                    </div>
+    const uName = String(document.getElementById('userSelect').value).trim();
+    const uPass = String(document.getElementById('passInput').value).trim();
 
-                    <!-- ADIM 2: ODAKLI DENETİM MODU (Başlangıçta Gizli) -->
-                    <div id="mufettisOdakModu" class="d-none flex-column flex-grow-1 h-100 pb-3">
-                        <!-- Üst Bar: Geri Dönüş ve İlerleme -->
-                        <div class="d-flex align-items-center mb-4">
-                            <button class="btn btn-sm btn-glass-round me-3" onclick="MufettisFocus.cikisYAP()">
-                                <i data-lucide="arrow-left" size="18"></i>
-                            </button>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between x-small text-muted fw-bold mb-1">
-                                    <span id="focusKatIsim">1. Kat</span>
-                                    <span id="focusYuzdeMetin">%0 (0/5)</span>
-                                </div>
-                                <div class="progress" style="height: 6px; background: rgba(255,255,255,0.1); border-radius: 4px;">
-                                    <div id="focusIlerlemeBar" class="progress-bar bg-emerald" role="progressbar" style="width: 0%;"></div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Ortada Koca Oda Kartı -->
-                        <div class="glass-card flex-grow-1 d-flex flex-column align-items-center justify-content-center p-4 text-center position-relative overflow-hidden mb-4" id="focusOdaKarti" style="border: 2px solid var(--accent-emerald); background: linear-gradient(to bottom, rgba(16, 185, 129, 0.05), rgba(0,0,0,0.5)); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s; transform-origin: center;">
-                            
-                            <!-- İkon -->
-                            <div class="mb-4 bg-emerald-glow p-4 rounded-circle d-inline-flex" style="background: rgba(16,185,129,0.1);">
-                                <i data-lucide="door-open" size="48" class="text-emerald"></i>
-                            </div>
-                            
-                            <!-- Oda Adı -->
-                            <h2 id="focusOdaAdi" class="fw-black text-white mb-3" style="font-size: 2rem;">Lavabolar</h2>
-                            
-                            <!-- Görevli Bilgisi -->
-                            <div class="x-small text-muted text-uppercase fw-bold mb-1">GÖREVLİ İŞLEMİ</div>
-                            <div id="focusGorevliZaman" class="badge-status badge-idle px-3 py-1 mb-3" style="font-size: 0.8rem;">14:30 - Bekleniyor</div>
-                            
-                            <!-- Görevli Notu -->
-                            <div id="focusGorevliNotContainer" class="d-none w-100 p-3 rounded-3" style="background: rgba(0,0,0,0.3); border-left: 3px solid rgba(255,255,255,0.2);">
-                                <div class="x-small text-dim mb-1"><i data-lucide="message-square" size="12"></i> Mesaj:</div>
-                                <div id="focusGorevliNot" class="text-white small fw-bold fst-italic">Her şey tamam</div>
-                            </div>
-                        </div>
-                        
-                        <!-- Dev Butonlar (Alt Kısım) -->
-                        <div class="d-flex gap-3 mt-auto">
-                            <button class="btn btn-danger flex-grow-1 rounded-4 py-4 d-flex flex-column align-items-center justify-content-center gap-2 fw-black shadow-lg" onclick="MufettisFocus.onBtnReddet()" style="font-size: 1.1rem; border: none; background: linear-gradient(135deg, #ef4444, #991b1b);">
-                                <i data-lucide="x-circle" size="28"></i> KUSURLU
-                            </button>
-                            <button class="btn btn-emerald flex-grow-1 rounded-4 py-4 d-flex flex-column align-items-center justify-content-center gap-2 fw-black shadow-lg" onclick="MufettisFocus.onayVer()" style="font-size: 1.1rem; border: none;">
-                                <i data-lucide="check-circle" size="28"></i> TERTEMİZ
-                            </button>
-                        </div>
-                    </div>
+    try {
+        // 1. Liste Dağılımı Özel Giriş
+        if (uName === "Liste Dağılımı") {
+            currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
+            localStorage.setItem('topclean_session', JSON.stringify(currentUser));
+            ListeManager.load();
+            showPanel("listePanel");
+            updateHeader();
+            return;
+        }
 
-                    <!-- ADIM 3: HIZLI ETİKET AÇILIR MENÜSÜ (Başlangıçta Gizli) -->
-                    <div id="mufettisHizliRetPanel" class="position-absolute bottom-0 start-0 w-100 p-3 z-3" style="background: var(--bg-main); border-top: 2px solid var(--accent-primary); border-radius: 20px 20px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.8); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); transform: translateY(100%); display:flex; flex-direction:column; pointer-events:none;">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h6 class="text-white fw-bold m-0"><i data-lucide="alert-triangle" class="text-danger me-2" size="16"></i> Neden Kusurlu?</h6>
-                            <button class="btn btn-sm btn-glass-round" onclick="MufettisFocus.iptalRet()"><i data-lucide="x" size="16"></i></button>
-                        </div>
-                        <div class="row g-2 mb-3">
-                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Çöp Kutusu Dolu')">🗑️ Çöp Dolu</button></div>
-                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Zemin Kirli')">🧹 Zemin Kirli</button></div>
-                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Eşyalar Dağınık')">📦 Dağınık</button></div>
-                            <div class="col-6"><button class="btn btn-outline-danger w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.hizliRet('Lavabo Pis')">🚰 Lavabo Pis</button></div>
-                            <div class="col-12"><button class="btn btn-outline-light w-100 rounded-3 py-3 fw-bold small" onclick="MufettisFocus.acKlavyeRet()">✍️ Diğer Neden (Yaz)</button></div>
-                        </div>
-                    </div>
+        // 2. Load and Search Users (Firebase Data Primary, Hardcoded Secondary)
+        const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        const activeFixed = usersData.filter(u => !deletedFixed.includes(u.name));
 
-                </div>
+        // Extra Users (Firebase) öne koyuluyor ki, sabit şifreler dinamik olarak üstüne yazılabilsin
+        const allUsers = [...extraUsers, ...activeFixed].filter(u => u !== null && u !== undefined);
 
-            <!-- 5. İDAREC PANELİ -->
-            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch">
-                <div class="w-100" style="max-width: 860px; margin: 0 auto; padding: 0;">
+        // Find user (Case-insensitive name check)
+        const un = allUsers.find(x => x && x.name && String(x.name).trim().toLowerCase() === uName.toLowerCase());
 
-                    <!-- Panel Title -->
-                    <div class="text-center mb-3">
-                        <div class="d-inline-block px-4 py-2 glass-card" style="border-radius: 50px;">
-                            <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 0.9rem;">🏛️ YÖNETİM MERKEZİ</h4>
-                        </div>
-                    </div>
-
-                    <!-- İdareci Sekmeleri (Tabs) -->
-                    <div class="d-flex overflow-auto gap-2 mb-4">
-                        <button class="idarec-tab active fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('durum', this)">🏢 Bina Durumu</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('muf', this)">👮 İç Mesuller</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('personel', this)">👨‍🏫 Personeller</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('ari', this)">🛠️ Arızalar</button>
-                        <button class="idarec-tab fw-bold rounded-pill px-4 py-2 flex-shrink-0" onclick="IdarecManager.switchTab('stok', this)">📦 Stok Takibi</button>
-                    </div>
-
-                    <!-- TAB 1: BİNA DURUMU -->
-                    <div id="idarec-tab-durum" class="idarec-tab-content">
-                        <!-- Upper Action Row: Date & GDrive -->
-                        <div class="d-flex gap-2 mb-3">
-                            <div class="d-flex align-items-center gap-2 glass-card px-3 rounded-pill flex-grow-1" style="border: 1px solid var(--accent-primary) !important; height: 44px; padding: 0.5rem 1rem;">
-                                <i data-lucide="calendar" size="14" class="text-emerald flex-shrink-0"></i>
-                                <input type="date" id="idarecDateSelector" class="bg-transparent border-0 text-white fw-bold shadow-none flex-grow-1 w-100" style="outline: none; font-size: 0.85rem;">
-                            </div>
-                            <button class="btn btn-emerald-lg fw-bold px-4 rounded-pill d-flex align-items-center gap-2" style="height: 44px; font-size: 0.85rem; padding: 0.5rem 1.5rem;" onclick="IdarecManager.exportCSV()">
-                                <i data-lucide="download-cloud" size="16"></i> İNDİR
-                            </button>
-                        </div>
-                        
-                        <!-- Genel Hijyen Barı -->
-                        <div class="glass-card p-3 mb-4 text-center shadow-lg" style="border-left: 4px solid var(--accent-emerald);">
-                            <h6 class="text-white fw-bold small mb-2 text-uppercase">Tüm Yurt Genel Hijyen Yüzdesi</h6>
-                            <div class="progress mt-2" style="height: 14px; border-radius: 10px; background: rgba(255,255,255,0.1);">
-                                <div id="genelHijyenBar" class="progress-bar bg-emerald" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <div id="genelHijyenText" class="mt-2 text-emerald fw-bold fs-5">%0</div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <!-- Sol Taraf: Bina Matrisi ve Kat Filtreleri -->
-                            <div class="col-12 col-lg-7">
-                                <!-- Kat Butonları -->
-                                <div class="d-flex flex-wrap gap-2 mb-3 justify-content-center" id="katFilterButtons">
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold active kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Hepsi', this)">Tümü</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Bodrum Kat', this)">Bodrum</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Zemin Kat', this)">Zemin</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Akademik Kat', this)">Akademik</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Ara Kat', this)">Ara</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Yatakhane Katı', this)">Yatakhane</button>
-                                    <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter" style="border-color: rgba(255,255,255,0.2); color:white;" onclick="IdarecManager.filterKat('Sosyal Alan Katı', this)">Sosyal Alan</button>
-                                </div>
-                                <div id="idarecBinaMatrisi" class="d-flex flex-column pb-2 w-100 align-items-center" style="transform-origin: top center; transform: scale(0.9);"></div>
-                            </div>
-                            
-                            <!-- Sağ Taraf: Gurur Tablosu -->
-                            <div class="col-12 col-lg-5">
-                                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-center" style="background: linear-gradient(145deg, rgba(245, 158, 11, 0.1), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(245, 158, 11, 0.3);">
-                                    <div class="text-center mb-4">
-                                        <i data-lucide="trophy" size="48" class="text-warning mb-2" style="filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.5));"></i>
-                                        <h4 class="fw-black text-white m-0" style="letter-spacing: 1px;">GURUR TABLOSU</h4>
-                                    </div>
-                                    <div class="d-flex gap-2 mb-4 justify-content-center">
-                                        <button class="btn btn-sm rounded-pill fw-bold flex-grow-1 basari-filter active" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.1);" onclick="IdarecManager.loadBasari('haftalik', this)">Haftalık</button>
-                                        <button class="btn btn-sm rounded-pill fw-bold flex-grow-1 basari-filter" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid transparent;" onclick="IdarecManager.loadBasari('aylik', this)">Aylık</button>
-                                        <button class="btn btn-sm rounded-pill fw-bold flex-grow-1 basari-filter" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid transparent;" onclick="IdarecManager.loadBasari('donemlik', this)">Dönemlik</button>
-                                    </div>
-                                    <div class="d-flex flex-column gap-1 text-center mt-2 mb-4 bg-glass-dark p-3 rounded-4" style="background: rgba(0,0,0,0.2);">
-                                        <div class="small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;">EN BAŞARILI KAT</div>
-                                        <h2 id="basariKatIsim" class="fw-black text-warning m-0">-</h2>
-                                        <div id="basariPuan" class="small text-emerald fw-bold mt-1"></div>
-                                    </div>
-                                    <div class="d-flex flex-column gap-1 text-center mt-2">
-                                        <div class="x-small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;"><i data-lucide="user" size="12"></i> KAT GÖREVLİSİ</div>
-                                        <h6 id="basariGorevli" class="text-white m-0 fw-bold">-</h6>
-                                    </div>
-                                    <div class="d-flex flex-column gap-1 text-center mt-3">
-                                        <div class="x-small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;"><i data-lucide="crown" size="12" class="text-warning"></i> KAT BAŞKANI</div>
-                                        <h6 id="basariBaskan" class="text-white m-0 fw-bold">-</h6>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- TAB 3: İÇ MESUL YÖNETİMİ -->
-                    <div id="idarec-tab-muf" class="idarec-tab-content d-none">
-                        <div class="glass-card p-4 mb-4">
-                            <h6 class="fw-bold text-white mb-3">👮 Yeni İç Mesul Ekle</h6>
-                            <div class="d-flex flex-column gap-2">
-                                <input type="text" id="yeniMufettisAd" class="form-control custom-input" placeholder="Ad Soyad">
-                                <input type="password" id="yeniMufettisSifre" class="form-control custom-input" placeholder="Şifre">
-                                <button class="btn btn-emerald-lg w-100 py-2 fw-bold rounded-3" onclick="IdarecManager.mufettisEkle()">
-                                    <i data-lucide="user-check" size="16"></i> KAYDET
-                                </button>
-                            </div>
-                        </div>
-                        <div id="mufettisListesi" class="d-flex flex-column gap-2 pb-5"></div>
-                    </div>
-
-                    <!-- TAB 4: PERSONEL YÖNETİMİ -->
-                    <div id="idarec-tab-personel" class="idarec-tab-content d-none">
-                        <!-- Add form -->
-                        <div class="glass-card p-4 mb-4">
-                            <h6 class="fw-bold text-white mb-3">➕ Yeni Görevli Ekle</h6>
-                            <div class="d-flex flex-column gap-2">
-                                <input type="text" id="yeniPersonelAd" class="form-control custom-input" placeholder="Ad Soyad">
-                                <input type="password" id="yeniPersonelSifre" class="form-control custom-input" placeholder="Şifre">
-                                <select id="yeniPersonelKat" class="form-select custom-input">
-                                    <option value="">-- Kat Seç --</option>
-                                    <option>Bodrum Kat</option>
-                                    <option>Zemin Kat</option>
-                                    <option>Akademik Kat</option>
-                                    <option>Ara Kat</option>
-                                    <option>Yatakhane Katı</option>
-                                    <option>Sosyal Alan Katı</option>
-                                </select>
-                                <button class="btn btn-emerald-lg w-100 py-2 fw-bold rounded-3" onclick="IdarecManager.personelEkle()">
-                                    <i data-lucide="user-plus" size="16"></i> KAYDET
-                                </button>
-                            </div>
-                        </div>
-                        <!-- Personnel list -->
-                        <div id="personelListesi" class="d-flex flex-column gap-2 pb-5"></div>
-                    </div>
-
-                    <!-- TAB 5: ARIZALAR -->
-                    <div id="idarec-tab-ari" class="idarec-tab-content d-none">
-                        <div class="d-flex gap-2 mb-3">
-                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter active" style="background: rgba(16,185,129,0.2); color: #34D399; border: 1px solid #10B981;" onclick="IdarecManager.filterArizalar('hepsi', this)">Tümü</button>
-                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter" style="background: rgba(245,158,11,0.1); color: #f59e0b; border: 1px solid #f59e0b;" onclick="IdarecManager.filterArizalar('bekliyor', this)">⏳ Bekleyenler</button>
-                            <button class="btn btn-sm rounded-pill px-3 fw-bold ariza-filter" style="background: rgba(40,167,69,0.1); color: #28a745; border: 1px solid #28a745;" onclick="IdarecManager.filterArizalar('onarildi', this)">✅ Onarılanlar</button>
-                        </div>
-                        <div class="d-flex justify-content-end mb-3">
-                            <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="IdarecManager.exportArizaCSV()"><i data-lucide="download" size="14"></i> EXCEL</button>
-                        </div>
-                        <div id="idarecArizaList" class="d-flex flex-column gap-2 pb-5"></div>
-                    </div>
-
-                    <!-- TAB 6: STOK TAKİBİ (İçerik stokPanel'e taşındı) -->
-                    <div id="idarec-tab-stok" class="idarec-tab-content d-none">
-                        <div class="glass-card p-5 text-center mt-4">
-                            <i data-lucide="package" size="48" class="text-emerald mb-4"></i>
-                            <h4 class="text-white fw-bold mb-3">Stok ve Envanter</h4>
-                            <p class="text-muted mb-4 text-sm">Ürünleri görüntülemek, limit ayarlamak ve geçmiş hareketleri incelemek için yönetim panelini açın.</p>
-                            <button class="btn btn-emerald-lg px-5 py-3 rounded-pill fw-bold" onclick="InventoryManager.ac()">
-                                ENVANTER PANELİNİ AÇ
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 6. STOK / ENVANTER PANELİ (YENİ - BAĞIMSIZ) -->
-            <div id="stokPanel" class="view-panel w-100 flex-column align-items-stretch mw-800" style="margin: 0 auto; padding-bottom: 20px;">
-                <!-- Üst Bar -->
-                <div class="d-flex align-items-center justify-content-between mb-4 mt-2 px-1">
-                    <button class="btn btn-outline-secondary rounded-circle d-flex align-items-center justify-content-center p-0 flex-shrink-0" style="width: 38px; height: 38px; border-color: var(--glass-border);" onclick="InventoryManager.kapat()">
-                        <i data-lucide="arrow-left" size="18" class="text-muted"></i>
-                    </button>
-                    <div class="text-center flex-grow-1">
-                        <div class="x-small fw-bold text-muted text-uppercase" style="letter-spacing: 1px;">ENVANTER YÖNETİMİ</div>
-                        <h4 class="fw-bold m-0 text-white">📦 Ürün Listesi</h4>
-                    </div>
-                    <div style="width:38px;"></div>
-                </div>
-
-                <!-- Critical Alerts -->
-                <div id="stokKritikPanel" class="alert alert-danger d-none d-flex flex-column gap-2 p-3 rounded-4 mb-4" style="background: rgba(225, 29, 72, 0.1); border: 1px solid var(--danger-color);">
-                    <div class="d-flex align-items-center gap-2">
-                        <i data-lucide="alert-triangle" class="text-danger"></i>
-                        <div class="fw-bold text-danger">⚠️ KRİTİK STOK UYARISI</div>
-                    </div>
-                    <div id="stokKritikListe" class="small" style="color: #fca5a5;"></div>
-                </div>
-
-                <!-- Actions bar -->
-                <div class="d-flex gap-2 mb-4">
-                    <button class="btn btn-warning flex-grow-1 py-3 px-4 fw-bold rounded-3 d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="InventoryManager.showThresholdConfig()" title="Bildirim Ayarla" style="background: var(--warning-color); color: #000; border: none;">
-                        <i data-lucide="bell" size="20"></i> BİLDİRİM AYARLA
-                    </button>
-                    <button class="btn btn-glass-round py-3 shadow-lg" onclick="InventoryManager.showAllLogs()" title="Tüm Hareket Geçmişi" style="width: 60px;">
-                        <i data-lucide="history" size="20"></i>
-                    </button>
-                </div>
-
-                <!-- Search -->
-                <div class="glass-card px-4 rounded-pill mb-4" style="border: 1px solid var(--glass-border) !important; height: 54px; display: flex; align-items: center; background: rgba(0,0,0,0.3);">
-                    <i data-lucide="search" size="18" class="text-muted me-3"></i>
-                    <input type="text" id="stokSearchInput" class="bg-transparent border-0 text-white shadow-none w-100" placeholder="Ürün ismi ile ara..." oninput="InventoryManager.render()">
-                </div>
-
-                <!-- Stock List -->
-                <div id="stokListesi" class="row g-3 pb-5">
-                    <!-- Items will be rendered here -->
-                </div>
-            </div>
-
-            <!-- 6. LİSTE DAĞILIMI PANELİ -->
-            <div id="listePanel" class="view-panel w-100 flex-column align-items-stretch">
-                <div class="w-100" style="max-width: 900px; margin: 0 auto; padding: 0;">
-
-                    <!-- Panel Title -->
-                    <div class="text-center mb-3">
-                        <div class="d-inline-block px-4 py-2 glass-card" style="border-radius: 50px;">
-                            <h4 class="fw-bold m-0" style="color: var(--text-muted); font-size: 0.9rem;">📝 TALEBE TEMİZLİK DAĞILIMI</h4>
-                        </div>
-                    </div>
-
-                    <!-- Period & Quick Actions -->
-                    <div class="glass-card p-3 mb-4 d-flex align-items-center justify-content-between gap-3">
-                        <div class="flex-grow-1">
-                            <label class="x-small text-muted fw-bold mb-1 d-block">LİSTE DÖNEMİ / TARİH</label>
-                            <input type="text" id="cleaningPeriod" class="form-control bg-transparent border-0 text-white p-0 shadow-none fw-bold" placeholder="Örn: 2026 Bahar Dönemi" oninput="ListeManager.save()">
-                        </div>
-                        <div class="d-flex gap-2">
-                            <button class="btn btn-glass-round" onclick="ListeManager.toggleEdit()" title="Kişi Listesini Düzenle">
-                                <i data-lucide="users" size="18"></i>
-                            </button>
-                            <button id="btnDagitMain" class="btn btn-emerald-lg px-4" onclick="ListeManager.dagit()">
-                                <i data-lucide="shuffle" size="18" class="me-1"></i> DAĞIT
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Input Boxes (Collapsed by Default) -->
-                    <div id="listeInputArea" class="d-none animate__animated animate__fadeIn">
-                        <div class="row g-3 mb-4">
-                            <div class="col-12 col-md-6">
-                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #ffc107 !important;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="fw-bold text-warning small m-0">🤧 Alerjik Rahatsızlık</h6>
-                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listAlerjik')"><i data-lucide="clipboard-copy" size="12"></i></button>
-                                    </div>
-                                    <textarea id="listAlerjik" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #0dcaf0 !important;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="fw-bold text-info small m-0">🫁 Astım Hastası</h6>
-                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listAstim')"><i data-lucide="clipboard-copy" size="12"></i></button>
-                                    </div>
-                                    <textarea id="listAstim" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="glass-card p-3 h-100" style="border-left: 4px solid #198754 !important;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="fw-bold text-success small m-0">💪 Sağlıklı Olanlar</h6>
-                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listSaglikli')"><i data-lucide="clipboard-copy" size="12"></i></button>
-                                    </div>
-                                    <textarea id="listSaglikli" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <div class="glass-card p-3 h-100" style="border-left: 4px solid var(--text-muted) !important;">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="fw-bold text-secondary small m-0">📋 Diğer</h6>
-                                        <button class="btn btn-sm btn-glass-round x-small" onclick="ListeManager.smartPaste('listDiger')"><i data-lucide="clipboard-copy" size="12"></i></button>
-                                    </div>
-                                    <textarea id="listDiger" class="form-control bg-transparent text-white border-0 shadow-none p-0 x-small" rows="3" placeholder="İsimleri virgülle ayırın..." oninput="ListeManager.updateStats()"></textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Stats Bar & Heatmap (Inside Edit Mode) -->
-                        <div class="row g-2 mb-4">
-                            <div class="col-8">
-                                <div class="glass-card p-3 d-flex align-items-center justify-content-around h-100">
-                                    <div class="text-center">
-                                        <div class="x-small text-muted fw-bold">KAPASİTE</div>
-                                        <div id="statsKapasite" class="fw-black text-white">0</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="x-small text-muted fw-bold">TALEBE</div>
-                                        <div id="statsTalebe" class="fw-black text-white">0</div>
-                                    </div>
-                                    <div class="text-center">
-                                        <div class="x-small text-muted fw-bold">BOŞ</div>
-                                        <div id="statsBos" class="fw-black text-emerald">0</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-4">
-                                <div class="glass-card p-3 h-100 d-flex flex-column align-items-center justify-content-center">
-                                    <div id="statsHeatmap" class="d-flex gap-1"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="listeDisaAktarimAlani" class="p-0">
-                        <div id="posterHeader" class="text-center mb-4 d-none export-only">
-                            <h2 class="fw-black text-white mb-0">TOPCLEAN</h2>
-                            <h5 class="fw-bold text-emerald mb-2">TALEBE TEMİZLİK GÖREV ÇİZELGESİ</h5>
-                            <div id="posterPeriod" class="badge bg-emerald rounded-pill px-3 py-1"></div>
-                            <hr class="border-secondary opacity-25 mt-3">
-                        </div>
-
-                        <div id="listeSonuclari" class="d-flex flex-column gap-3 pb-5" style="min-height: 200px;">
-                            <!-- Kat kat dağılım sonuçları buraya gelecek -->
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-4 mb-5 justify-content-center">
-                        <!-- PDF Export -->
-                        <div class="text-center">
-                            <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(239, 68, 68, 0.4) !important;" onclick="ListeManager.exportPDF()" title="PDF Olarak Yazdır">
-                                <i data-lucide="file-text" size="28" style="color: #ef4444;"></i>
-                            </button>
-                            <div class="x-small text-muted fw-bold">PDF</div>
-                        </div>
-                        
-                        <!-- WhatsApp/Image Export -->
-                        <div class="text-center">
-                            <button class="btn btn-glass-round p-3 rounded-circle shadow-lg mb-2" style="border-color: rgba(16, 185, 129, 0.4) !important;" onclick="ListeManager.exportImage()" title="WhatsApp İçin Resim Al">
-                                <i data-lucide="image" size="28" style="color: #10b981;"></i>
-                            </button>
-                            <div class="x-small text-muted fw-bold">RESİM</div>
-                        </div>
-                    </div>
-
-
-                </div>
-            </div>
-
-        </main>
-    </div>
-
-    <!-- INSPECTOR DETAIL MODAL -->
-    <div class="modal fade" id="adminDetailModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content glass-card border-0 shadow-lg">
-                <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold text-white" id="modalKatBolum">Detaylı İnceleme</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body py-4">
-                    <div id="modalFotoContainer" class="text-center mb-4 d-none">
-                        <img id="modalFoto" src="" class="img-fluid rounded-4 border shadow-lg" style="max-height: 280px; border-color: var(--glass-border) !important;">
-                    </div>
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-dim small text-uppercase mb-3" style="letter-spacing: 1px;">Kriter Analizi</h6>
-                        <div id="modalKriterListesi" class="d-flex flex-column gap-2"></div>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="fw-bold text-dim small text-uppercase mb-2" style="letter-spacing: 1px;">Denetçi Notu</h6>
-                        <textarea id="modalAdminNot" class="form-control custom-input" rows="3" placeholder="Gözlemlerinizi buraya not edin..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0 gap-2">
-                    <button type="button" class="btn btn-outline-danger flex-grow-1 py-3 fw-bold rounded-pill" onclick="AdminManager.processReport('reddedildi')" style="border-radius: 50px !important;">REDDET</button>
-                    <button type="button" class="btn btn-emerald-lg flex-grow-1 py-3 fw-bold" onclick="AdminManager.processReport('onaylandi')">ONAYLA</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.2"></script>
-
-    <!-- PWA Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('TopClean SW Registered!', reg))
-                    .catch(err => console.log('SW Registration Failed:', err));
+        if (un && String(un.pass).trim() === uPass) {
+            currentUser = un;
+            localStorage.setItem('topclean_session', JSON.stringify(un));
+            loginSuccess();
+        } else {
+            console.warn("Login failed for:", uName, "Entered pass:", uPass, "Expected pass from DB:", un ? un.pass : "User not found");
+            Swal.fire({
+                icon: 'error',
+                title: 'Giriş Başarısız',
+                text: 'Seçilen personel veya şifre hatalı görünüyor. Lütfen tekrar deneyin.',
+                confirmButtonText: 'Tamam',
+                confirmButtonColor: '#10b981'
             });
         }
-    </script>
-</body>
-</html>
+    } catch (err) {
+        console.error("Login Exception:", err);
+        Swal.fire({
+            icon: 'error',
+            title: 'Sistem Hatası',
+            text: 'Giriş yapılırken beklenmeyen bir hata oluştu: ' + err.message,
+            confirmButtonText: 'Tamam'
+        });
+    }
+}
+
+function loginSuccess() {
+    const pIn = document.getElementById('passInput');
+    const eIn = document.getElementById('emailPassInput');
+    if (pIn) pIn.value = "";
+    if (eIn) eIn.value = "";
+    updateHeader();
+
+    Swal.fire({
+        icon: 'success',
+        title: 'Giriş Başarılı',
+        text: 'Oturum Başarıyla Açıldı.',
+        timer: 1500,
+        showConfirmButton: false
+    });
+
+    if (currentUser.rol === "gorevli") {
+        loadGorevliPanel(currentUser.kat);
+        showPanel("gorevliPanel");
+    } else if (currentUser.rol === "idareci") {
+        IdarecManager.load();
+        showPanel("idarecPanel");
+    } else {
+        loadAdminPanel();
+        showPanel("adminPanel");
+    }
+}
+
+function handleLogout() {
+    currentUser = null;
+    localStorage.removeItem('topclean_session');
+
+    const mainContainer = document.getElementById('mainContainer');
+    const loginPanel = document.getElementById('loginPanel');
+    const headerEl = document.getElementById('app-header');
+
+    if (mainContainer) mainContainer.classList.add('d-none');
+    if (loginPanel) {
+        loginPanel.classList.remove('d-none');
+        loginPanel.classList.add('active');
+    }
+    if (headerEl) headerEl.classList.add('d-none');
+
+    const badgeEl = document.getElementById('headerUserBadge');
+    if (badgeEl) {
+        badgeEl.classList.add('d-none');
+        badgeEl.classList.remove('d-flex');
+    }
+
+    initLoginSelect();
+    updateHeader();
+}
+
+function updateHeader() {
+    const headerEl = document.getElementById('app-header');
+    const badgeEl = document.getElementById('headerUserBadge');
+    const nameEl = document.getElementById('headerName');
+
+    if (currentUser) {
+        if (headerEl) headerEl.classList.remove('d-none');
+        if (badgeEl) {
+            badgeEl.classList.remove('d-none');
+            badgeEl.classList.add('d-flex');
+        }
+        if (nameEl) {
+            let userDisplay = currentUser.rol === 'gorevli' ? currentUser.kat : currentUser.rol.toUpperCase();
+            nameEl.innerText = `${currentUser.name} | ${userDisplay}`;
+        }
+    } else {
+        if (headerEl) headerEl.classList.add('d-none');
+        if (badgeEl) {
+            badgeEl.classList.add('d-none');
+            badgeEl.classList.remove('d-flex');
+        }
+    }
+}
+
+function showPanel(id) {
+    const mainContainer = document.getElementById('mainContainer');
+    const loginPanel = document.getElementById('loginPanel');
+
+    if (mainContainer) mainContainer.classList.remove('d-none');
+    if (loginPanel) loginPanel.classList.add('d-none');
+
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+// ---------- VERİ (Cloud / LocalStorage) ----------
+// Firebase'den veri çekme (Realtime)
+let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+let cachedArizalar = JSON.parse(localStorage.getItem('topclean_arizalar') || '[]');
+let cachedInventory = JSON.parse(localStorage.getItem('topclean_inventory') || '[]');
+let cachedInventoryLogs = JSON.parse(localStorage.getItem('topclean_inventory_logs') || '[]');
+let isSyncing = false;
+let syncTimeout = null;
+
+function syncFromCloud() {
+    if (!db) return;
+
+    db.ref('reports').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedData = Object.values(val);
+            localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+            refreshCurrentPanel();
+        }
+    });
+
+    db.ref('users').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            localStorage.setItem('topclean_users', JSON.stringify(Object.values(val)));
+        } else {
+            localStorage.setItem('topclean_users', '[]');
+        }
+        initLoginSelect();
+    });
+
+    db.ref('student_distribution').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            localStorage.setItem('topclean_talebe_listesi', JSON.stringify(val));
+            if (currentUser && currentUser.rol === "liste") ListeManager.load();
+        }
+    });
+
+    db.ref('deleted_fixed_users').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            var arr = Array.isArray(val) ? val : Object.values(val);
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(arr));
+        } else {
+            localStorage.setItem('topclean_deleted_fixed_users', '[]');
+        }
+        initLoginSelect();
+        if (currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
+    });
+
+    db.ref('arizalar').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedArizalar = Object.values(val);
+            localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+            refreshCurrentPanel();
+        }
+    });
+
+    db.ref('inventory').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedInventory = Object.values(val);
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (currentUser && currentUser.rol === "idareci") InventoryManager.render();
+        }
+    });
+
+    db.ref('inventory_logs').on('value', snapshot => {
+        const val = snapshot.val();
+        if (val) {
+            cachedInventoryLogs = Object.values(val);
+            localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+        }
+    });
+}
+
+function refreshCurrentPanel() {
+    if (!currentUser) return;
+    if (currentUser.rol === "gorevli") loadGorevliPanel(currentUser.kat);
+    else if (currentUser.rol === "idareci") {
+        IdarecManager.loadBinaDurumu();
+        InventoryManager.render();
+    }
+    else if (currentUser.rol === "mufettis") loadAdminPanel();
+}
+
+function getData() {
+    return cachedData;
+}
+
+// Helper for consistent date comparison (YYYY-MM-DD)
+function toShortDate(dateInput) {
+    const d = new Date(dateInput);
+    if (isNaN(d.getTime())) return "";
+    return d.toISOString().split('T')[0];
+}
+
+function saveData(item) {
+    item.id = new Date().getTime().toString();
+
+    cachedData.push(item);
+    localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+
+    // Cloud Save
+    if (db) {
+        db.ref('reports/' + item.id).set(item).catch(err => console.error("Firebase save error:", err));
+    }
+}
+
+// Ariza kaydetme
+function saveAriza(ariza) {
+    ariza.id = "ARZ_" + new Date().getTime().toString();
+    ariza.onay_tarih = null;
+    cachedArizalar.push(ariza);
+    localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+
+    // Cloud Save
+    if (db) {
+        db.ref('arizalar/' + ariza.id).set(ariza).catch(err => console.error("Firebase ariza save error:", err));
+    }
+}
+
+// Migration Helper
+async function migrateLocalToCloud() {
+    if (!db) return;
+    const data = JSON.parse(localStorage.getItem('topclean_data') || '[]');
+    data.forEach(item => {
+        db.ref('reports/' + item.id).set(item);
+    });
+    console.log("Migration complete");
+}
+
+// ---------- GÖREVLİ PANELİ ----------
+function showArizaForm() {
+    if (!currentUser || !currentKat) return;
+
+    const bolumler = katlar[currentKat] ? Object.keys(katlar[currentKat]) : [];
+    let opts = '<option value="">-- Bölüm Seçiniz --</option>';
+    bolumler.forEach(b => {
+        opts += `<option value="${b}">${b}</option>`;
+    });
+
+    Swal.fire({
+        title: 'Teknik Arıza Bildir',
+        html: `
+            <div class="text-start">
+                <label class="form-label text-white small fw-bold">ARIZALI BÖLÜM</label>
+                <select id="arizaBolumSel" class="form-select custom-input mb-3 text-white border-secondary" style="background-color: var(--glass-bg);">
+                    ${opts}
+                </select>
+                <label class="form-label text-white small fw-bold">ARIZA AÇIKLAMASI</label>
+                <textarea id="arizaNot" class="form-control custom-input text-white border-secondary" style="background-color: var(--glass-bg);" placeholder="Örn: Priz çalışmıyor, ampul patlamış..." rows="3"></textarea>
+            </div>
+        `,
+        background: 'var(--bg-main)',
+        color: '#fff',
+        showCancelButton: true,
+        confirmButtonText: 'Gönder',
+        cancelButtonText: 'İptal',
+        confirmButtonColor: '#f59e0b',
+        preConfirm: () => {
+            const bolum = document.getElementById('arizaBolumSel').value;
+            const not = document.getElementById('arizaNot').value.trim();
+            if (!bolum) return Swal.showValidationMessage("Lütfen bir bölüm seçiniz!");
+            if (!not) return Swal.showValidationMessage("Lütfen arıza detayını yazınız!");
+            return { bolum, not };
+        }
+    }).then(res => {
+        if (res.isConfirmed) {
+            const ariza = {
+                gonderen: currentUser.name,
+                kat: currentKat,
+                bolum: res.value.bolum,
+                detay: res.value.not,
+                durum: "bekliyor",
+                tarih: new Date().getTime()
+            };
+            saveAriza(ariza);
+            Swal.fire({
+                icon: 'success',
+                title: 'İletildi!',
+                text: 'Teknik arıza talebiniz yetkililere gönderildi.',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+
+function loadGorevliPanel(katAd) {
+    currentKat = katAd;
+    document.getElementById('gorevliKatAd').innerText = katAd;
+    const listeEl = document.getElementById('bolumListesi');
+    listeEl.innerHTML = "";
+
+    // Stok butonu tüm hocalarda görünsün
+    const stokBtn = document.getElementById('btnStokIslemi');
+    if (stokBtn) stokBtn.classList.remove('d-none');
+
+    // Ürün tanımlama butonu sadece Ara Kat görevlisinde görünsün
+    const tanimlaBtn = document.getElementById('btnUrunTanimla');
+    if (tanimlaBtn) {
+        if (katAd === "Ara Kat") tanimlaBtn.classList.remove('d-none');
+        else tanimlaBtn.classList.add('d-none');
+    }
+
+    // Burakhan Karaoğlan için DEPO YÖNETİMİ butonu
+    const depoBtn = document.getElementById('btnEnvanterErisim');
+    if (depoBtn) {
+        if (currentUser.name === "Burakhan Karaoğlan") depoBtn.classList.remove('d-none');
+        else depoBtn.classList.add('d-none');
+    }
+
+    const bolumler = katlar[katAd];
+    const data = getData();
+    const bugunStr = new Date().toLocaleDateString();
+
+    let reddedilenCount = 0;
+
+    // Arıza loglarını kontrol et
+    const onarilanArizalar = cachedArizalar.filter(a => a.gonderen === currentUser.name && a.durum === "onarildi");
+    const arizaKutu = document.getElementById('onarilanArizaUyari');
+    const arizaList = document.getElementById('onarilanArizaList');
+    if (onarilanArizalar.length > 0) {
+        arizaKutu.classList.remove('d-none');
+        arizaKutu.classList.add('d-flex');
+        arizaList.innerHTML = onarilanArizalar.map(a => `<div>• <b>${a.bolum}</b>: ${a.detay} (Onarıldı)</div>`).join('');
+    } else {
+        arizaKutu.classList.add('d-none');
+        arizaKutu.classList.remove('d-flex');
+    }
+
+    // --- SON GÖNDERİM ÖZETİ ---
+    const bugunVeriler = data.filter(d => d.kat === katAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+    const gonderilen = new Set(bugunVeriler.map(d => d.bolum));
+    const toplamBolum = Object.keys(bolumler).length;
+    const sonGonderim = bugunVeriler.length > 0 ? bugunVeriler[bugunVeriler.length - 1] : null;
+    const sonZaman = sonGonderim ? new Date(parseInt(sonGonderim.id)).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}) : null;
+    
+    const ozetDiv = document.createElement('div');
+    ozetDiv.className = 'glass-card p-3 mb-4 d-flex align-items-center gap-3';
+    ozetDiv.style.borderLeft = '4px solid var(--accent-emerald)';
+    const yuzde = toplamBolum > 0 ? Math.round((gonderilen.size / toplamBolum) * 100) : 0;
+    ozetDiv.innerHTML = `
+        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(16,185,129,0.15);flex-shrink:0;">
+            <span style="font-size:1.4rem;">${yuzde === 100 ? '✨' : '📊'}</span>
+        </div>
+        <div class="flex-grow-1">
+            <div class="fw-bold text-white" style="font-size:0.95rem;">Bugün ${gonderilen.size}/${toplamBolum} bölüm gönderildi</div>
+            <div class="x-small text-muted">${sonGonderim ? 'Son: ' + sonZaman + ' - ' + sonGonderim.bolum : 'Henüz gönderim yapılmadı'}</div>
+            <div class="progress mt-2" style="height:4px;background:rgba(255,255,255,0.1);border-radius:4px;">
+                <div class="progress-bar bg-emerald" style="width:${yuzde}%;"></div>
+            </div>
+        </div>
+    `;
+    listeEl.appendChild(ozetDiv);
+
+    // --- BÖLÜM KARTLARI ---
+    const kartContainer = document.createElement('div');
+    kartContainer.className = 'row g-3';
+
+    for (const [bolumAd, kriterler] of Object.entries(bolumler)) {
+        const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+        let badgeYazi = "Bekliyor";
+        let badgeClass = "badge-idle";
+        let statusIcon = '⏳';
+        let cardBorder = 'rgba(255,255,255,0.06)';
+
+        if (gecmis.length > 0) {
+            const son = gecmis[gecmis.length - 1];
+            if (son.durum === "reddedildi") {
+                reddedilenCount++;
+                badgeClass = "badge-danger";
+                badgeYazi = "REDDEDİLDİ";
+                statusIcon = '❌';
+                cardBorder = 'rgba(239, 68, 68, 0.4)';
+            } else if (son.durum === "onaylandi") {
+                badgeClass = "badge-success";
+                badgeYazi = "ONAYLANDI ✨";
+                statusIcon = '✅';
+                cardBorder = 'rgba(16, 185, 129, 0.4)';
+            } else {
+                const isaretli = son.secilen.length;
+                const toplam = kriterler.length;
+                const oran = Math.floor((isaretli / toplam) * 100);
+                badgeClass = "badge-warning";
+                badgeYazi = `%${oran} İNCELENYOR`;
+                statusIcon = '🔍';
+                cardBorder = 'rgba(245, 158, 11, 0.4)';
+            }
+        }
+
+        const aktifAriza = cachedArizalar.find(a => a.kat === katAd && a.bolum === bolumAd && a.durum === "bekliyor");
+        const sonRapor = gecmis.length > 0 ? gecmis[gecmis.length - 1] : null;
+        const isRejected = sonRapor && sonRapor.durum === "reddedildi";
+        const rejectionNote = isRejected ? (sonRapor.mufettis_yorum || "Not belirtilmedi.") : "";
+
+        const col = document.createElement('div');
+        col.className = 'col-6';
+        
+        const kart = document.createElement('div');
+        kart.className = 'glass-card stagger-item d-flex flex-column align-items-center text-center p-3 h-100 cursor-pointer';
+        kart.style.cssText = `border: 2px solid ${cardBorder}; border-radius: 20px; transition: all 0.3s ease;`;
+        kart.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.08}s`;
+        
+        kart.onmouseenter = () => { kart.style.transform = 'translateY(-4px)'; kart.style.boxShadow = '0 8px 25px rgba(16,185,129,0.15)'; };
+        kart.onmouseleave = () => { kart.style.transform = ''; kart.style.boxShadow = ''; };
+        
+        kart.onclick = () => {
+            console.log("Kart tıklandı:", bolumAd);
+            if (isRejected) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '❌ Müfettiş Bu Bölümü Reddetti',
+                    html: `<div class="text-start"><p class="mb-2"><strong>Bölüm:</strong> ${bolumAd}</p><p class="mb-2"><strong>Müfettiş Notu:</strong></p><div class="p-3 rounded-3 mb-2" style="background: rgba(220,53,69,0.15); border: 1px solid #dc3545; color: #fca5a5;">${rejectionNote}</div><p class="small text-muted mt-3">Tamam'a basarsanız bölümü tekrar düzenleyebilirsiniz.</p></div>`,
+                    background: 'var(--bg-main)',
+                    color: '#fff',
+                    confirmButtonText: 'Tamam, Düzenle',
+                    confirmButtonColor: '#10b981',
+                    showCancelButton: true,
+                    cancelButtonText: 'Geri Dön',
+                    cancelButtonColor: '#6c757d'
+                }).then(res => {
+                    if (res.isConfirmed) KriterManager.ac(katAd, bolumAd, kriterler);
+                });
+            } else {
+                KriterManager.ac(katAd, bolumAd, kriterler);
+            }
+        };
+        
+        kart.innerHTML = `
+            <div style="font-size:2rem;margin-bottom:8px;">${statusIcon}</div>
+            <div class="fw-bold text-white" style="font-size:0.85rem;line-height:1.2;margin-bottom:6px;">${bolumAd}</div>
+            ${aktifAriza ? '<span class="badge bg-warning text-dark rounded-pill" style="font-size:0.55rem;">🔧 Arızalı</span>' : ''}
+            <div class="badge-status ${badgeClass} mt-auto w-100 py-1" style="font-weight:700;font-size:0.6rem;">${badgeYazi}</div>
+        `;
+        col.appendChild(kart);
+        kartContainer.appendChild(col);
+    }
+    listeEl.appendChild(kartContainer);
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+
+    if (reddedilenCount > 0) {
+        document.getElementById('reddedilenUyari').classList.remove('d-none');
+        document.getElementById('reddedilenSayi').innerText = reddedilenCount;
+    } else {
+        document.getElementById('reddedilenUyari').classList.add('d-none');
+    }
+}
+
+// ---------- KRİTER EKLEME (CHECKLIST) ----------
+const KriterManager = {
+    ac: function (katAd, bolumAd, kriterler) {
+        currentBolum = bolumAd;
+        currentKriterler = kriterler;
+        currentKat = katAd;
+        
+        document.getElementById('kriterKatAd').innerText = katAd;
+        document.getElementById('kriterBolumAd').innerText = bolumAd;
+
+        // Reset inputs
+        this.fotografiSil();
+        document.getElementById('gorevliNot').value = "";
+
+        const listEl = document.getElementById('kriterListesi');
+        listEl.innerHTML = "";
+
+        // Panel animasyonu
+        const panel = document.getElementById('kriterPanel');
+        panel.classList.remove('panel-transition-next');
+        void panel.offsetWidth; // Trigger reflow
+        panel.classList.add('panel-transition-next');
+
+        kriterler.forEach((k, idx) => {
+            const div = document.createElement('div');
+            div.className = 'kriter-kart p-3 d-flex align-items-center gap-3 cursor-pointer';
+            div.setAttribute('data-kriter', k);
+            
+            // TERS MANTIK: Varsayılan olarak seçili (true)
+            div.setAttribute('data-selected', 'true');
+            
+            div.innerHTML = `
+                <div class="kriter-ikon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" 
+                     style="width:36px;height:36px;background:rgba(16, 185, 129, 0.2);border:2px solid var(--accent-emerald);transition:all 0.25s ease;">
+                    <i data-lucide="check" size="16" class="text-emerald"></i>
+                </div>
+                <span class="fs-6 text-white fw-bold" style="transition:all 0.25s ease;">${k}</span>
+            `;
+            
+            div.onclick = () => {
+                const isSelected = div.getAttribute('data-selected') === 'true';
+                const ikon = div.querySelector('.kriter-ikon');
+                const txt = div.querySelector('span');
+                
+                if (isSelected) {
+                    div.setAttribute('data-selected', 'false');
+                    div.style.background = '';
+                    ikon.style.background = 'rgba(255,255,255,0.05)';
+                    ikon.style.borderColor = 'rgba(255,255,255,0.15)';
+                    ikon.innerHTML = '<i data-lucide="circle" size="16" class="text-muted"></i>';
+                    txt.className = 'fs-6 text-white-50 fw-normal';
+                } else {
+                    div.setAttribute('data-selected', 'true');
+                    div.style.background = 'rgba(16, 185, 129, 0.08)';
+                    ikon.style.background = 'rgba(16, 185, 129, 0.2)';
+                    ikon.style.borderColor = 'var(--accent-emerald)';
+                    ikon.innerHTML = '<i data-lucide="check" size="16" class="text-emerald"></i>';
+                    txt.className = 'fs-6 text-white fw-bold';
+                }
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+                this.guncelleSayac();
+            };
+            listEl.appendChild(div);
+        });
+
+        this.guncelleSayac();
+        showPanel('kriterPanel');
+        this.initSwipe();
+    },
+
+    guncelleSayac: function () {
+        const kartlar = document.querySelectorAll('.kriter-kart');
+        let isaretli = 0;
+        kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') isaretli++; });
+        const toplam = currentKriterler.length;
+        
+        const badge = document.getElementById('kriterSayac');
+        badge.innerText = `${isaretli}/${toplam} ${isaretli === toplam ? '✅' : '⏳'}`;
+        badge.className = `badge rounded-pill px-3 py-2 fw-bold ${isaretli === toplam ? 'bg-emerald' : 'bg-warning text-dark'}`;
+    },
+
+    fabFotoYukle: function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            fotoDataURL = e.target.result;
+            document.getElementById('fotoOnizleme').src = fotoDataURL;
+            document.getElementById('fotoOnizlemeContainer').classList.remove('d-none');
+            document.getElementById('btnKameraFAB').classList.add('has-photo');
+            document.getElementById('fotoCheckBadge').classList.remove('d-none');
+        };
+        reader.readAsDataURL(file);
+    },
+
+    fotografiSil: function () {
+        fotoDataURL = "";
+        const input = document.getElementById('fotoUpload');
+        if(input) input.value = "";
+        document.getElementById('fotoOnizlemeContainer').classList.add('d-none');
+        document.getElementById('btnKameraFAB').classList.remove('has-photo');
+        document.getElementById('fotoCheckBadge').classList.add('d-none');
+    },
+
+    veriyiKaydet: function () {
+        const kartlar = document.querySelectorAll('.kriter-kart');
+        let secilenler = [];
+        kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') secilenler.push(k.getAttribute('data-kriter')); });
+
+        const yorum = document.getElementById('gorevliNot').value.trim();
+
+        // Fotoğraf teşviki
+        if (!fotoDataURL) {
+            Swal.fire({
+                icon: 'question',
+                title: '📸 Fotoğraf Eklenmedi',
+                text: 'Fotoğraflı raporlar daha hızlı onaylanır. Yine de göndermek istiyor musun?',
+                showCancelButton: true,
+                confirmButtonText: 'Evet, Gönder',
+                cancelButtonText: 'Fotoğraf Ekle',
+                confirmButtonColor: '#10b981',
+                cancelButtonColor: '#64748b',
+                background: 'var(--bg-main)',
+                color: '#fff'
+            }).then(res => {
+                if(res.isConfirmed) this._kaydetDevam(secilenler, yorum);
+            });
+            return;
+        }
+        this._kaydetDevam(secilenler, yorum);
+    },
+
+    _kaydetDevam: function(secilenler, yorum) {
+        const item = {
+            kat: currentKat,
+            bolum: currentBolum,
+            secilen: secilenler,
+            foto: fotoDataURL,
+            tarih: new Date().toISOString(),
+            durum: "bekliyor",
+            yorum: yorum,
+            mufettis_yorum: ""
+        };
+
+        saveData(item);
+
+        // Bir sonraki bölümü bul
+        const sonraki = this.findNextSection();
+
+        if (sonraki) {
+            Swal.fire({
+                icon: 'success',
+                title: 'Kaydedildi!',
+                text: `${currentBolum} tamamlandı. Sıradakine geçiliyor...`,
+                timer: 1200,
+                showConfirmButton: false
+            }).then(() => {
+                this.ac(currentKat, sonraki, katlar[currentKat][sonraki]);
+            });
+        } else {
+            Swal.fire({
+                icon: 'success',
+                title: 'Tebrikler! ✨',
+                text: `Kattaki tüm bölümler tamamlandı!`,
+                timer: 2000,
+                showConfirmButton: false
+            }).then(() => {
+                this.geriDon();
+            });
+        }
+    },
+
+    findNextSection: function() {
+        const bolumler = Object.keys(katlar[currentKat]);
+        const currentIndex = bolumler.indexOf(currentBolum);
+        const data = getData();
+        const bugunStr = new Date().toLocaleDateString();
+
+        // Mevcut indexten sonrasına bak
+        for(let i = 1; i < bolumler.length; i++) {
+            const nextIdx = (currentIndex + i) % bolumler.length;
+            const bName = bolumler[nextIdx];
+            
+            // Bugün raporu olmayan veya reddedilen var mı bak
+            const gecmis = data.filter(d => d.kat === currentKat && d.bolum === bName && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+            if (gecmis.length === 0 || (gecmis.length > 0 && gecmis[gecmis.length-1].durum === 'reddedildi')) {
+                return bName;
+            }
+        }
+        return null;
+    },
+
+    geriDon: function () {
+        loadGorevliPanel(currentKat);
+        showPanel('gorevliPanel');
+    },
+
+    // Swipe Desteği
+    initSwipe: function() {
+        const panel = document.getElementById('kriterPanel');
+        let touchstartX = 0;
+        let touchendX = 0;
+        
+        panel.ontouchstart = e => { touchstartX = e.changedTouches[0].screenX; };
+        panel.ontouchend = e => {
+            touchendX = e.changedTouches[0].screenX;
+            if (touchstartX - touchendX > 100) { // Sola kaydırma (Next)
+                const sonraki = this.findNextSection();
+                if (sonraki) this.ac(currentKat, sonraki, katlar[currentKat][sonraki]);
+            }
+            if (touchendX - touchstartX > 100) { // Sağa kaydırma (Back)
+                this.geriDon();
+            }
+        };
+    },
+
+    rehberBilgi: function (bolum) {
+        const b = bolum.toLowerCase();
+        let title = "✨ Standart Temizlik Prosedürü";
+        let content = `
+            1. <b>HAVALANDIRMA:</b> Odaya girdiğinizde ilk iş camları açıp temiz hava girmesini sağlayın.<br>
+            2. <b>ÇÖP BOŞALTMA:</b> Çöp kutularını boşaltın, torbaları yenileyin.<br>
+            3. <b>TOZ ALMA:</b> Yukarıdan aşağıya (raflardan zemine) doğru toz alın.<br>
+            4. <b>YÜZEY TEMİZLİĞİ:</b> Masaları ve temas noktalarını dezenfektanlı bezle silin.<br>
+            5. <b>ZEMİNLER:</b> Zemini süpürün ve ardından uygun temizleyici ile paspaslayın.<br>
+            6. <b>KOKU & DÜZEN:</b> Odaya hoş bir koku sıkın ve eşyaları düzeltin.<br>
+            7. <b>KONTROL:</b> Çıkmadan önce odanın genel görünümünü %100 kontrol edin.
+        `;
+
+        if (b.includes("wc") || b.includes("lavabo")) {
+            title = "🧼 WC Temizlik Talimatı";
+            content = `
+                1. <b>HİJYEN:</b> Eldivenlerinizi takın ve lavaboları dezenfektanla ovun.<br>
+                2. <b>KLOZETLER:</b> İç kısımları fırçalayın, dış ve kapak kısımlarını alkol bazlı temizleyici ile silin.<br>
+                3. <b>İKRAM/SARF:</b> Tuvalet kağıdı ve kağıt havluları yenileyin, sabunları doldurun.<br>
+                4. <b>AYNALAR:</b> Cam temizleyici ile iz kalmayacak şekilde aynaları parlatın.<br>
+                5. <b>ZEMİNLER:</b> Çamaşır sulu su ile zemini paspaslayın, gider deliklerini kontrol edin.<br>
+                6. <b>HAVALANDIRMA:</b> Varsa fanı çalıştırın, kapıyı açık bırakarak havalandırın.
+            `;
+        } else if (b.includes("yatakhane") || b.includes("misafir")) {
+            title = "🛏️ Yatakhane Temizlik Talimatı";
+            content = `
+                1. <b>YATAK DÜZENİ:</b> Çarşafları gerginleştirin ve yorganları nizami katlayın.<br>
+                2. <b>ZEMİN:</b> Yatak altlarına giren tozları özel olarak temizleyin.<br>
+                3. <b>DOLAPLAR:</b> Dolap üstlerinin tozunu alın ve parmak izlerini silin.<br>
+                4. <b>HAVALANDIRMA:</b> Pencereleri en az 15 dakika tam açık tutun.<br>
+                5. <b>KİŞİSEL ALAN:</b> Terliklerin ve ayakkabıların düzenli durduğundan emin olun.
+            `;
+        } else if (b.includes("mescit")) {
+            title = "🕌 Mescit Temizlik Talimatı";
+            content = `
+                1. <b>HALILAR:</b> Halıları enine ve boyuna olacak şekilde güçlü vakumla süpürün.<br>
+                2. <b>KİTAPLIK:</b> Elifba ve Kur'an-ı Kerim raflarının tozunu incitmeden alın.<br>
+                3. <b>KÜRSÜ:</b> Kürsü ve mihrap çevresini detaylıca silin.<br>
+                4. <b>ESANSLAMA:</b> Cemaati rahatsız etmeyecek hafif gül/misk kokusu uygulayın.<br>
+                5. <b>DÜZEN:</b> Rahleleri ve tesbihleri düzenli sıralarına dizin.
+            `;
+        } else if (b.includes("çayhane") || b.includes("kantin") || b.includes("mutfak")) {
+            title = "☕ Çayhane/Kantin Talimatı";
+            content = `
+                1. <b>HİJYEN:</b> Tezgah üzerlerini gıda dostu dezenfektanlarla temizleyin.<br>
+                2. <b>DEMLİKLER:</b> Çay makinelerini ve demlikleri kireçten arındırıp parlatın.<br>
+                3. <b>BARDAKLAR:</b> Bardaklarda su lekesi kalmadığını kontrol edin.<br>
+                4. <b>ZEMİN:</b> Yapışkanlık kalmayacak şekilde sıcak su ve deterjanla silin.<br>
+                5. <b>ÇÖPLER:</b> Gıda atığı içeren çöpleri bekletmeden dışarı çıkarın.
+            `;
+        } else if (b.includes("donanım") || b.includes("lab") || b.includes("robotik")) {
+            title = "💻 Teknik Alan Temizlik Talimatı";
+            content = `
+                1. <b>TOZ ALMA:</b> Elektronik cihazlara asla ıslak bez sürmeyin, sadece kuru mikrofiber kullanın.<br>
+                2. <b>ZEMİN:</b> Kablolara takılmadan, hassas hareketlerle paspas yapın.<br>
+                3. <b>KLAVYELER:</b> Klavye ve mouse yüzeylerini dezenfektanlı mendille hafifçe silin.<br>
+                4. <b>HAVALANDIRMA:</b> Tozu dışarı atacak şekilde pencereleri açın.<br>
+                5. <b>GÜVENLİK:</b> Temizlik sonrası fişlerin ve kabloların yerinden oynamadığını kontrol edin.
+            `;
+        } else if (b.includes("merdiven") || b.includes("koridor")) {
+            title = "🚶 Sirkülasyon Alanı Talimatı";
+            content = `
+                1. <b>KORKULUKLAR:</b> Merdiven korkuluklarını ve kapı kollarını dezenfekte edin.<br>
+                2. <b>KÖŞELER:</b> Süpürgelik kenarlarında biriken tozları özel olarak alın.<br>
+                3. <b>PASPAS:</b> Ayak altı çok olduğu için gerekirse günde 2 kez paspas geçin.<br>
+                4. <b>AYDINLATMA:</b> Sensörlü lambaların düzgün çalıştığını kontrol edin.
+            `;
+        }
+
+        Swal.fire({
+            title: title,
+            html: `
+            <div style="text-align: left; font-size: 0.95rem; line-height: 1.6;">
+                ${content}
+            </div>
+            `,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonText: 'Tamam',
+            width: '600px'
+        });
+    }
+};
+
+// Image Upload Handler with Compression
+function handleFotoUpload(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const fotoDurum = document.getElementById('fotoDurum');
+        fotoDurum.innerText = "İşleniyor...";
+        fotoDurum.style.color = "var(--warning-color)";
+
+        const reader = new FileReader();
+        reader.onload = function (evt) {
+            const tempImg = new Image();
+            tempImg.onload = function () {
+                // Resize using Canvas
+                const canvas = document.createElement('canvas');
+                let width = tempImg.width;
+                let height = tempImg.height;
+                const MAX_SIZE = 1024; // 1024px max
+
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(tempImg, 0, 0, width, height);
+
+                // Convert back to base64 with lower quality (0.7)
+                fotoDataURL = canvas.toDataURL('image/jpeg', 0.7);
+
+                fotoDurum.innerText = `✔ ${file.name} (Optimize Edildi)`;
+                fotoDurum.style.color = "var(--success-color)";
+                document.getElementById('fotoOnizleme').src = fotoDataURL;
+                document.getElementById('fotoOnizlemeContainer').classList.remove('d-none');
+            };
+            tempImg.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// ---------- İDARECİ / MÜFETTİŞ PANEL ----------
+function loadAdminPanel() {
+    try {
+        const dateEl = document.getElementById('adminDateSelector');
+        const katContainer = document.getElementById('mufettisKatButonlari');
+        if (!katContainer || !dateEl) return;
+
+        katContainer.innerHTML = "";
+        const selectedDate = dateEl.value; // yyyy-mm-dd
+        let allData = getData();
+        const dayData = allData.filter(d => toShortDate(d.tarih) === selectedDate);
+
+        const arizaCtn = cachedArizalar.filter(a => a.durum === "bekliyor").length;
+        if (document.getElementById('adminArizaCount')) document.getElementById('adminArizaCount').innerText = arizaCtn;
+
+        // Loop through Building Structure (katlar)
+        Object.keys(katlar).reverse().forEach(katAd => {
+            const bolumler = katlar[katAd];
+            let bekleyenSayisi = 0;
+            
+            Object.keys(bolumler).forEach(b => {
+                const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
+                if(rec && rec.durum === 'bekliyor') bekleyenSayisi++;
+            });
+            
+            const btn = document.createElement('button');
+            const isActive = bekleyenSayisi > 0;
+            btn.className = `btn d-flex justify-content-between align-items-center w-100 rounded-4 px-4 py-3 fw-bold border-0 kat-secim-btn ${isActive ? 'kat-aktif' : 'kat-pasif'}`;
+            
+            btn.innerHTML = `
+                <span class="fs-6">${katAd}</span>
+                <span class="badge ${isActive ? 'bg-white text-success' : 'bg-secondary text-white'} rounded-pill px-3 py-2">${bekleyenSayisi} Bekleyen</span>
+            `;
+            
+            btn.onclick = () => MufettisFocus.basla(katAd, dayData);
+            katContainer.appendChild(btn);
+        });
+
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch (e) {
+        console.error("loadAdminPanel Error:", e);
+    }
+}
+
+const MufettisFocus = {
+    odalar: [],
+    index: 0,
+    aktifKat: "",
+    basla: function(katAd, dayData) {
+        this.aktifKat = katAd;
+        this.odalar = [];
+        
+        Object.keys(katlar[katAd]).forEach(b => {
+            const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
+            if(rec && rec.durum === 'bekliyor') {
+                this.odalar.push(rec);
+            }
+        });
+        
+        if(this.odalar.length === 0) {
+            Swal.fire({icon:'success', title:'Dört Dörtlük', text: katAd + ' için denetim bekleyen oda yok, ellerinize sağlık.', timer: 2000, showConfirmButton:false});
+            return;
+        }
+        
+        this.index = 0;
+        document.getElementById('mufettisKatSecim').classList.add('d-none');
+        document.getElementById('mufettisOdakModu').classList.remove('d-none');
+        document.getElementById('mufettisOdakModu').classList.add('d-flex');
+        
+        this.renderOda();
+    },
+    renderOda: function() {
+        if(this.index >= this.odalar.length) {
+            Swal.fire({icon:'success', title:'Tebrikler 🎊', text: this.aktifKat + ' denetimini tamamen bitirdiniz!', timer: 2500, showConfirmButton:false});
+            this.cikisYAP();
+            return;
+        }
+        
+        const oda = this.odalar[this.index];
+        document.getElementById('focusKatIsim').innerText = this.aktifKat;
+        
+        const yuzde = Math.round((this.index / this.odalar.length) * 100);
+        document.getElementById('focusYuzdeMetin').innerText = `%${yuzde} (${this.index}/${this.odalar.length})`;
+        document.getElementById('focusIlerlemeBar').style.width = `${yuzde}%`;
+        
+        document.getElementById('focusOdaAdi').innerText = oda.bolum;
+        
+        const timeStr = new Date(oda.tarih).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+        document.getElementById('focusGorevliZaman').innerText = `${timeStr} - Görevli Onaya Sundu`;
+        
+        const notContainer = document.getElementById('focusGorevliNotContainer');
+        if(oda.yorum) {
+            notContainer.classList.remove('d-none');
+            document.getElementById('focusGorevliNot').innerText = oda.yorum;
+        } else {
+            notContainer.classList.add('d-none');
+        }
+        
+        const kart = document.getElementById('focusOdaKarti');
+        kart.style.opacity = '1';
+        kart.style.transform = 'scale(1) rotate(0deg)';
+    },
+    cikisYAP: function() {
+        document.getElementById('mufettisOdakModu').classList.add('d-none');
+        document.getElementById('mufettisOdakModu').classList.remove('d-flex');
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisKatSecim').classList.remove('d-none');
+        loadAdminPanel();
+    },
+    gec: function(sonuc, neden) {
+        const oda = this.odalar[this.index];
+        
+        let data = getData();
+        const idx = data.findIndex(d => d.id === oda.id);
+        if (idx !== -1) {
+            data[idx].durum = sonuc;
+            data[idx].mufettis_yorum = neden || "";
+            data[idx].mufettis_tarih = new Date().getTime();
+            if (db) {
+                db.ref('reports/' + oda.id).update({
+                    durum: sonuc,
+                    mufettis_yorum: neden || "",
+                    mufettis_tarih: data[idx].mufettis_tarih
+                });
+            }
+            localStorage.setItem('topclean_data', JSON.stringify(data));
+            cachedData = data;
+        }
+        
+        const kart = document.getElementById('focusOdaKarti');
+        kart.style.transform = sonuc === 'onaylandi' ? 'translateX(120%) rotate(15deg)' : 'translateX(-120%) rotate(-15deg)';
+        kart.style.opacity = '0';
+        
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
+        
+        setTimeout(() => {
+            kart.style.transition = 'none';
+            kart.style.transform = 'translateY(20px) scale(0.9)';
+            setTimeout(() => {
+                 kart.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s';
+                 this.index++;
+                 this.renderOda();
+            }, 50);
+        }, 300);
+    },
+    onayVer: function() {
+        this.gec('onaylandi', "");
+    },
+    onBtnReddet: function() {
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(0)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'auto';
+    },
+    iptalRet: function() {
+        document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
+        document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
+    },
+    hizliRet: function(neden) {
+        this.gec('reddedildi', neden);
+    },
+    acKlavyeRet: async function() {
+        const { value: neden } = await Swal.fire({
+            title: 'Kusur Nedeni',
+            input: 'text',
+            inputPlaceholder: 'Varsa yazınız...',
+            showCancelButton: true,
+            confirmButtonText: 'Reddet',
+            cancelButtonText: 'İptal',
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonColor: '#ef4444'
+        });
+        if(neden) {
+            this.hizliRet(neden);
+        } else {
+            this.iptalRet();
+        }
+    }
+};
+
+const AdminManager = {
+
+    exportCSV: function () {
+        let data = getData();
+        if (data.length === 0) return;
+
+        let csvHeader = "ID,Kat,Bolum,KriterSayisi,Tarih,Durum,GorevliNotu,MufettisNotu\n";
+        let csvBody = data.map(d => {
+            return `${d.id},${d.kat},${d.bolum},${d.secilen.length},"${new Date(d.tarih).toLocaleString()}",${d.durum},"${d.yorum || ''}","${d.mufettis_yorum || ''}"`;
+        }).join("\n");
+
+        const blob = new Blob(["\uFEFF" + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TopClean_Rapor_${new Date().toLocaleDateString()}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    },
+
+    showArizalar: function () {
+        const bekleyenler = cachedArizalar.filter(a => a.durum === "bekliyor");
+        if (bekleyenler.length === 0) {
+            Swal.fire({ icon: 'info', title: 'Harika!', text: 'Bekleyen teknik arıza bulunmuyor.', confirmButtonColor: '#10b981' });
+            return;
+        }
+
+        let html = '<div class="d-flex flex-column gap-3 text-start mt-3" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">';
+        bekleyenler.forEach(a => {
+            html += `
+                <div class="glass-card p-3 border border-warning position-relative" style="background: rgba(245, 158, 11, 0.1);">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-warning d-flex align-items-center gap-1"><i data-lucide="wrench" size="14"></i> ${a.kat} - ${a.bolum}</span>
+                        <span class="small text-muted">${new Date(a.tarih).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    </div>
+                    <div class="small text-white mb-2"><strong>Arıza:</strong> ${a.detay}</div>
+                    <div class="small text-muted mb-3"><strong>Bildiren:</strong> ${a.gonderen}</div>
+                    <button class="btn btn-sm btn-success w-100 fw-bold rounded-pill" onclick="AdminManager.onarildiIsaretle('${a.id}')">
+                        <i data-lucide="check-circle" size="14"></i> Onarıldı Olarak İşaretle
+                    </button>
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'TEKNİK ARIZALAR',
+            html: html,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            showConfirmButton: false,
+            showCloseButton: true,
+            didOpen: () => {
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            }
+        });
+    },
+
+    onarildiIsaretle: function (arizaId) {
+        Swal.fire({
+            title: 'Emin misiniz?',
+            text: "Bu durumdaki arıza 'onarıldı' olarak kaydedilecek ve görevliye bildirilecek.",
+            icon: 'question',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: '#fff',
+            confirmButtonColor: '#10b981',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Evet, Onarıldı',
+            cancelButtonText: 'İptal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const idx = cachedArizalar.findIndex(a => a.id === arizaId);
+                if (idx !== -1) {
+                    cachedArizalar[idx].durum = "onarildi";
+                    cachedArizalar[idx].onay_tarih = new Date().getTime();
+
+                    localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+
+                    if (db) {
+                        db.ref('arizalar/' + arizaId).update({
+                            durum: "onarildi",
+                            onay_tarih: cachedArizalar[idx].onay_tarih
+                        });
+                    }
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'İşlem Başarılı',
+                        text: 'Arıza onarıldı olarak güncellendi.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        this.showArizalar(); // Listeyi yenile
+                        loadAdminPanel(); // Sayacı yenile
+                    });
+                }
+            }
+        });
+    }
+};
+
+// ---------- İDARECİ MANAGER ----------
+const IdarecManager = {
+    load: function () {
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            const dateSel = document.getElementById('idarecDateSelector');
+            if (dateSel) { dateSel.value = today; dateSel.onchange = function () { IdarecManager.loadBinaDurumu(); }; }
+
+            this.currentBinaKat = 'Hepsi';
+            try { this.loadBinaDurumu(); } catch(err) { console.error("Load Bina Error:", err); }
+            try { this.loadBasari('haftalik'); } catch(err) { console.error("Load Basari Error:", err); }
+            try { this.loadPersonel(); } catch(err) { console.error("Load Personel Error:", err); }
+            try { this.loadMufettis(); } catch(err) { console.error("Load Mufettis Error:", err); }
+            try { this.loadArizalar('hepsi'); } catch(err) { console.error("Load Arizalar Error:", err); }
+            try { if(typeof InventoryManager !== 'undefined') InventoryManager.render(); } catch(err) { console.error("Render Inventory Error:", err); }
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        } catch (e) {
+            console.error("IdarecManager.load Error:", e);
+        }
+    },
+    switchTab: function (tab, btn) {
+        document.querySelectorAll('.idarec-tab-content').forEach(function (el) { el.classList.add('d-none'); });
+        document.querySelectorAll('.idarec-tab').forEach(function (el) { el.classList.remove('active'); });
+        document.getElementById('idarec-tab-' + tab).classList.remove('d-none');
+        btn.classList.add('active');
+        lucide.createIcons();
+    },
+    loadBinaDurumu: function () {
+        var matris = document.getElementById('idarecBinaMatrisi');
+        var dateSel = document.getElementById('idarecDateSelector');
+        if (!matris || !dateSel) return;
+        matris.innerHTML = '';
+        var selectedDate = dateSel.value;
+        var allData = getData();
+        var dayData = allData.filter(function (d) { return toShortDate(d.tarih) === selectedDate; });
+
+        if (document.getElementById('idarecStatTotal')) document.getElementById('idarecStatTotal').innerText = dayData.length;
+        if (document.getElementById('idarecStatSuccess')) document.getElementById('idarecStatSuccess').innerText = dayData.filter(function (d) { return d.durum === 'onaylandi'; }).length;
+        if (document.getElementById('idarecStatDanger')) document.getElementById('idarecStatDanger').innerText = dayData.filter(function (d) { return d.durum === 'reddedildi'; }).length;
+
+        var totalGenel = dayData.length;
+        var onayGenel = dayData.filter(d => d.durum === 'onaylandi').length;
+        var yuzde = totalGenel > 0 ? Math.round((onayGenel / totalGenel) * 100) : 0;
+        var bar = document.getElementById('genelHijyenBar');
+        var txt = document.getElementById('genelHijyenText');
+        if (bar) bar.style.width = yuzde + '%';
+        if (txt) txt.innerText = '%' + yuzde;
+
+        var katKeys = Object.keys(katlar).reverse();
+        if (this.currentBinaKat && this.currentBinaKat !== 'Hepsi') {
+            katKeys = katKeys.filter(k => k === this.currentBinaKat);
+        }
+
+        var buildingWrapper = document.createElement('div');
+        buildingWrapper.className = 'bina-dis-cephe';
+
+        if (this.currentBinaKat === 'Hepsi') {
+            var roof = document.createElement('div');
+            roof.className = 'bina-cati';
+            buildingWrapper.appendChild(roof);
+        }
+
+        katKeys.forEach(function (katAd, kIdx) {
+            var w = document.createElement('div');
+            w.className = 'bina-kat d-flex align-items-stretch';
+
+            var leftSide = document.createElement('div');
+            leftSide.className = 'kat-kanat left-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
+            leftSide.style.width = '45%';
+
+            var middleSide = document.createElement('div');
+            middleSide.className = 'kat-asansor d-flex align-items-center justify-content-center flex-column text-center px-1';
+            middleSide.style.width = '10%';
+            middleSide.innerHTML = '<div class="kat-numarasi fw-bold text-white shadow-sm">' + katAd.replace('. Kat', '') + '</div>';
+
+            var rightSide = document.createElement('div');
+            rightSide.className = 'kat-kanat right-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
+            rightSide.style.width = '45%';
+
+            var bolumKeys = Object.keys(katlar[katAd]);
+            var half = Math.ceil(bolumKeys.length / 2);
+
+            bolumKeys.forEach(function (bolumAd, bIdx) {
+                var recs = dayData.filter(function (d) { return d.kat === katAd && d.bolum === bolumAd; });
+                recs.sort(function (a, b) { return parseInt(b.id) - parseInt(a.id); });
+                var rec = recs[0];
+                var hasReport = !!rec;
+                var sc = 'cam-bekliyor', sy = '⏳';
+                if (rec) {
+                    if (rec.durum === 'onaylandi') { sc = 'cam-onayli'; sy = '✅'; }
+                    else if (rec.durum === 'reddedildi') { sc = 'cam-red'; sy = '❌'; }
+                    else { sc = 'cam-onay-bekliyor'; sy = '🔍'; }
+                }
+
+                var roomDiv = document.createElement('div');
+                roomDiv.className = 'bina-oda ' + sc + (hasReport ? ' cursor-pointer' : '');
+                var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                var clickAttr = hasReport ? 'onclick="AdminManager.showDetail(\'' + rec.id + '\')"' : '';
+
+                roomDiv.innerHTML = '<div class="oda-ic" ' + clickAttr + '><div class="oda-durum-ikoni">' + sy + '</div><div class="oda-baslik text-truncate" title="' + bolumAd + '">' + bolumAd + '</div></div>';
+
+                if (bIdx < half) leftSide.appendChild(roomDiv);
+                else rightSide.appendChild(roomDiv);
+            });
+
+            w.appendChild(leftSide);
+            w.appendChild(middleSide);
+            w.appendChild(rightSide);
+
+            buildingWrapper.appendChild(w);
+
+            var katZemin = document.createElement('div');
+            katZemin.className = 'kat-zemin';
+            buildingWrapper.appendChild(katZemin);
+        });
+
+        if (this.currentBinaKat === 'Hepsi') {
+            var temel = document.createElement('div');
+            temel.className = 'bina-temel';
+            temel.innerHTML = '<div class="temel-yazi text-white fw-bold">ENDERUN BİNASI</div>';
+            buildingWrapper.appendChild(temel);
+        }
+
+        matris.appendChild(buildingWrapper);
+        lucide.createIcons();
+    },
+    filterKat: function (katSecimi, btn) {
+        document.querySelectorAll('.kat-filter').forEach(b => {
+            b.classList.remove('active', 'bg-emerald', 'text-white');
+            b.style.borderColor = "rgba(255,255,255,0.2)";
+        });
+        btn.classList.add('active', 'bg-emerald', 'text-white');
+        btn.style.borderColor = "var(--accent-emerald)";
+        this.currentBinaKat = katSecimi;
+        this.loadBinaDurumu();
+    },
+    loadBasari: function (period, btn) {
+        if (btn) {
+            document.querySelectorAll('.basari-filter').forEach(b => {
+                b.classList.remove('active');
+                b.style.border = "1px solid transparent";
+            });
+            btn.classList.add('active');
+            btn.style.border = "1px solid rgba(255,255,255,0.1)";
+        }
+        var allData = getData();
+        var now = new Date();
+        var filteredData = allData.filter(d => {
+            var dTarih = new Date(d.tarih);
+            if (period === 'haftalik') {
+                var diff = now - dTarih;
+                return diff <= 7 * 24 * 60 * 60 * 1000;
+            } else if (period === 'aylik') {
+                return dTarih.getMonth() === now.getMonth() && dTarih.getFullYear() === now.getFullYear();
+            } else {
+                return true;
+            }
+        });
+
+        var katScores = {};
+        Object.keys(katlar).forEach(k => { katScores[k] = { total: 0, onay: 0 }; });
+
+        filteredData.forEach(d => {
+            if (katScores[d.kat]) {
+                katScores[d.kat].total++;
+                if (d.durum === 'onaylandi') katScores[d.kat].onay++;
+            }
+        });
+
+        var bestKat = "-";
+        var bestPercentage = -1;
+        var minTotalThreshold = period === 'haftalik' ? 1 : (period === 'aylik' ? 5 : 10);
+
+        Object.keys(katScores).forEach(k => {
+            if (katScores[k].total >= minTotalThreshold || (filteredData.length < minTotalThreshold && katScores[k].total > 0)) {
+                var p = (katScores[k].onay / katScores[k].total) * 100;
+                if (p > bestPercentage) {
+                    bestPercentage = p;
+                    bestKat = k;
+                }
+            }
+        });
+
+        var bIsim = document.getElementById('basariKatIsim');
+        var bPuan = document.getElementById('basariPuan');
+        var bGorevli = document.getElementById('basariGorevli');
+        var bBaskan = document.getElementById('basariBaskan');
+
+        if (!bIsim) return;
+
+        if (bestKat === "-") {
+            bIsim.innerText = "-";
+            bPuan.innerText = "Yeterli Veri Yok";
+            bGorevli.innerText = "-";
+            bBaskan.innerText = "-";
+        } else {
+            bIsim.innerText = bestKat;
+            bPuan.innerText = Math.round(bestPercentage) + "% Başarı Oranı";
+
+            var allUsers = [...usersData, ...JSON.parse(localStorage.getItem('topclean_users') || '[]')];
+            var hoca = allUsers.find(u => u.kat === bestKat && u.rol === 'gorevli');
+            bGorevli.innerText = hoca ? hoca.name : "Atanmadı";
+
+            var talebeData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+            var baskanlar = talebeData.baskanlar || {};
+            bBaskan.innerText = baskanlar[bestKat] || "Belirtilmedi";
+        }
+    },
+    loadMufettis: function () {
+        var list = document.getElementById('mufettisListesi');
+        if (!list) return;
+        list.innerHTML = '';
+        var all = usersData.filter(function (u) { return u.rol === 'mufettis'; });
+        var extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        all = all.concat(extraMuf);
+
+        all.forEach(function (u, idx) {
+            var isExtra = idx >= usersData.filter(u => u.rol === 'mufettis').length;
+            var c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
+            c.innerHTML = '<div><div class="fw-bold text-white">' + u.name + '</div><div class="x-small text-muted">İç Mesul | Şifre: ' + u.pass + '</div></div><button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.mufettisSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
+            list.appendChild(c);
+        });
+        lucide.createIcons();
+    },
+    mufettisEkle: function () {
+        var ad = document.getElementById('yeniMufettisAd').value.trim();
+        var sifre = document.getElementById('yeniMufettisSifre').value.trim();
+        if (!ad || !sifre) { Swal.fire({ icon: 'warning', title: 'Eksik Bilgi', text: 'Ad ve şifre girin.', timer: 2000, showConfirmButton: false }); return; }
+        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        var newUser = { name: ad, pass: sifre, rol: 'mufettis', kat: 'Hepsi' };
+        extras.push(newUser);
+        localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
+        if (db) {
+            db.ref('users/' + newUser.name).set(newUser);
+        }
+        document.getElementById('yeniMufettisAd').value = '';
+        document.getElementById('yeniMufettisSifre').value = '';
+        Swal.fire({ icon: 'success', title: 'Kaydedildi!', text: ad + ' İç Mesul olarak eklendi.', timer: 1800, showConfirmButton: false });
+        IdarecManager.loadMufettis();
+        initLoginSelect();
+    },
+    mufettisSil: function (idx) {
+        var fixed = usersData.filter(u => u.rol === 'mufettis');
+        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        var target;
+        if (idx < fixed.length) {
+            Swal.fire({ icon: 'error', title: 'Hata', text: 'Sistem admini silinemez.', timer: 2000, showConfirmButton: false });
+            return;
+        } else {
+            target = extras[idx - fixed.length];
+            extras.splice(idx - fixed.length, 1);
+            localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
+        }
+        if (db && target) db.ref('users/' + target.name).remove();
+        Swal.fire({ icon: 'info', title: 'Silindi', text: 'İç Mesul kaldırıldı.', timer: 1800, showConfirmButton: false });
+        IdarecManager.loadMufettis();
+        initLoginSelect();
+    },
+    loadPersonel: function () {
+        var list = document.getElementById('personelListesi');
+        if (!list) return;
+        list.innerHTML = '';
+        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        var sabitGorevliler = usersData.filter(function (u) { return u.rol === 'gorevli' && !deletedFixed.includes(u.name); });
+        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var all = sabitGorevliler.concat(extraUsers);
+        all.forEach(function (u, idx) {
+            var isExtra = idx >= sabitGorevliler.length;
+            var c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
+            // Both extra and fixed users have delete buttons now
+            // We'll pass the name and isExtra to the delete function
+            var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
+            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div><div class="x-small text-muted">' + u.kat + ' | Şifre: ' + u.pass + '</div></div><div class="d-flex gap-2 align-items-center"><span class="badge-status ' + (isExtra ? 'badge-warning' : 'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra ? 'YENİ' : 'SABİT') + '</span>' + deleteBtn + '</div>';
+            list.appendChild(c);
+        });
+        lucide.createIcons();
+    },
+    personelEkle: function () {
+        var ad = document.getElementById('yeniPersonelAd').value.trim();
+        var sifre = document.getElementById('yeniPersonelSifre').value.trim();
+        var kat = document.getElementById('yeniPersonelKat').value;
+        if (!ad || !sifre || !kat) { Swal.fire({ icon: 'warning', title: 'Eksik Bilgi', text: 'Tüm alanları doldurun.', timer: 2000, showConfirmButton: false }); return; }
+        var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var newUser = { name: ad, pass: sifre, kat: kat, rol: 'gorevli' };
+        extras.push(newUser);
+
+        localStorage.setItem('topclean_users', JSON.stringify(extras));
+        if (db) {
+            db.ref('users/' + newUser.name).set(newUser);
+        }
+        document.getElementById('yeniPersonelAd').value = '';
+        document.getElementById('yeniPersonelSifre').value = '';
+        document.getElementById('yeniPersonelKat').value = '';
+        Swal.fire({ icon: 'success', title: 'Kaydedildi!', text: ad + ' sisteme eklendi.', timer: 1800, showConfirmButton: false });
+        IdarecManager.loadPersonel();
+        initLoginSelect(); // Login dropdown'u güncelle
+    },
+    personelSil: function (allIdx) {
+        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        var sabitGorevliler = usersData.filter(function (u) { return u.rol === 'gorevli' && !deletedFixed.includes(u.name); });
+        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        var all = sabitGorevliler.concat(extraUsers);
+        var target = all[allIdx];
+        if (!target) return;
+
+        if (allIdx >= sabitGorevliler.length) {
+            // Extra user
+            var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+            var filtered = extras.filter(u => u.name !== target.name);
+            localStorage.setItem('topclean_users', JSON.stringify(filtered));
+        } else {
+            // Fixed user
+            var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+            deletedFixed.push(target.name);
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
+            if (db) db.ref('deleted_fixed_users').set(deletedFixed);
+        }
+
+        // Cloud Delete
+        if (db) db.ref('users/' + target.name).remove();
+
+        Swal.fire({ icon: 'info', title: 'Silindi', text: target.name + ' sistemden kaldırıldı.', timer: 1800, showConfirmButton: false });
+        IdarecManager.loadPersonel();
+        initLoginSelect();
+    },
+    exportCSV: function () {
+        var selectedDate = document.getElementById('idarecDateSelector').value;
+        var dayData = getData().filter(function (d) { return toShortDate(d.tarih) === selectedDate; });
+        if (dayData.length === 0) { Swal.fire({ icon: 'info', title: 'Kayıt Yok', text: 'Seçilen tarih için rapor bulunamadı.', timer: 2000, showConfirmButton: false }); return; }
+        var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,IcMesulNotu\n";
+        csv += dayData.map(function (d) {
+            var saat = new Date(d.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+            return '"' + d.kat + '","' + d.bolum + '",' + d.secilen.length + ',' + saat + ',' + d.durum + ',"' + (d.yorum || '') + '","' + (d.mufettis_yorum || '') + '"';
+        }).join("\n");
+        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+
+        setTimeout(() => {
+            Swal.fire({
+                title: 'Google Drive Yardımcısı',
+                text: 'İndirilen dosyayı Google Drive klasörünüze taşıyabilirsiniz.',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Driveı Aç',
+                cancelButtonText: 'Kapat'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.open("https://drive.google.com/drive/my-drive", "_blank");
+                }
+            });
+        }, 1000);
+    },
+
+    loadArizalar: function (filterType) {
+        var aList = cachedArizalar;
+        if (filterType === 'bekliyor') aList = aList.filter(a => a.durum === 'bekliyor');
+        else if (filterType === 'onarildi') aList = aList.filter(a => a.durum === 'onarildi');
+
+        aList.sort((a, b) => b.tarih - a.tarih);
+        var container = document.getElementById('idarecArizaList');
+        if (!container) return;
+        container.innerHTML = '';
+        if (aList.length === 0) {
+            container.innerHTML = '<div class="glass-card text-center text-muted p-4 small">Kayıtlı arıza bulunmuyor.</div>';
+            return;
+        }
+
+        aList.forEach(a => {
+            var sc = a.durum === 'onarildi' ? 'badge-success' : 'badge-warning';
+            var sy = a.durum === 'onarildi' ? 'ONARILDI' : 'BEKLİYOR';
+            var div = document.createElement('div');
+            div.className = 'glass-card p-3 mb-2';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold fs-6 text-white"><i data-lucide="wrench" size="14"></i> ${a.kat} / ${a.bolum}</span>
+                    <span class="badge-status ${sc} px-2 py-1" style="font-size:0.6rem;">${sy}</span>
+                </div>
+                <div class="small text-white mb-2">${a.detay}</div>
+                <div class="x-small text-muted d-flex justify-content-between mt-2 pt-2 border-top border-secondary">
+                    <span>GÖNDEREN: ${a.gonderen}</span>
+                    <span>${new Date(a.tarih).toLocaleString()}</span>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    filterArizalar: function (type, btn) {
+        document.querySelectorAll('.ariza-filter').forEach(b => b.classList.remove('active'));
+        if (btn) btn.classList.add('active');
+        this.loadArizalar(type);
+    },
+
+    exportArizaCSV: function () {
+        if (cachedArizalar.length === 0) return;
+        let csvHeader = "ID,Kat,Bolum,Gonderen,Detay,Tarih,Durum,OnayTarihi\n";
+        let csvBody = cachedArizalar.map(a => {
+            let onayTarihStr = a.onay_tarih ? new Date(a.onay_tarih).toLocaleString() : "";
+            return `${a.id},${a.kat},${a.bolum},${a.gonderen},"${a.detay}","${new Date(a.tarih).toLocaleString()}",${a.durum},"${onayTarihStr}"`;
+        }).join("\n");
+        const blob = new Blob(["\uFEFF" + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", `TopClean_Arizalar.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+};
+
+// ---------- LİSTE DAĞILIMI MANAGER V3 (POSTER MODE) ----------
+const ListeManager = {
+    load: function () {
+        const saved = localStorage.getItem('topclean_talebe_listesi');
+        if (saved) {
+            const data = JSON.parse(saved);
+            document.getElementById('listAlerjik').value = data.alerjik || "";
+            document.getElementById('listAstim').value = data.astim || "";
+            document.getElementById('listSaglikli').value = data.saglikli || "";
+            document.getElementById('listDiger').value = data.diger || "";
+            document.getElementById('cleaningPeriod').value = data.period || "";
+            
+            if (data.sonuclar) {
+                this.renderSonuclar(data.sonuclar, data.baskanlar || {}, data.locks || {});
+            } else {
+                document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. "Dağıt" butonuna basın.</div>';
+            }
+        } else {
+            document.getElementById('listeSonuclari').innerHTML = '<div class="glass-card p-4 text-center text-muted small stagger-item">Henüz dağıtım yapılmadı. "Dağıt" butonuna basın.</div>';
+        }
+        this.updateStats();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    toggleEdit: function() {
+        const area = document.getElementById('listeInputArea');
+        area.classList.toggle('d-none');
+        this.updateStats();
+    },
+
+    updateStats: function () {
+        const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+        const tCount = [...parseList('listAlerjik'), ...parseList('listAstim'), ...parseList('listSaglikli'), ...parseList('listDiger')].length;
+        
+        let capacity = 0;
+        let floorStats = [];
+        Object.keys(katlar).forEach(kat => {
+            let fCap = 0;
+            Object.keys(katlar[kat]).forEach(oda => {
+                let nameLower = oda.toLowerCase();
+                let isWc = nameLower.includes("wc") || nameLower.includes("lavabo");
+                let isSmall = nameLower.includes("merdiven") || nameLower.includes("donanım") || nameLower.includes("muhasebe");
+                if (!isSmall) fCap += (isWc ? 2 : 1);
+            });
+            capacity += fCap;
+            floorStats.push(fCap);
+        });
+
+        const capEl = document.getElementById('statsKapasite');
+        const talEl = document.getElementById('statsTalebe');
+        const bosEl = document.getElementById('statsBos');
+        if (capEl) capEl.innerText = capacity;
+        if (talEl) talEl.innerText = tCount;
+        if (bosEl) bosEl.innerText = Math.max(0, capacity - tCount);
+
+        const hTarget = document.getElementById('statsHeatmap');
+        if (hTarget) {
+            hTarget.innerHTML = "";
+            floorStats.forEach(cap => {
+                const dot = document.createElement('div');
+                dot.className = "heatmap-dot " + (cap > 5 ? 'high' : (cap > 2 ? 'med' : 'low'));
+                hTarget.appendChild(dot);
+            });
+        }
+    },
+
+    smartPaste: async function (targetId) {
+        const { value: text } = await Swal.fire({
+            title: 'Listeyi Yapıştır',
+            input: 'textarea',
+            inputPlaceholder: 'İsimleri buraya yapıştırın...',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        });
+        if (text) {
+            const names = text.split(/[\n,\t]/).map(s => s.trim()).filter(s => s.length > 1);
+            const current = document.getElementById(targetId).value;
+            const combined = current ? current + ", " + names.join(", ") : names.join(", ");
+            document.getElementById(targetId).value = combined;
+            this.updateStats();
+            this.save();
+        }
+    },
+
+    save: function (sonuclar = null, baskanlar = null, locks = null) {
+        const currentData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const data = {
+            alerjik: document.getElementById('listAlerjik').value,
+            astim: document.getElementById('listAstim').value,
+            saglikli: document.getElementById('listSaglikli').value,
+            diger: document.getElementById('listDiger').value,
+            period: document.getElementById('cleaningPeriod').value,
+            sonuclar: sonuclar || currentData.sonuclar,
+            baskanlar: baskanlar || currentData.baskanlar || {},
+            locks: locks || currentData.locks || {}
+        };
+        localStorage.setItem('topclean_talebe_listesi', JSON.stringify(data));
+        if (db) db.ref('student_distribution').set(data);
+    },
+
+    getPoolNames: function () {
+        const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+        return [...parseList('listAlerjik'), ...parseList('listAstim'), ...parseList('listSaglikli'), ...parseList('listDiger')];
+    },
+
+    dagit: function () {
+        const resBox = document.getElementById('listeSonuclari');
+        if (resBox) {
+            resBox.classList.add('magic-shuffle-active');
+            setTimeout(() => resBox.classList.remove('magic-shuffle-active'), 800);
+        }
+
+        const currentData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const baskanlar = currentData.baskanlar || {};
+        const locks = currentData.locks || {};
+
+        const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
+        let studentsCategories = {
+            alerjik: parseList('listAlerjik'),
+            astim: parseList('listAstim'),
+            saglikli: parseList('listSaglikli'),
+            diger: parseList('listDiger')
+        };
+
+        let allPool = [...studentsCategories.astim, ...studentsCategories.alerjik, ...studentsCategories.saglikli, ...studentsCategories.diger];
+        const lockedInRooms = [];
+        Object.keys(locks).forEach(key => lockedInRooms.push(locks[key]));
+        allPool = allPool.filter(n => !lockedInRooms.includes(n));
+
+        let distribution = {};
+        let rooms = [];
+        Object.keys(katlar).forEach(kat => {
+            Object.keys(katlar[kat]).forEach(oda => {
+                let type = "genel";
+                let nameLower = oda.toLowerCase();
+                if (nameLower.includes("wc") || nameLower.includes("lavabo")) type = "lavabo";
+                else if (nameLower.includes("merdiven") || nameLower.includes("donanım") || nameLower.includes("muhasebe")) type = "dar";
+                
+                let capacity = type === "lavabo" ? 2 : 1;
+                let assigned = [];
+                for(let i=0; i<capacity; i++) {
+                    const lockId = `${kat}-${oda}-${i}`;
+                    if (locks[lockId]) assigned[i] = locks[lockId];
+                }
+                rooms.push({ kat, oda, type, capacity, assigned });
+            });
+        });
+
+        let pool_astim = allPool.filter(n => studentsCategories.astim.includes(n));
+        let pool_alerjik = allPool.filter(n => studentsCategories.alerjik.includes(n));
+        let pool_genel = allPool.filter(n => studentsCategories.saglikli.includes(n) || studentsCategories.diger.includes(n));
+
+        const fill = (pool, condition) => {
+            rooms.forEach(r => {
+                if (condition(r)) {
+                    for(let i=0; i<r.capacity; i++) {
+                        if (!r.assigned[i] && pool.length > 0) {
+                            r.assigned[i] = pool.shift();
+                        }
+                    }
+                }
+            });
+        };
+
+        fill(pool_astim, (r) => r.type !== "dar");
+        fill(pool_alerjik, (r) => r.type !== "lavabo");
+        fill(pool_genel, () => true);
+        fill(pool_astim, () => true);
+        fill(pool_alerjik, () => true);
+
+        const baskanNames = Object.values(baskanlar);
+        rooms.forEach(r => {
+            r.assigned = r.assigned.map((n, i) => {
+                const lockId = `${r.kat}-${r.oda}-${i}`;
+                if (locks[lockId]) return n;
+                return baskanNames.includes(n) ? "" : n;
+            }).filter(n => n !== undefined);
+        });
+
+        rooms.forEach(r => {
+            if (!distribution[r.kat]) distribution[r.kat] = {};
+            distribution[r.kat][r.oda] = r.assigned;
+        });
+
+        this.renderSonuclar(distribution, baskanlar, locks);
+        this.save(distribution, baskanlar, locks);
+        this.updateStats();
+    },
+
+    toggleLock: function (kat, oda, index, name) {
+        if (!name) return;
+        const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const locks = data.locks || {};
+        const lockId = `${kat}-${oda}-${index}`;
+        if (locks[lockId]) delete locks[lockId];
+        else locks[lockId] = name;
+        this.save(null, null, locks);
+        this.renderSonuclar(data.sonuclar, data.baskanlar, locks);
+    },
+
+    setBaskan: function (kat, isim) {
+        const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const baskanlar = data.baskanlar || {};
+        if (isim.trim() === "") {
+            delete baskanlar[kat];
+            this.save(null, baskanlar);
+            this.dagit();
+            return;
+        }
+        const havuz = this.getPoolNames();
+        if (!havuz.includes(isim)) {
+            Swal.fire('Hata', 'İsim listede bulunamadı!', 'error');
+            return;
+        }
+        baskanlar[kat] = isim;
+        this.save(null, baskanlar);
+        this.dagit();
+    },
+
+    renderSonuclar: function (dist, baskanlar = {}, locks = {}) {
+        const target = document.getElementById('listeSonuclari');
+        if (!target) return;
+        target.innerHTML = "";
+
+        Object.keys(dist).forEach((kat, kIdx) => {
+            const allUsers = [...usersData, ...(JSON.parse(localStorage.getItem('topclean_users') || '[]'))];
+            const hoca = allUsers.find(u => u.kat === kat && u.rol === 'gorevli');
+            const wrap = document.createElement('div');
+            wrap.className = "stagger-item mb-4";
+            wrap.style.animationDelay = (kIdx * 0.1) + "s";
+            wrap.innerHTML = `
+                <div class="d-flex align-items-center justify-content-between gap-2 mb-3 px-2">
+                    <div class="x-small text-muted fw-bold">👤 ${hoca ? hoca.name : 'Hoca Atanmamış'}</div>
+                    <div class="px-3 py-1 glass-card rounded-pill fw-bold small text-white" style="border: 1px solid var(--accent-primary);">${kat}</div>
+                    <div class="d-flex align-items-center gap-1">
+                        <input type="text" class="form-control form-control-sm bg-transparent border-0 text-emerald text-end p-0 shadow-none fw-bold" 
+                                style="width: 80px; font-size: 0.75rem;" placeholder="Başkan" 
+                                value="${baskanlar[kat] || ''}" 
+                                onblur="ListeManager.setBaskan('${kat}', this.value)">
+                    </div>
+                </div>
+                <div class="row g-2 mx-0" id="res-rooms-${kIdx}"></div>
+            `;
+            target.appendChild(wrap);
+
+            const row = document.getElementById(`res-rooms-${kIdx}`);
+            Object.keys(dist[kat]).forEach(oda => {
+                const names = dist[kat][oda];
+                const isWc = oda.toLowerCase().includes("wc") || oda.toLowerCase().includes("lavabo");
+                const capacity = isWc ? 2 : 1;
+                const col = document.createElement('div');
+                col.className = "col-12 col-md-6 px-1";
+
+                let namesCardHTML = "";
+                for (let i = 0; i < capacity; i++) {
+                    const name = names[i] || "";
+                    const lockId = `${kat}-${oda}-${i}`;
+                    const isLocked = !!locks[lockId];
+                    namesCardHTML += `
+                        <div class="d-flex align-items-center justify-content-between py-1 border-bottom border-secondary border-opacity-25">
+                            <span class="${name ? 'text-emerald' : 'text-danger fw-bold'} x-small cursor-pointer flex-grow-1" onclick="ListeManager.editOda('${kat}', '${oda}', ${i})">
+                                ${name || '🆕 Ekle'}
+                            </span>
+                            <div class="d-flex gap-2">
+                                <i data-lucide="${isLocked ? 'lock' : 'unlock'}" size="12" class="btn-lock ${isLocked ? 'active' : ''}" onclick="ListeManager.toggleLock('${kat}', '${oda}', ${i}, '${name}')"></i>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                col.innerHTML = `
+                    <div class="glass-card p-2 px-3 h-100">
+                        <div class="fw-bold text-white small mb-1">${oda}</div>
+                        <div class="d-flex flex-column">${namesCardHTML}</div>
+                    </div>
+                `;
+                row.appendChild(col);
+            });
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    editOda: async function (kat, oda, index) {
+        const data = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
+        const dist = data.sonuclar;
+        const { value: newName } = await Swal.fire({
+            title: `${oda} Değiştir`,
+            input: 'text',
+            inputValue: dist[kat][oda][index] || "",
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        });
+        if (newName !== undefined) {
+            if (newName.trim() === "") dist[kat][oda].splice(index, 1);
+            else dist[kat][oda][index] = newName;
+            this.save(dist);
+            this.renderSonuclar(dist, data.baskanlar, data.locks);
+        }
+    },
+
+    exportPDF: async function () {
+        const area = document.getElementById('listeDisaAktarimAlani');
+        const period = document.getElementById('cleaningPeriod').value;
+        const posterPeriodEl = document.getElementById('posterPeriod');
+        if (posterPeriodEl) posterPeriodEl.innerText = period || new Date().toLocaleDateString();
+        
+        area.classList.add('is-exporting');
+        Swal.fire({ title: 'PDF Hazırlanıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        const { jsPDF } = window.jspdf;
+        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#000', useCORS: true });
+        const imgData = canvas.toDataURL('image/png');
+        const doc = new jsPDF('p', 'mm', 'a4');
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        doc.save(`TopClean_Liste_${period ? period.replace(/\s+/g, '_') : 'Guncel'}.pdf`);
+        
+        area.classList.remove('is-exporting');
+        Swal.close();
+    },
+
+    exportImage: async function () {
+        const area = document.getElementById('listeDisaAktarimAlani');
+        const period = document.getElementById('cleaningPeriod').value;
+        const posterPeriodEl = document.getElementById('posterPeriod');
+        if (posterPeriodEl) posterPeriodEl.innerText = period || new Date().toLocaleDateString();
+
+        area.classList.add('is-exporting');
+        Swal.fire({ title: 'Resim Oluşturuluyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+
+        const canvas = await html2canvas(area, { scale: 2, backgroundColor: '#000', useCORS: true });
+        const link = document.createElement('a');
+        link.download = `TopClean_Liste_${new Date().getTime()}.png`;
+        link.href = canvas.toDataURL();
+        link.click();
+
+        area.classList.remove('is-exporting');
+        Swal.close();
+    }
+};
+
+
+
+// ---------- STOK (INVENTORY) MANAGER ----------
+const InventoryManager = {
+    ac: function() {
+        showPanel('stokPanel');
+        this.render();
+    },
+
+    kapat: function() {
+        if (currentUser.rol === 'idareci') {
+            showPanel('idarecPanel');
+        } else {
+            showPanel('gorevliPanel');
+        }
+    },
+
+    render: function () {
+        const container = document.getElementById('stokListesi');
+        if (!container) return;
+
+        const searchInput = document.getElementById('stokSearchInput');
+        const search = searchInput ? searchInput.value.toLowerCase() : "";
+        
+        let items = [];
+        try {
+            items = Array.isArray(cachedInventory) ? cachedInventory : Object.values(cachedInventory || {});
+        } catch(e) { items = []; }
+
+        if (search) {
+            items = items.filter(i => i && i.name && i.name.toLowerCase().includes(search));
+        }
+
+        container.innerHTML = "";
+
+        if (items.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted p-5 glass-card border-dashed" style="border: 2px dashed var(--glass-border);">📦 Gösterilecek ürün bulunamadı.</div>';
+        }
+
+        items.forEach(item => {
+            const isCritical = item.threshold && item.amount <= item.threshold;
+            const div = document.createElement('div');
+            div.className = "col-12 col-md-6 col-lg-4";
+            div.innerHTML = `
+                <div class="glass-card p-3 h-100 position-relative ${isCritical ? 'border-danger shadow-danger-sm' : ''}" style="transition: all 0.3s ease;">
+                    ${isCritical ? '<span class="position-absolute top-0 end-0 m-2 badge bg-danger" style="font-size:0.6rem; animation: pulse-red 2s infinite;">KRİTİK</span>' : ''}
+                    <div class="small fw-bold text-dim mb-1 text-uppercase">${item.unit}</div>
+                    <h5 class="fw-bold text-white mb-3" style="font-size: 1.1rem;">${item.name}</h5>
+                    
+                    <div class="d-flex align-items-end justify-content-between mb-3">
+                        <div>
+                            <div class="stat-value ${isCritical ? 'text-danger' : 'text-emerald'}" style="font-size: 1.8rem;">${item.amount}</div>
+                            <div class="x-small text-muted">Limit: ${item.threshold || 'Söz Konusu Değil'}</div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-glass-round" onclick="InventoryManager.showLogs('${item.id}')" title="Geçmiş">
+                                <i data-lucide="list" size="14"></i>
+                            </button>
+                            <button class="btn btn-sm btn-glass-round ${currentUser.rol === 'idareci' ? '' : 'd-none'}" onclick="InventoryManager.setThreshold('${item.id}')" title="Limit Düzenle">
+                                <i data-lucide="bell-ring" size="14"></i>
+                            </button>
+                            <button class="btn btn-sm btn-glass-round text-danger-glow ${currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) ? '' : 'd-none'}" onclick="InventoryManager.deleteProduct('${item.id}')" title="Sil">
+                                <i data-lucide="trash-2" size="14"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+
+        this.checkCriticalLevels();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    },
+
+    checkCriticalLevels: function () {
+        const panel = document.getElementById('stokKritikPanel');
+        const list = document.getElementById('stokKritikListe');
+        if (!panel || !list) return;
+
+        const criticalItems = cachedInventory.filter(i => i.threshold && i.amount <= i.threshold);
+
+        if (criticalItems.length > 0) {
+            panel.classList.remove('d-none');
+            list.innerHTML = criticalItems.map(i => `• <b>${i.name}</b> stoğu azaldı (${i.amount} ${i.unit} kaldı, limit: ${i.threshold})`).join('<br>');
+        } else {
+            panel.classList.add('d-none');
+        }
+    },
+
+    showAddProductForm: async function () {
+        const isEligible = (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) || currentUser.rol === 'idareci'; 
+        if (!isEligible) {
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Ürün tanımlama yetkisi Depo Sorumlusuna (Ara Kat) veya İdarecilere aittir.' });
+        }
+        const { value: formValues } = await Swal.fire({
+            title: 'Yeni Ürün Ekle',
+            html: `
+                <div class="text-start">
+                    <label class="small fw-bold text-white mb-1">Ürün İsmi</label>
+                    <input id="swal-input-name" class="form-control custom-input mb-3" placeholder="Örn: Sıvı Sabun">
+                    <label class="small fw-bold text-white mb-1">Birim</label>
+                    <select id="swal-input-unit" class="form-select custom-input mb-3">
+                        <option value="Litre">Litre</option>
+                        <option value="Adet">Adet</option>
+                        <option value="Paket">Paket</option>
+                        <option value="Rulo">Rulo</option>
+                        <option value="Koli">Koli</option>
+                    </select>
+                    <label class="small fw-bold text-white mb-1">Mevcut Miktar</label>
+                    <input id="swal-input-amount" type="number" class="form-control custom-input mb-3" placeholder="0">
+                </div>
+            `,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Devam Et',
+            showCancelButton: true,
+            cancelButtonText: 'İptal',
+            preConfirm: () => {
+                const name = document.getElementById('swal-input-name').value.trim();
+                const unit = document.getElementById('swal-input-unit').value;
+                const amount = parseInt(document.getElementById('swal-input-amount').value) || 0;
+                if (!name) return Swal.showValidationMessage('Lütfen ürün ismi girin!');
+                return { name, unit, amount };
+            }
+        });
+
+        if (formValues) {
+            const { value: threshold } = await Swal.fire({
+                title: 'Bildirim Limiti',
+                text: `${formValues.name} miktarı kaça düştüğünde size bildirim gelsin?`,
+                input: 'number',
+                inputPlaceholder: 'Örn: 5',
+                background: 'var(--bg-main)',
+                color: 'var(--text-primary)',
+                confirmButtonText: 'Kaydet',
+                allowOutsideClick: false
+            });
+
+            const newItem = {
+                id: "PRD_" + new Date().getTime(),
+                name: formValues.name,
+                unit: formValues.unit,
+                amount: formValues.amount,
+                threshold: parseInt(threshold) || 0
+            };
+
+            cachedInventory.push(newItem);
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (db) db.ref('inventory/' + newItem.id).set(newItem);
+
+            this.logMovement(newItem.id, formValues.amount, "ekleme", "İlk Stok Girişi");
+
+            Swal.fire({ icon: 'success', title: 'Ürün Eklendi', timer: 1500, showConfirmButton: false });
+            this.render();
+        }
+    },
+
+    showThresholdConfig: async function () {
+        if (currentUser.rol !== 'idareci') {
+            return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Bildirim limitlerini sadece İdareci düzenleyebilir.' });
+        }
+
+        if (cachedInventory.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Önce ürün eklemeniz gerekiyor.' });
+        }
+
+        let options = {};
+        cachedInventory.forEach(i => options[i.id] = i.name);
+
+        const { value: productId } = await Swal.fire({
+            title: 'Bildirim Ayarla',
+            text: 'Limitini belirlemek istediğiniz malzemeyi seçin:',
+            input: 'select',
+            inputOptions: options,
+            inputPlaceholder: '-- Malzeme Seç --',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        });
+
+        if (productId) {
+            this.setThreshold(productId);
+        }
+    },
+
+    showMovementForm: async function () {
+        if (cachedInventory.length === 0) {
+            return Swal.fire({ icon: 'info', title: 'Ürün Yok', text: 'Sistemde henüz ürün tanımlı değil.' });
+        }
+
+        const canAdd = currentUser.rol === 'idareci' || (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat'));
+
+        let options = {};
+        cachedInventory.forEach(i => options[i.id] = i.name);
+
+        const { value: productId } = await Swal.fire({
+            title: 'Malzeme İşlemi',
+            input: 'select',
+            inputOptions: options,
+            inputPlaceholder: '-- Malzeme Seçin --',
+            showCancelButton: true,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        });
+
+        if (productId) {
+            const item = cachedInventory.find(i => i.id === productId);
+            const { value: result } = await Swal.fire({
+                title: item.name,
+                html: `
+                    <div class="mb-3">Mevcut: <b>${item.amount} ${item.unit}</b></div>
+                    <div class="row g-2">
+                        <div class="col-6 ${canAdd ? '' : 'd-none'}">
+                            <button id="btn-in" class="btn btn-outline-success w-100 py-3 fw-bold" onclick="selectType('in')">📥 EKLE</button>
+                        </div>
+                        <div class="${canAdd ? 'col-6' : 'col-12'}">
+                            <button id="btn-out" class="btn btn-outline-danger w-100 py-3 fw-bold" onclick="selectType('out')">📤 KULLAN</button>
+                        </div>
+                    </div>
+                    <input type="number" id="swal-move-amount" class="form-control custom-input mt-4 text-center fs-4" placeholder="MİKTAR">
+                    <input type="text" id="swal-move-note" class="form-control custom-input mt-2" placeholder="Not (Opsiyonel)">
+                `,
+                background: 'var(--bg-main)',
+                color: 'var(--text-primary)',
+                showCancelButton: true,
+                didOpen: () => {
+                    window.selectedMoveType = canAdd ? null : 'out';
+                    if (!canAdd) {
+                        document.getElementById('btn-out').className = 'btn btn-danger w-100 py-3 fw-bold';
+                    }
+                    window.selectType = (type) => {
+                        window.selectedMoveType = type;
+                        if (document.getElementById('btn-in')) {
+                            document.getElementById('btn-in').className = type === 'in' ? 'btn btn-success w-100 py-3 fw-bold' : 'btn btn-outline-success w-100 py-3 fw-bold';
+                        }
+                        document.getElementById('btn-out').className = type === 'out' ? 'btn btn-danger w-100 py-3 fw-bold' : 'btn btn-outline-danger w-100 py-3 fw-bold';
+                    };
+                },
+                preConfirm: () => {
+                    const amountInput = document.getElementById('swal-move-amount');
+                    const amount = amountInput ? parseInt(amountInput.value) : 0;
+                    const noteInput = document.getElementById('swal-move-note');
+                    const note = noteInput ? noteInput.value.trim() : "";
+                    const type = window.selectedMoveType;
+                    if (!type) return Swal.showValidationMessage('Lütfen işlem tipini seçin (Ekle/Kullan)');
+                    if (!amount || amount <= 0) return Swal.showValidationMessage('Geçerli bir miktar girin!');
+                    return { type, amount, note };
+                }
+            });
+
+            if (result) {
+                const finalAmount = result.type === 'in' ? result.amount : -result.amount;
+
+                if (result.type === 'out' && item.amount + finalAmount < 0) {
+                    return Swal.fire('Hata', 'Stok yetersiz! Mevcut miktardan fazla kullanım giremezsiniz.', 'error');
+                }
+
+                item.amount += finalAmount;
+                localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+                if (db) db.ref('inventory/' + item.id).update({ amount: item.amount });
+
+                this.logMovement(item.id, result.amount, result.type, result.note);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: 'İşlem Başarılı',
+                    text: `${item.name} stoku güncellendi.`,
+                    timer: 1500,
+                    showConfirmButton: false
+                });
+
+                if (currentUser && currentUser.rol === "idareci") this.render();
+            }
+        }
+    },
+
+    logMovement: function (itemId, amount, type, note = "") {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const log = {
+            id: "LOG_" + new Date().getTime(),
+            itemId: itemId,
+            itemName: item ? item.name : "Bilinmeyen",
+            change: amount,
+            type: type,
+            date: new Date().getTime(),
+            user: currentUser ? currentUser.name : "Personel",
+            note: note
+        };
+
+        cachedInventoryLogs.push(log);
+        localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+        if (db) db.ref('inventory_logs/' + log.id).set(log);
+    },
+
+    showLogs: function (itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const logs = cachedInventoryLogs.filter(l => l.itemId === itemId).sort((a, b) => b.date - a.date);
+
+        let html = '<div class="text-start mt-3" style="max-height: 50vh; overflow-y: auto;">';
+        if (logs.length === 0) {
+            html += '<div class="text-center text-muted py-4">Hareket kaydı bulunamadı.</div>';
+        } else {
+            logs.forEach(l => {
+                const isAdd = l.type === 'in' || l.type === 'ekleme';
+                html += `
+                    <div class="p-2 border-bottom border-secondary border-opacity-25 d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold ${isAdd ? 'text-success' : 'text-danger'}" style="font-size: 0.9rem;">
+                                ${isAdd ? '+' : '-'}${l.change} ${item.unit}
+                            </div>
+                            <div class="x-small text-muted">${new Date(l.date).toLocaleString()} | ${l.user}</div>
+                            ${l.note ? `<div class="x-small text-dim italic">"${l.note}"</div>` : ''}
+                        </div>
+                        <span class="x-small badge ${isAdd ? 'bg-success' : 'bg-danger'} bg-opacity-10">${l.type.toUpperCase()}</span>
+                    </div>
+                `;
+            });
+        }
+        html += '</div>';
+
+        Swal.fire({
+            title: `${item.name} Geçmişi`,
+            html: html,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Kapat',
+            confirmButtonColor: '#6c757d'
+        });
+    },
+
+    showAllLogs: function () {
+        const logs = [...cachedInventoryLogs].sort((a, b) => b.date - a.date).slice(0, 50);
+
+        let html = '<div class="text-start mt-3" style="max-height: 60vh; overflow-y: auto;">';
+        logs.forEach(l => {
+            const isAdd = l.type === 'in' || l.type === 'ekleme';
+            html += `
+                <div class="p-2 border-bottom border-secondary border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold text-white small">${l.itemName}</span>
+                        <span class="${isAdd ? 'text-success' : 'text-danger'} fw-bold small">${isAdd ? '+' : '-'}${l.change}</span>
+                    </div>
+                    <div class="x-small text-muted">${new Date(l.date).toLocaleString()} | ${l.user}</div>
+                    ${l.note ? `<div class="x-small text-dim italic">("${l.note}")</div>` : ''}
+                </div>
+            `;
+        });
+        html += '</div>';
+
+        Swal.fire({
+            title: 'Son 50 Stok Hareketi',
+            html: html,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Kapat'
+        });
+    },
+
+    setThreshold: async function (itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        const { value: threshold } = await Swal.fire({
+            title: 'Limit Düzenle',
+            text: `${item.name} için bildirim limiti belirleyin:`,
+            input: 'number',
+            inputValue: item.threshold,
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)',
+            confirmButtonText: 'Güncelle',
+            showCancelButton: true
+        });
+
+        if (threshold !== undefined) {
+            item.threshold = parseInt(threshold) || 0;
+            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+            if (db) db.ref('inventory/' + item.id).update({ threshold: item.threshold });
+            this.render();
+            Swal.fire({ icon: 'success', title: 'Limit Güncellendi', timer: 1000, showConfirmButton: false });
+        }
+    },
+
+    deleteProduct: function (itemId) {
+        const item = cachedInventory.find(i => i.id === itemId);
+        Swal.fire({
+            title: 'Emin misiniz?',
+            text: `"${item.name}" ürünü ve tüm geçmişi silinecek!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            confirmButtonText: 'Evet, Sil',
+            background: 'var(--bg-main)',
+            color: 'var(--text-primary)'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                cachedInventory = cachedInventory.filter(i => i.id !== itemId);
+                cachedInventoryLogs = cachedInventoryLogs.filter(l => l.itemId !== itemId);
+                localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+                localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+                if (db) db.ref('inventory/' + itemId).remove();
+                this.render();
+            }
+        });
+    }
+};
+
+// ---------- INITIALIZATION (Moved to Bottom to avoid ReferenceError) ----------
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        initTheme();
+        initLoginSelect();
+        checkSession(); // Artık tüm Manager'lar tanımlı olduğu için ReferenceError vermez
+
+        const dateSel = document.getElementById('adminDateSelector');
+        if (dateSel) {
+            dateSel.valueAsDate = new Date();
+            dateSel.addEventListener('change', loadAdminPanel);
+        }
+    } catch (err) {
+        console.error("General Init Error:", err);
+    }
+});
