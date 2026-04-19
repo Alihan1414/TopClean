@@ -1,4 +1,4 @@
-const CACHE_NAME = 'topclean-cache-v2';
+const CACHE_NAME = 'topclean-cache-v3-0-3';
 const ASSETS = [
     './',
     './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
 
 // Install Event
 self.addEventListener('install', (event) => {
+    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then((cache) => {
             return cache.addAll(ASSETS);
@@ -22,17 +23,22 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
-                keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))
+                keys.map((key) => {
+                    if (key !== CACHE_NAME) {
+                        console.log('Cleaning old cache:', key);
+                        return caches.delete(key);
+                    }
+                })
             );
-        })
+        }).then(() => self.clients.claim())
     );
 });
 
-// Fetch Event
+// Fetch Event - Network First for critical assets to bypass stale SW
 self.addEventListener('fetch', (event) => {
     event.respondWith(
-        caches.match(event.request).then((cachedResponse) => {
-            return cachedResponse || fetch(event.request);
+        fetch(event.request).catch(() => {
+            return caches.match(event.request);
         })
     );
 });
