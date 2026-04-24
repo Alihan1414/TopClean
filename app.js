@@ -9,8 +9,8 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// ---------- TOPCLEAN v3.0.7 (Detective Mode Active) ----------
-console.log("%c TOPCLEAN v3.0.7 - DETECTIVE ACTIVE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+// ---------- TOPCLEAN v3.0.8 (STABLE) ----------
+console.log("%c TOPCLEAN v3.0.8 - STABLE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
 let db = null;
 let auth = null;
@@ -18,11 +18,9 @@ let auth = null;
 // Initialize Firebase Safely
 try {
     if (typeof firebase !== 'undefined') {
-        window.TC_REPORT.firebaseInit = true;
         firebase.initializeApp(firebaseConfig);
         db = firebase.database();
         auth = firebase.auth();
-        window.TC_REPORT.dbInit = true;
         console.log("Firebase initialized successfully.");
     }
 } catch (e) {
@@ -119,33 +117,7 @@ let currentActiveReport = null;
 // Base64 fotoğraf encode
 let fotoDataURL = "";
 
-document.addEventListener("DOMContentLoaded", () => {
-    try {
-        // Event Listeners (Guaranteed Bind)
-        const lForm = document.getElementById('loginForm');
-        if (lForm) lForm.addEventListener('submit', handleLogin);
-
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
-
-        const uSel = document.getElementById('userSelect');
-        if (uSel) uSel.addEventListener('change', checkLoginType);
-
-        const fUp = document.getElementById('fotoUpload');
-        if (fUp) fUp.addEventListener('change', handleFotoUpload);
-
-        // State Init
-        if (typeof lucide !== 'undefined') lucide.createIcons();
-        initTheme();
-
-        // 1. Cloud Sync
-        if (db) syncFromCloud();
-
-        initLoginSelect();
-    } catch (err) {
-        console.error("Theme Init Error:", err);
-    }
-});
+// DOMContentLoaded event merged to bottom of file.
 
 // ---------- TEMA (Theme) ----------
 function initTheme() {
@@ -637,6 +609,13 @@ function loadGorevliPanel(katAd) {
     }
 
     const bolumler = katlar[katAd];
+    
+    // GÜVENLİK KONTROLÜ: Eğer kat yanlışsa (örn undefined) çökmeyi engelle
+    if (!bolumler) {
+        listeEl.innerHTML = "<div class='alert alert-danger mx-auto mt-4' style='max-width:400px;'>Bu hesaba tanımlanmış geçerli bir kat bulunamadı. (Kat: " + katAd + ")</div>";
+        return;
+    }
+
     const data = getData();
     const bugunStr = new Date().toLocaleDateString();
 
@@ -2574,18 +2553,38 @@ const InventoryManager = {
     }
 };
 
-// ---------- INITIALIZATION (Moved to Bottom to avoid ReferenceError) ----------
+// ---------- INITIALIZATION ----------
 document.addEventListener('DOMContentLoaded', () => {
     try {
-        initTheme();
-        initLoginSelect();
-        checkSession(); // Artık tüm Manager'lar tanımlı olduğu için ReferenceError vermez
+        // Event Listeners
+        const lForm = document.getElementById('loginForm');
+        if (lForm) lForm.addEventListener('submit', handleLogin);
+
+        const logoutBtn = document.getElementById('logoutBtn');
+        if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
+
+        const uSel = document.getElementById('userSelect');
+        if (uSel) uSel.addEventListener('change', checkLoginType);
+
+        const fUp = document.getElementById('fotoUpload');
+        if (fUp) fUp.addEventListener('change', handleFotoUpload);
 
         const dateSel = document.getElementById('adminDateSelector');
         if (dateSel) {
             dateSel.valueAsDate = new Date();
             dateSel.addEventListener('change', loadAdminPanel);
         }
+
+        // Init UI
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        initTheme();
+        initLoginSelect();
+
+        // Cloud Data Wait List
+        if (db) syncFromCloud();
+
+        // Launch View
+        checkSession();
     } catch (err) {
         console.error("General Init Error:", err);
     }
