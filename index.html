@@ -11,13 +11,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <script>
-    // TOPCLEAN v3.0.8 - Cache Buster
-    if (localStorage.getItem('tc_v3_pushed_v8') !== 'true') {
+    // TOPCLEAN v4.0 - Cache Buster
+    if (localStorage.getItem('tc_v4_pushed') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
-                localStorage.setItem('tc_v3_pushed_v8', 'true');
-                window.location.reload(true);
+                localStorage.setItem('tc_v4_pushed', 'true');
+                location.reload();
             });
         }
     }
@@ -89,7 +89,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     
-    <link rel="stylesheet" href="style.css?v=3.0.7">
+    <link rel="stylesheet" href="style.css?v=4.0">
     
     <!-- PWA / Mobile Meta Tags -->
     <meta name="theme-color" content="#030807">
@@ -107,6 +107,15 @@
         <div class="blob blob-3"></div>
     </div>
 
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Yükleniyor...</div>
+    </div>
+
+    <!-- Offline Banner -->
+    <div id="offlineBanner" class="offline-banner">⚠️ İnternet bağlantısı yok — çevrim dışı modda çalışıyorsunuz</div>
+
     <div class="app-container">
         <!-- HEADER -->
         <header id="app-header" class="d-none">
@@ -123,7 +132,7 @@
                         <span id="headerName" class="fw-bold text-white small" style="white-space: nowrap;">-</span>
                     </div>
                     
-                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.7</div>
+                    <div class="small fw-bold text-muted opacity-50 px-2" style="font-size: 0.65rem; letter-spacing: 1px;">V3.0.8</div>
                     
                     <div class="header-actions d-flex gap-2">
                         <button id="themeToggleBtn" class="btn btn-glass-round shadow-sm" title="Tema Değiştir">
@@ -172,25 +181,10 @@
                             </div>
                         </div>
 
-                        <div id="emailLoginSection" class="d-none">
-                            <div class="text-start mb-3">
-                                <label class="small fw-bold text-dim mb-2 ms-2">E-POSTA ADRESİ</label>
-                                <input type="email" id="emailInput" class="form-control custom-input py-3" placeholder="admin@topclean.com">
-                            </div>
-                            <div class="text-start">
-                                <label class="small fw-bold text-dim mb-2 ms-2">ŞİFRE</label>
-                                <input type="password" id="emailPassInput" class="form-control custom-input py-3" placeholder="••••••••">
-                            </div>
-                        </div>
-                        
                         <button type="submit" class="btn btn-emerald-lg w-100 py-3 mt-4 d-flex align-items-center justify-content-center gap-2">
                             <i data-lucide="arrow-right-circle" size="20"></i> OTURUMU AÇ
                         </button>
                     </form>
-
-                    <button id="toggleLoginMode" class="btn btn-link text-dim x-small mt-3 text-decoration-none" onclick="toggleAuthMode()">
-                        E-posta ile Giriş Yap
-                    </button>
                 </div>
             </div>
 
@@ -395,7 +389,7 @@
                 </div>
 
             <!-- 5. İDAREC PANELİ -->
-            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch" style="display: none;">
+            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch">
                 <div class="w-100" style="max-width: 860px; margin: 0 auto; padding: 0; display: block !important;">
 
                     <!-- Panel Title -->
@@ -757,19 +751,32 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=3.0.7"></script>
+    <script src="app.js?v=4.0"></script>
 
-    <!-- Diagnostic Script Kaldırıldı (v3.0.8) -->
-
-    <!-- PWA Service Worker Registration -->
+    <!-- PWA Service Worker + Offline Detection -->
     <script>
+        // SW Registration
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('TopClean SW Registered!', reg))
-                    .catch(err => console.log('SW Registration Failed:', err));
+                    .then(reg => console.log('[TopClean] SW Registered'))
+                    .catch(err => console.warn('[TopClean] SW Failed:', err));
             });
         }
+
+        // Loading overlay: DOM hazır olunca kaldır
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.classList.add('hidden');
+            }, 600);
+        });
+
+        // Offline/Online durumu
+        const _offBanner = document.getElementById('offlineBanner');
+        window.addEventListener('offline', () => { if(_offBanner) _offBanner.classList.add('visible'); });
+        window.addEventListener('online', () => { if(_offBanner) _offBanner.classList.remove('visible'); });
+        if (!navigator.onLine && _offBanner) _offBanner.classList.add('visible');
     </script>
 </body>
 </html>
