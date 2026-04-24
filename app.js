@@ -110,6 +110,7 @@ const usersData = [
 let currentUser = null;
 let currentKat = "";
 let currentBolum = "";
+let isSyncing = false; // Mükerrer bağlantıları önlemek için flag
 // Let's add a global reference for the modal
 let bootstrapModal = null;
 let currentActiveReport = null;
@@ -207,17 +208,30 @@ function checkSession() {
     if (!saved) return;
     try {
         const parsed = JSON.parse(saved);
+        if (!parsed || typeof parsed !== 'object') {
+            console.error("[Session] Geçersiz veri formatı.");
+            return;
+        }
+        
         // TTL kontrolü
         if (parsed._ts && (Date.now() - parsed._ts) > SESSION_TTL_MS) {
+            console.log("[Session] Oturum süresi doldu.");
             localStorage.removeItem('topclean_session');
             return;
         }
+
         currentUser = parsed;
         updateHeader();
-        if (db) syncFromCloud();
+        
+        // Sync zaten DOMContentLoaded içinde bir kez başlatılıyor.
+        // O yüzden burada tekrar çağırmıyoruz veya isSyncing korumalı çağırın.
+        if (db && !isSyncing) syncFromCloud();
+        
         _routeUser();
     } catch (e) {
-        localStorage.removeItem('topclean_session');
+        console.error("[Session] JSON parse hatası:", e);
+        // Hata durumunda hemen silmek yerine loglayıp bırakıyoruz.
+        // Kullanıcı manuel login olduğunda zaten üzerine yazılacak.
     }
 }
 
@@ -308,10 +322,16 @@ function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
 
-    // Tüm panelleri gizle, login'i göster
+    // UI Reset
     document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
     const loginPanel = document.getElementById('loginPanel');
-    if (loginPanel) loginPanel.classList.add('active');
+    if (loginPanel) {
+        loginPanel.classList.add('active');
+        loginPanel.classList.remove('d-none');
+    }
+    
+    const mainContainer = document.getElementById('mainContainer');
+    if (mainContainer) mainContainer.classList.remove('d-none');
 
     const headerEl = document.getElementById('app-header');
     if (headerEl) headerEl.classList.add('d-none');
@@ -322,6 +342,7 @@ function handleLogout() {
     initLoginSelect();
     updateHeader();
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    console.log("[TopClean] Güvenli çıkış yapıldı.");
 }
 
 function updateHeader() {
@@ -375,7 +396,9 @@ function _debouncedRefresh() {
 }
 
 function syncFromCloud() {
-    if (!db) return;
+    if (!db || isSyncing) return;
+    isSyncing = true;
+    console.log("[Firebase] Veri senkronizasyonu başlatıldı...");
 
     // Rapor verisi — son 300 kayıt
     db.ref('reports').limitToLast(300).on('value', snapshot => {
@@ -437,12 +460,22 @@ function syncFromCloud() {
 
 function refreshCurrentPanel() {
     if (!currentUser) return;
-    if (currentUser.rol === "gorevli") loadGorevliPanel(currentUser.kat);
-    else if (currentUser.rol === "idareci") {
+    
+    // Sadece aktif olan paneli yenile (Performans ve Stabilite için)
+    const activePanel = document.querySelector('.view-panel.active');
+    if (!activePanel) return;
+
+    const panelId = activePanel.id;
+
+    if (panelId === "gorevliPanel" && currentUser.rol === "gorevli") {
+        loadGorevliPanel(currentUser.kat);
+    } else if (panelId === "idarecPanel" && currentUser.rol === "idareci") {
+        // İdareci panelinde sadece gerekli alt kısımları yenile
         IdarecManager.loadBinaDurumu();
         InventoryManager.render();
+    } else if (panelId === "adminPanel" && (currentUser.rol === "mufettis" || currentUser.rol === "idareci")) {
+        loadAdminPanel();
     }
-    else if (currentUser.rol === "mufettis") loadAdminPanel();
 }
 
 function getData() { return cachedData; }
