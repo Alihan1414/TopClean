@@ -9,8 +9,8 @@ const firebaseConfig = {
     appId: "1:413118182506:web:4e1897da948b8348030613"
 };
 
-// ---------- TOPCLEAN v3.0.8 (STABLE) ----------
-console.log("%c TOPCLEAN v3.0.8 - STABLE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
+// ---------- TOPCLEAN v4.0 (SECURE + STABLE) ----------
+console.log("%c TOPCLEAN v4.0 - SECURE", "background: #10b981; color: #fff; font-weight: bold; padding: 4px; border-radius: 4px;");
 
 let db = null;
 let auth = null;
@@ -168,7 +168,7 @@ function initLoginSelect() {
         const allUsers = [...activeFixed, ...extraUsers].filter(u => u && !deletedFixed.includes(u.name));
 
         allUsers.forEach(u => {
-            if (u && u.name) {
+            if (u?.name) {
                 const opt = document.createElement('option');
                 opt.value = u.name;
                 opt.textContent = u.name;
@@ -176,10 +176,10 @@ function initLoginSelect() {
             }
         });
 
-        // Liste Dağılımı seçeneği (İdareci girişi)
+        // Liste Dağılımı seçeneği
         const opt = document.createElement('option');
         opt.value = "Liste Dağılımı";
-        opt.textContent = "Liste Dağılımı (Demo)";
+        opt.textContent = "Liste Dağılımı";
         select.appendChild(opt);
     } catch (err) {
         console.error("initLoginSelect Error:", err);
@@ -187,146 +187,117 @@ function initLoginSelect() {
 }
 
 function checkLoginType() {
-    const val = document.getElementById('userSelect').value;
+    const val = document.getElementById('userSelect')?.value;
     const pInput = document.getElementById('passInput');
+    if (!pInput) return;
     if (val === "Liste Dağılımı") {
         pInput.disabled = true;
         pInput.placeholder = "Şifre Gerekmez";
     } else {
         pInput.disabled = false;
-        pInput.placeholder = "Mevcut Şifreniz";
+        pInput.placeholder = "Şifreniz";
     }
 }
+
+// Session 24 saat geçerliliği: eski token varsa otomatik logout
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
 
 function checkSession() {
     const saved = localStorage.getItem('topclean_session');
-    if (saved) {
-        try {
-            currentUser = JSON.parse(saved);
-            updateHeader();
-            if (currentUser.rol === "gorevli") {
-                loadGorevliPanel(currentUser.kat);
-                showPanel("gorevliPanel");
-            } else if (currentUser.rol === "idareci") {
-                IdarecManager.load();
-                showPanel("idarecPanel");
-            } else if (currentUser.rol === "liste") {
-                ListeManager.load();
-                showPanel("listePanel");
-            } else {
-                loadAdminPanel();
-                showPanel("adminPanel");
-            }
-        } catch (e) {
+    if (!saved) return;
+    try {
+        const parsed = JSON.parse(saved);
+        // TTL kontrolü
+        if (parsed._ts && (Date.now() - parsed._ts) > SESSION_TTL_MS) {
             localStorage.removeItem('topclean_session');
+            return;
         }
+        currentUser = parsed;
+        updateHeader();
+        if (db) syncFromCloud();
+        _routeUser();
+    } catch (e) {
+        localStorage.removeItem('topclean_session');
     }
 }
 
-let authMode = "quick"; // "quick" or "email"
-
-function toggleAuthMode() {
-    const qSec = document.getElementById('quickLoginSection');
-    const eSec = document.getElementById('emailLoginSection');
-    const btn = document.getElementById('toggleLoginMode');
-
-    if (!qSec || !eSec || !btn) return;
-
-    if (authMode === "quick") {
-        authMode = "email";
-        qSec.classList.add('d-none');
-        eSec.classList.remove('d-none');
-        btn.innerText = "Personel Seçimi ile Giriş";
-    } else {
-        authMode = "quick";
-        qSec.classList.remove('d-none');
-        eSec.classList.add('d-none');
-        btn.innerText = "E-posta ile Giriş Yap";
-    }
-}
+// E-posta giriş modu kaldırıldı (v4.0)
 
 function handleLogin(e) {
     e.preventDefault();
 
-    // Email auth disabled for demo
-    /*
-    if (authMode === "email") {
-        ...
-    }
-    */
+    const uName = String(document.getElementById('userSelect')?.value || '').trim();
+    const uPass = String(document.getElementById('passInput')?.value || '').trim();
 
-
-    const uName = String(document.getElementById('userSelect').value).trim();
-    const uPass = String(document.getElementById('passInput').value).trim();
+    if (!uName) return;
 
     try {
         // 1. Liste Dağılımı Özel Giriş
         if (uName === "Liste Dağılımı") {
             currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
-            localStorage.setItem('topclean_session', JSON.stringify(currentUser));
+            // Şifre session'a yazılmıyor (güvenlik)
+            _saveSession(currentUser);
             ListeManager.load();
             showPanel("listePanel");
             updateHeader();
             return;
         }
 
-        // 2. Load and Search Users (Firebase Data Primary, Hardcoded Secondary)
+        // 2. Kullanıcıları yükle (Firebase öncelikli, hardcoded fallback)
         const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
         const extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        const activeFixed = usersData.filter(u => !deletedFixed.includes(u.name));
+        const activeFixed = usersData.filter(u => u && !deletedFixed.includes(u.name));
+        const allUsers = [...extraUsers, ...activeFixed].filter(Boolean);
 
-        // Extra Users (Firebase) öne koyuluyor ki, sabit şifreler dinamik olarak üstüne yazılabilsin
-        const allUsers = [...extraUsers, ...activeFixed].filter(u => u !== null && u !== undefined);
-
-        // Find user (Case-insensitive name check)
-        const un = allUsers.find(x => x && x.name && String(x.name).trim().toLowerCase() === uName.toLowerCase());
+        const un = allUsers.find(x => x?.name && String(x.name).trim().toLowerCase() === uName.toLowerCase());
 
         if (un && String(un.pass).trim() === uPass) {
-            currentUser = un;
-            localStorage.setItem('topclean_session', JSON.stringify(un));
+            // Şifreyi session'a YAZMA — sadece gerekli alanlar
+            currentUser = { name: un.name, rol: un.rol, kat: un.kat || '' };
+            _saveSession(currentUser);
             loginSuccess();
         } else {
-            console.warn("Login failed for:", uName, "Entered pass:", uPass, "Expected pass from DB:", un ? un.pass : "User not found");
             Swal.fire({
                 icon: 'error',
                 title: 'Giriş Başarısız',
-                text: 'Seçilen personel veya şifre hatalı görünüyor. Lütfen tekrar deneyin.',
+                text: 'Şifre veya personel seçimi hatalı.',
                 confirmButtonText: 'Tamam',
                 confirmButtonColor: '#10b981'
             });
         }
     } catch (err) {
         console.error("Login Exception:", err);
-        Swal.fire({
-            icon: 'error',
-            title: 'Sistem Hatası',
-            text: 'Giriş yapılırken beklenmeyen bir hata oluştu: ' + err.message,
-            confirmButtonText: 'Tamam'
-        });
+        Swal.fire({ icon: 'error', title: 'Sistem Hatası', text: 'Beklenmeyen bir hata oluştu.', confirmButtonText: 'Tamam' });
     }
+}
+
+// --- Güvenli session kaydet (şifre hariç) ---
+function _saveSession(userObj) {
+    const safe = { name: userObj.name, rol: userObj.rol, kat: userObj.kat || '', _ts: Date.now() };
+    localStorage.setItem('topclean_session', JSON.stringify(safe));
 }
 
 function loginSuccess() {
     const pIn = document.getElementById('passInput');
-    const eIn = document.getElementById('emailPassInput');
     if (pIn) pIn.value = "";
-    if (eIn) eIn.value = "";
     updateHeader();
 
-    Swal.fire({
-        icon: 'success',
-        title: 'Giriş Başarılı',
-        text: 'Oturum Başarıyla Açıldı.',
-        timer: 1500,
-        showConfirmButton: false
-    });
+    Swal.fire({ icon: 'success', title: 'Giriş Başarılı', text: 'Oturum açıldı.', timer: 1200, showConfirmButton: false });
 
+    _routeUser();
+}
+
+function _routeUser() {
+    if (!currentUser) return;
     if (currentUser.rol === "gorevli") {
         loadGorevliPanel(currentUser.kat);
         showPanel("gorevliPanel");
     } else if (currentUser.rol === "idareci") {
         IdarecManager.load();
         showPanel("idarecPanel");
+    } else if (currentUser.rol === "liste") {
+        ListeManager.load();
+        showPanel("listePanel");
     } else {
         loadAdminPanel();
         showPanel("adminPanel");
@@ -337,25 +308,20 @@ function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
 
-    const mainContainer = document.getElementById('mainContainer');
+    // Tüm panelleri gizle, login'i göster
+    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
     const loginPanel = document.getElementById('loginPanel');
-    const headerEl = document.getElementById('app-header');
+    if (loginPanel) loginPanel.classList.add('active');
 
-    if (mainContainer) mainContainer.classList.add('d-none');
-    if (loginPanel) {
-        loginPanel.classList.remove('d-none');
-        loginPanel.classList.add('active');
-    }
+    const headerEl = document.getElementById('app-header');
     if (headerEl) headerEl.classList.add('d-none');
 
     const badgeEl = document.getElementById('headerUserBadge');
-    if (badgeEl) {
-        badgeEl.classList.add('d-none');
-        badgeEl.classList.remove('d-flex');
-    }
+    if (badgeEl) { badgeEl.classList.add('d-none'); badgeEl.classList.remove('d-flex'); }
 
     initLoginSelect();
     updateHeader();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 function updateHeader() {
@@ -394,80 +360,78 @@ function showPanel(id) {
 }
 
 // ---------- VERİ (Cloud / LocalStorage) ----------
-// Firebase'den veri çekme (Realtime)
 let cachedData = JSON.parse(localStorage.getItem('topclean_data') || '[]');
 let cachedArizalar = JSON.parse(localStorage.getItem('topclean_arizalar') || '[]');
 let cachedInventory = JSON.parse(localStorage.getItem('topclean_inventory') || '[]');
 let cachedInventoryLogs = JSON.parse(localStorage.getItem('topclean_inventory_logs') || '[]');
-let isSyncing = false;
-let syncTimeout = null;
+
+// Offline işlem kuyruğu (bağlantı yokken yapılan işlemler)
+let offlineQueue = JSON.parse(localStorage.getItem('topclean_offline_queue') || '[]');
+let _refreshDebounce = null;
+
+function _debouncedRefresh() {
+    clearTimeout(_refreshDebounce);
+    _refreshDebounce = setTimeout(refreshCurrentPanel, 300);
+}
 
 function syncFromCloud() {
     if (!db) return;
 
-    db.ref('reports').on('value', snapshot => {
+    // Rapor verisi — son 300 kayıt
+    db.ref('reports').limitToLast(300).on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            cachedData = Object.values(val);
-            localStorage.setItem('topclean_data', JSON.stringify(cachedData));
-            refreshCurrentPanel();
-        }
+        cachedData = val ? Object.values(val) : [];
+        localStorage.setItem('topclean_data', JSON.stringify(cachedData));
+        _debouncedRefresh();
     });
 
     db.ref('users').on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            localStorage.setItem('topclean_users', JSON.stringify(Object.values(val)));
-        } else {
-            localStorage.setItem('topclean_users', '[]');
-        }
-        initLoginSelect();
+        localStorage.setItem('topclean_users', JSON.stringify(val ? Object.values(val) : []));
+        // Sadece login sayfasındaysa dropdown'u yenile
+        if (!currentUser) initLoginSelect();
     });
 
     db.ref('student_distribution').on('value', snapshot => {
         const val = snapshot.val();
         if (val) {
             localStorage.setItem('topclean_talebe_listesi', JSON.stringify(val));
-            if (currentUser && currentUser.rol === "liste") ListeManager.load();
+            if (currentUser?.rol === "liste") ListeManager.load();
         }
     });
 
     db.ref('deleted_fixed_users').on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            var arr = Array.isArray(val) ? val : Object.values(val);
-            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(arr));
-        } else {
-            localStorage.setItem('topclean_deleted_fixed_users', '[]');
-        }
-        initLoginSelect();
-        if (currentUser && currentUser.rol === "idareci") IdarecManager.loadPersonel();
+        const arr = val ? (Array.isArray(val) ? val : Object.values(val)) : [];
+        localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(arr));
+        if (!currentUser) initLoginSelect();
+        if (currentUser?.rol === "idareci") IdarecManager.loadPersonel();
     });
 
     db.ref('arizalar').on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            cachedArizalar = Object.values(val);
-            localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
-            refreshCurrentPanel();
-        }
+        cachedArizalar = val ? Object.values(val) : [];
+        localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
+        _debouncedRefresh();
     });
 
     db.ref('inventory').on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            cachedInventory = Object.values(val);
-            localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
-            if (currentUser && currentUser.rol === "idareci") InventoryManager.render();
-        }
+        cachedInventory = val ? Object.values(val) : [];
+        localStorage.setItem('topclean_inventory', JSON.stringify(cachedInventory));
+        if (currentUser?.rol === "idareci") InventoryManager.render();
     });
 
-    db.ref('inventory_logs').on('value', snapshot => {
+    // Envanter logları — son 200
+    db.ref('inventory_logs').limitToLast(200).on('value', snapshot => {
         const val = snapshot.val();
-        if (val) {
-            cachedInventoryLogs = Object.values(val);
-            localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
-        }
+        cachedInventoryLogs = val ? Object.values(val) : [];
+        localStorage.setItem('topclean_inventory_logs', JSON.stringify(cachedInventoryLogs));
+    });
+
+    // Bağlantı durumu — offline queue çöz
+    db.ref('.info/connected').on('value', snapshot => {
+        if (snapshot.val() === true) _flushOfflineQueue();
     });
 }
 
@@ -481,50 +445,67 @@ function refreshCurrentPanel() {
     else if (currentUser.rol === "mufettis") loadAdminPanel();
 }
 
-function getData() {
-    return cachedData;
-}
+function getData() { return cachedData; }
 
-// Helper for consistent date comparison (YYYY-MM-DD)
+// Helper: YYYY-MM-DD formatında tarih (locale bağımsız)
 function toShortDate(dateInput) {
     const d = new Date(dateInput);
     if (isNaN(d.getTime())) return "";
     return d.toISOString().split('T')[0];
 }
 
-function saveData(item) {
-    item.id = new Date().getTime().toString();
+// Bugünün tarihi YYYY-MM-DD formatında
+function todayISO() {
+    return new Date().toISOString().split('T')[0];
+}
 
+// Offline queue: Firebase yokken kaydedilen işlemler
+function _queueOffline(path, data) {
+    offlineQueue.push({ path, data, ts: Date.now() });
+    localStorage.setItem('topclean_offline_queue', JSON.stringify(offlineQueue));
+}
+
+function _flushOfflineQueue() {
+    if (!db || offlineQueue.length === 0) return;
+    const toFlush = [...offlineQueue];
+    offlineQueue = [];
+    localStorage.setItem('topclean_offline_queue', '[]');
+    toFlush.forEach(item => {
+        db.ref(item.path).set(item.data).catch(err => {
+            console.error('Offline flush error:', err);
+            offlineQueue.push(item);
+            localStorage.setItem('topclean_offline_queue', JSON.stringify(offlineQueue));
+        });
+    });
+    if (toFlush.length > 0) console.log(`[TopClean] ${toFlush.length} offline işlem gönderildi.`);
+}
+
+function saveData(item) {
+    item.id = Date.now().toString();
     cachedData.push(item);
     localStorage.setItem('topclean_data', JSON.stringify(cachedData));
-
-    // Cloud Save
     if (db) {
-        db.ref('reports/' + item.id).set(item).catch(err => console.error("Firebase save error:", err));
+        db.ref('reports/' + item.id).set(item).catch(err => {
+            console.warn('Firebase kaydet hatası, offline kuyruğa eklendi:', err);
+            _queueOffline('reports/' + item.id, item);
+        });
+    } else {
+        _queueOffline('reports/' + item.id, item);
     }
 }
 
-// Ariza kaydetme
 function saveAriza(ariza) {
-    ariza.id = "ARZ_" + new Date().getTime().toString();
+    ariza.id = "ARZ_" + Date.now();
     ariza.onay_tarih = null;
     cachedArizalar.push(ariza);
     localStorage.setItem('topclean_arizalar', JSON.stringify(cachedArizalar));
-
-    // Cloud Save
     if (db) {
-        db.ref('arizalar/' + ariza.id).set(ariza).catch(err => console.error("Firebase ariza save error:", err));
+        db.ref('arizalar/' + ariza.id).set(ariza).catch(err => {
+            _queueOffline('arizalar/' + ariza.id, ariza);
+        });
+    } else {
+        _queueOffline('arizalar/' + ariza.id, ariza);
     }
-}
-
-// Migration Helper
-async function migrateLocalToCloud() {
-    if (!db) return;
-    const data = JSON.parse(localStorage.getItem('topclean_data') || '[]');
-    data.forEach(item => {
-        db.ref('reports/' + item.id).set(item);
-    });
-    console.log("Migration complete");
 }
 
 // ---------- GÖREVLİ PANELİ ----------
@@ -617,7 +598,8 @@ function loadGorevliPanel(katAd) {
     }
 
     const data = getData();
-    const bugunStr = new Date().toLocaleDateString();
+    // toShortDate ile locale-bağımsız tarih karşılaştırması
+    const bugunISO = todayISO();
 
     let reddedilenCount = 0;
 
@@ -625,17 +607,19 @@ function loadGorevliPanel(katAd) {
     const onarilanArizalar = cachedArizalar.filter(a => a.gonderen === currentUser.name && a.durum === "onarildi");
     const arizaKutu = document.getElementById('onarilanArizaUyari');
     const arizaList = document.getElementById('onarilanArizaList');
-    if (onarilanArizalar.length > 0) {
-        arizaKutu.classList.remove('d-none');
-        arizaKutu.classList.add('d-flex');
-        arizaList.innerHTML = onarilanArizalar.map(a => `<div>• <b>${a.bolum}</b>: ${a.detay} (Onarıldı)</div>`).join('');
-    } else {
-        arizaKutu.classList.add('d-none');
-        arizaKutu.classList.remove('d-flex');
+    if (arizaKutu) {
+        if (onarilanArizalar.length > 0) {
+            arizaKutu.classList.remove('d-none');
+            arizaKutu.classList.add('d-flex');
+            if (arizaList) arizaList.innerHTML = onarilanArizalar.map(a => `<div>• <b>${a.bolum}</b>: ${a.detay} (Onarıldı)</div>`).join('');
+        } else {
+            arizaKutu.classList.add('d-none');
+            arizaKutu.classList.remove('d-flex');
+        }
     }
 
     // --- SON GÖNDERİM ÖZETİ ---
-    const bugunVeriler = data.filter(d => d.kat === katAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+    const bugunVeriler = data.filter(d => d.kat === katAd && toShortDate(parseInt(d.id)) === bugunISO);
     const gonderilen = new Set(bugunVeriler.map(d => d.bolum));
     const toplamBolum = Object.keys(bolumler).length;
     const sonGonderim = bugunVeriler.length > 0 ? bugunVeriler[bugunVeriler.length - 1] : null;
@@ -664,7 +648,7 @@ function loadGorevliPanel(katAd) {
     kartContainer.className = 'row g-3';
 
     for (const [bolumAd, kriterler] of Object.entries(bolumler)) {
-        const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
+        const gecmis = data.filter(d => d.kat === katAd && d.bolum === bolumAd && toShortDate(parseInt(d.id)) === bugunISO);
         let badgeYazi = "Bekliyor";
         let badgeClass = "badge-idle";
         let statusIcon = '⏳';
@@ -927,10 +911,10 @@ const KriterManager = {
     },
 
     findNextSection: function() {
-        const bolumler = Object.keys(katlar[currentKat]);
+        const bolumler = Object.keys(katlar[currentKat] || {});
         const currentIndex = bolumler.indexOf(currentBolum);
         const data = getData();
-        const bugunStr = new Date().toLocaleDateString();
+        const bugunISO = todayISO();
 
         // Mevcut indexten sonrasına bak
         for(let i = 1; i < bolumler.length; i++) {
@@ -938,8 +922,8 @@ const KriterManager = {
             const bName = bolumler[nextIdx];
             
             // Bugün raporu olmayan veya reddedilen var mı bak
-            const gecmis = data.filter(d => d.kat === currentKat && d.bolum === bName && new Date(parseInt(d.id)).toLocaleDateString() === bugunStr);
-            if (gecmis.length === 0 || (gecmis.length > 0 && gecmis[gecmis.length-1].durum === 'reddedildi')) {
+            const gecmis = data.filter(d => d.kat === currentKat && d.bolum === bName && toShortDate(parseInt(d.id)) === bugunISO);
+            if (gecmis.length === 0 || gecmis[gecmis.length-1].durum === 'reddedildi') {
                 return bName;
             }
         }
@@ -1598,18 +1582,20 @@ const IdarecManager = {
         var list = document.getElementById('mufettisListesi');
         if (!list) return;
         list.innerHTML = '';
-        var all = usersData.filter(function (u) { return u.rol === 'mufettis'; });
+        var fixedMuf = usersData.filter(function (u) { return u.rol === 'mufettis'; });
         var extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
-        all = all.concat(extraMuf);
+        var all = fixedMuf.concat(extraMuf);
 
         all.forEach(function (u, idx) {
-            var isExtra = idx >= usersData.filter(u => u.rol === 'mufettis').length;
+            var isExtra = idx >= fixedMuf.length;
             var c = document.createElement('div');
             c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            c.innerHTML = '<div><div class="fw-bold text-white">' + u.name + '</div><div class="x-small text-muted">İç Mesul | Şifre: ' + u.pass + '</div></div><button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.mufettisSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
+            // GÜVENLİK: Şifre UI'da gösterilmiyor
+            c.innerHTML = '<div><div class="fw-bold text-white">' + u.name + '</div><div class="x-small text-muted">İç Mesul' + (isExtra ? ' • Dinamik' : ' • Sistem') + '</div></div>' +
+                '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.mufettisSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
             list.appendChild(c);
         });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
     mufettisEkle: function () {
         var ad = document.getElementById('yeniMufettisAd').value.trim();
@@ -1657,13 +1643,16 @@ const IdarecManager = {
             var isExtra = idx >= sabitGorevliler.length;
             var c = document.createElement('div');
             c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            // Both extra and fixed users have delete buttons now
-            // We'll pass the name and isExtra to the delete function
             var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
-            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div><div class="x-small text-muted">' + u.kat + ' | Şifre: ' + u.pass + '</div></div><div class="d-flex gap-2 align-items-center"><span class="badge-status ' + (isExtra ? 'badge-warning' : 'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra ? 'YENİ' : 'SABİT') + '</span>' + deleteBtn + '</div>';
+            // GÜVENLİK: Şifre UI'da gösterilmiyor
+            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div>' +
+                '<div class="x-small text-muted">' + (u.kat || 'Kat Yok') + '</div></div>' +
+                '<div class="d-flex gap-2 align-items-center">' +
+                '<span class="badge-status ' + (isExtra ? 'badge-warning' : 'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra ? 'YENİ' : 'SABİT') + '</span>' +
+                deleteBtn + '</div>';
             list.appendChild(c);
         });
-        lucide.createIcons();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
     personelEkle: function () {
         var ad = document.getElementById('yeniPersonelAd').value.trim();
@@ -2554,6 +2543,32 @@ const InventoryManager = {
 };
 
 // ---------- INITIALIZATION ----------
+
+// --- Auto-Logout: 30 dakika hareketsizlik ---
+const AUTO_LOGOUT_MS = 30 * 60 * 1000;
+let _inactivityTimer = null;
+
+function _resetInactivityTimer() {
+    clearTimeout(_inactivityTimer);
+    if (!currentUser) return;
+    _inactivityTimer = setTimeout(() => {
+        if (currentUser) {
+            console.log('[TopClean] Hareketsizlik nedeniyle otomatik çıkış yapıldı.');
+            Swal.fire({
+                icon: 'info',
+                title: 'Oturum Süresi Doldu',
+                text: '30 dakika işlem yapılmadığı için güvenlik nedeniyle çıkış yapıldı.',
+                timer: 3000,
+                showConfirmButton: false
+            }).then(() => handleLogout());
+        }
+    }, AUTO_LOGOUT_MS);
+}
+
+['click', 'keydown', 'touchstart', 'scroll'].forEach(evt =>
+    document.addEventListener(evt, _resetInactivityTimer, { passive: true })
+);
+
 document.addEventListener('DOMContentLoaded', () => {
     try {
         // Event Listeners
@@ -2580,11 +2595,14 @@ document.addEventListener('DOMContentLoaded', () => {
         initTheme();
         initLoginSelect();
 
-        // Cloud Data Wait List
+        // Cloud Data
         if (db) syncFromCloud();
 
-        // Launch View
+        // Session kontrolü (TTL dahil)
         checkSession();
+
+        // Offline kuyruk: sayfa açılışında bekleyen işlemleri gönder
+        if (db && offlineQueue.length > 0) _flushOfflineQueue();
     } catch (err) {
         console.error("General Init Error:", err);
     }
