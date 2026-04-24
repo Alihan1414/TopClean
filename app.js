@@ -322,17 +322,9 @@ function handleLogout() {
     currentUser = null;
     localStorage.removeItem('topclean_session');
 
-    // UI Reset
-    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-    const loginPanel = document.getElementById('loginPanel');
-    if (loginPanel) {
-        loginPanel.classList.add('active');
-        loginPanel.classList.remove('d-none');
-    }
+    // UI Reset - Merkezi fonksiyona yönlendir
+    showPanel('loginPanel');
     
-    const mainContainer = document.getElementById('mainContainer');
-    if (mainContainer) mainContainer.classList.remove('d-none');
-
     const headerEl = document.getElementById('app-header');
     if (headerEl) headerEl.classList.add('d-none');
 
@@ -369,15 +361,30 @@ function updateHeader() {
     }
 }
 
-function showPanel(id) {
-    const mainContainer = document.getElementById('mainContainer');
-    const loginPanel = document.getElementById('loginPanel');
+function showPanel(panelId) {
+    // 1. Tüm panelleri kapat
+    document.querySelectorAll('.view-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
 
-    if (mainContainer) mainContainer.classList.remove('d-none');
-    if (loginPanel) loginPanel.classList.add('d-none');
+    // 2. Hedef paneli bul
+    const target = document.getElementById(panelId);
 
-    document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
+    if (target) {
+        // 3. Hedef paneli aktif yap
+        target.classList.add('active');
+        
+        // 4. Container görünürlüğünü garanti et
+        const mainContainer = document.getElementById('mainContainer');
+        if (mainContainer) {
+            mainContainer.classList.remove('d-none');
+            mainContainer.style.display = 'flex';
+        }
+
+        console.log("%c[Panel] Aktif: " + panelId, "color: #10b981; font-weight: bold;");
+    } else {
+        console.error("[Panel] Hata: '" + panelId + "' id'li panel DOM'da bulunamadı!");
+    }
 }
 
 // ---------- VERİ (Cloud / LocalStorage) ----------
