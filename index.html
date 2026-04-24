@@ -12,12 +12,13 @@
     
     <script>
     // TOPCLEAN v4.0 - Cache Buster
-    if (localStorage.getItem('tc_v4_pushed') !== 'true') {
+    // Geliştirme ortamında service worker çakışmalarını önlemek için
+    if (location.hostname === "localhost" && localStorage.getItem('tc_v4_pushed') !== 'true') {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
                 for(let registration of registrations) { registration.unregister(); }
                 localStorage.setItem('tc_v4_pushed', 'true');
-                location.reload();
+                console.log("Service workers resetledildi (Localhost)");
             });
         }
     }
