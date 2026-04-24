@@ -206,10 +206,10 @@ body {
 main {
     position: relative;
     z-index: 10;
-    /* Removed height: 100dvh so flex-grow-1 controls the layout properly */
+    min-height: 100vh;
     overflow-y: auto;
     overflow-x: hidden;
-    padding-bottom: 120px; /* Better spacing for mobile bottom bounds */
+    padding-bottom: 120px;
 }
 
 /* --- Header --- */
@@ -330,18 +330,16 @@ select.custom-input option {
 
 /* --- Views & Animations --- */
 .view-panel {
-    display: none !important;
+    display: none;
     width: 100%;
-    height: 100%;
-    flex-direction: column;
-    align-items: center;
+    position: relative;
+    z-index: 50;
+    min-height: 100vh;
 }
 
 .view-panel.active {
     display: flex !important;
-    z-index: 10;
-    /* Hafif giriş animasyonu - opacity 0 ile BAŞLAMAZ, sadece yukarı kayar */
-    animation: reveal 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    flex-direction: column;
 }
 
 @keyframes reveal {
@@ -805,6 +803,78 @@ select.custom-input option {
 
 #listeInputArea:not(.d-none) {
     animation: slideDown 0.4s ease forwards;
+}
+
+/* --- PREMİUM UI / AERO EMERALD v4.0 --- */
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 1.25rem;
+    box-shadow: var(--glass-shadow);
+    color: white;
+}
+
+.idarec-tab {
+    background: transparent;
+    color: var(--text-dim);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+    border: 1px solid transparent !important;
+}
+
+.idarec-tab.active {
+    background: var(--accent-emerald) !important;
+    color: white !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+}
+
+.idarec-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.btn-emerald-lg {
+    background: var(--accent-emerald);
+    color: white;
+    font-weight: 800;
+    padding: 0.8rem 1.5rem;
+    border-radius: 1rem;
+    border: none;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-emerald-lg:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+    background: #0ea171;
+}
+
+/* Scrollbar Hide */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Grid & Layout Helpers */
+.stagger-item {
+    animation: fadeInSlideUp 0.5s ease forwards;
+    opacity: 0;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0.1s; }
+.stagger-item:nth-child(2) { animation-delay: 0.2s; }
+.stagger-item:nth-child(3) { animation-delay: 0.3s; }
+
+/* Dashboard İkon Glow */
+.text-emerald i, .rounded-circle.text-emerald i {
+    filter: drop-shadow(0 0 5px rgba(16, 185, 129, 0.5));
 }
 
 .fw-black { font-weight: 900 !important; }
