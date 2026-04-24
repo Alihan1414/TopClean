@@ -590,7 +590,7 @@ function loadGorevliPanel(katAd) {
     }
 
     const bolumler = katlar[katAd];
-    
+
     // GÜVENLİK KONTROLÜ: Eğer kat yanlışsa (örn undefined) çökmeyi engelle
     if (!bolumler) {
         listeEl.innerHTML = "<div class='alert alert-danger mx-auto mt-4' style='max-width:400px;'>Bu hesaba tanımlanmış geçerli bir kat bulunamadı. (Kat: " + katAd + ")</div>";
@@ -623,8 +623,8 @@ function loadGorevliPanel(katAd) {
     const gonderilen = new Set(bugunVeriler.map(d => d.bolum));
     const toplamBolum = Object.keys(bolumler).length;
     const sonGonderim = bugunVeriler.length > 0 ? bugunVeriler[bugunVeriler.length - 1] : null;
-    const sonZaman = sonGonderim ? new Date(parseInt(sonGonderim.id)).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'}) : null;
-    
+    const sonZaman = sonGonderim ? new Date(parseInt(sonGonderim.id)).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) : null;
+
     const ozetDiv = document.createElement('div');
     ozetDiv.className = 'glass-card p-3 mb-4 d-flex align-items-center gap-3';
     ozetDiv.style.borderLeft = '4px solid var(--accent-emerald)';
@@ -685,15 +685,15 @@ function loadGorevliPanel(katAd) {
 
         const col = document.createElement('div');
         col.className = 'col-6';
-        
+
         const kart = document.createElement('div');
         kart.className = 'glass-card stagger-item d-flex flex-column align-items-center text-center p-3 h-100 cursor-pointer';
         kart.style.cssText = `border: 2px solid ${cardBorder}; border-radius: 20px; transition: all 0.3s ease;`;
         kart.style.animationDelay = `${(Object.keys(bolumler).indexOf(bolumAd)) * 0.08}s`;
-        
+
         kart.onmouseenter = () => { kart.style.transform = 'translateY(-4px)'; kart.style.boxShadow = '0 8px 25px rgba(16,185,129,0.15)'; };
         kart.onmouseleave = () => { kart.style.transform = ''; kart.style.boxShadow = ''; };
-        
+
         kart.onclick = () => {
             console.log("Kart tıklandı:", bolumAd);
             if (isRejected) {
@@ -715,7 +715,7 @@ function loadGorevliPanel(katAd) {
                 KriterManager.ac(katAd, bolumAd, kriterler);
             }
         };
-        
+
         kart.innerHTML = `
             <div style="font-size:2rem;margin-bottom:8px;">${statusIcon}</div>
             <div class="fw-bold text-white" style="font-size:0.85rem;line-height:1.2;margin-bottom:6px;">${bolumAd}</div>
@@ -743,7 +743,7 @@ const KriterManager = {
         currentBolum = bolumAd;
         currentKriterler = kriterler;
         currentKat = katAd;
-        
+
         document.getElementById('kriterKatAd').innerText = katAd;
         document.getElementById('kriterBolumAd').innerText = bolumAd;
 
@@ -764,10 +764,10 @@ const KriterManager = {
             const div = document.createElement('div');
             div.className = 'kriter-kart p-3 d-flex align-items-center gap-3 cursor-pointer';
             div.setAttribute('data-kriter', k);
-            
+
             // TERS MANTIK: Varsayılan olarak seçili (true)
             div.setAttribute('data-selected', 'true');
-            
+
             div.innerHTML = `
                 <div class="kriter-ikon d-flex align-items-center justify-content-center rounded-circle flex-shrink-0" 
                      style="width:36px;height:36px;background:rgba(16, 185, 129, 0.2);border:2px solid var(--accent-emerald);transition:all 0.25s ease;">
@@ -775,12 +775,12 @@ const KriterManager = {
                 </div>
                 <span class="fs-6 text-white fw-bold" style="transition:all 0.25s ease;">${k}</span>
             `;
-            
+
             div.onclick = () => {
                 const isSelected = div.getAttribute('data-selected') === 'true';
                 const ikon = div.querySelector('.kriter-ikon');
                 const txt = div.querySelector('span');
-                
+
                 if (isSelected) {
                     div.setAttribute('data-selected', 'false');
                     div.style.background = '';
@@ -812,13 +812,13 @@ const KriterManager = {
         let isaretli = 0;
         kartlar.forEach(k => { if (k.getAttribute('data-selected') === 'true') isaretli++; });
         const toplam = currentKriterler.length;
-        
+
         const badge = document.getElementById('kriterSayac');
         badge.innerText = `${isaretli}/${toplam} ${isaretli === toplam ? '✅' : '⏳'}`;
         badge.className = `badge rounded-pill px-3 py-2 fw-bold ${isaretli === toplam ? 'bg-emerald' : 'bg-warning text-dark'}`;
     },
 
-    fabFotoYukle: function(event) {
+    fabFotoYukle: function (event) {
         const file = event.target.files[0];
         if (!file) return;
 
@@ -836,7 +836,7 @@ const KriterManager = {
     fotografiSil: function () {
         fotoDataURL = "";
         const input = document.getElementById('fotoUpload');
-        if(input) input.value = "";
+        if (input) input.value = "";
         document.getElementById('fotoOnizlemeContainer').classList.add('d-none');
         document.getElementById('btnKameraFAB').classList.remove('has-photo');
         document.getElementById('fotoCheckBadge').classList.add('d-none');
@@ -863,14 +863,14 @@ const KriterManager = {
                 background: 'var(--bg-main)',
                 color: '#fff'
             }).then(res => {
-                if(res.isConfirmed) this._kaydetDevam(secilenler, yorum);
+                if (res.isConfirmed) this._kaydetDevam(secilenler, yorum);
             });
             return;
         }
         this._kaydetDevam(secilenler, yorum);
     },
 
-    _kaydetDevam: function(secilenler, yorum) {
+    _kaydetDevam: function (secilenler, yorum) {
         const item = {
             kat: currentKat,
             bolum: currentBolum,
@@ -910,20 +910,20 @@ const KriterManager = {
         }
     },
 
-    findNextSection: function() {
+    findNextSection: function () {
         const bolumler = Object.keys(katlar[currentKat] || {});
         const currentIndex = bolumler.indexOf(currentBolum);
         const data = getData();
         const bugunISO = todayISO();
 
         // Mevcut indexten sonrasına bak
-        for(let i = 1; i < bolumler.length; i++) {
+        for (let i = 1; i < bolumler.length; i++) {
             const nextIdx = (currentIndex + i) % bolumler.length;
             const bName = bolumler[nextIdx];
-            
+
             // Bugün raporu olmayan veya reddedilen var mı bak
             const gecmis = data.filter(d => d.kat === currentKat && d.bolum === bName && toShortDate(parseInt(d.id)) === bugunISO);
-            if (gecmis.length === 0 || gecmis[gecmis.length-1].durum === 'reddedildi') {
+            if (gecmis.length === 0 || gecmis[gecmis.length - 1].durum === 'reddedildi') {
                 return bName;
             }
         }
@@ -936,11 +936,11 @@ const KriterManager = {
     },
 
     // Swipe Desteği
-    initSwipe: function() {
+    initSwipe: function () {
         const panel = document.getElementById('kriterPanel');
         let touchstartX = 0;
         let touchendX = 0;
-        
+
         panel.ontouchstart = e => { touchstartX = e.changedTouches[0].screenX; };
         panel.ontouchend = e => {
             touchendX = e.changedTouches[0].screenX;
@@ -1106,21 +1106,21 @@ function loadAdminPanel() {
         Object.keys(katlar).reverse().forEach(katAd => {
             const bolumler = katlar[katAd];
             let bekleyenSayisi = 0;
-            
+
             Object.keys(bolumler).forEach(b => {
-                const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
-                if(rec && rec.durum === 'bekliyor') bekleyenSayisi++;
+                const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a, b) => parseInt(b.id) - parseInt(a.id))[0];
+                if (rec && rec.durum === 'bekliyor') bekleyenSayisi++;
             });
-            
+
             const btn = document.createElement('button');
             const isActive = bekleyenSayisi > 0;
             btn.className = `btn d-flex justify-content-between align-items-center w-100 rounded-4 px-4 py-3 fw-bold border-0 kat-secim-btn ${isActive ? 'kat-aktif' : 'kat-pasif'}`;
-            
+
             btn.innerHTML = `
                 <span class="fs-6">${katAd}</span>
                 <span class="badge ${isActive ? 'bg-white text-success' : 'bg-secondary text-white'} rounded-pill px-3 py-2">${bekleyenSayisi} Bekleyen</span>
             `;
-            
+
             btn.onclick = () => MufettisFocus.basla(katAd, dayData);
             katContainer.appendChild(btn);
         });
@@ -1135,70 +1135,70 @@ const MufettisFocus = {
     odalar: [],
     index: 0,
     aktifKat: "",
-    basla: function(katAd, dayData) {
+    basla: function (katAd, dayData) {
         this.aktifKat = katAd;
         this.odalar = [];
-        
+
         Object.keys(katlar[katAd]).forEach(b => {
-            const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a,b)=>parseInt(b.id)-parseInt(a.id))[0];
-            if(rec && rec.durum === 'bekliyor') {
+            const rec = dayData.filter(d => d.kat === katAd && d.bolum === b).sort((a, b) => parseInt(b.id) - parseInt(a.id))[0];
+            if (rec && rec.durum === 'bekliyor') {
                 this.odalar.push(rec);
             }
         });
-        
-        if(this.odalar.length === 0) {
-            Swal.fire({icon:'success', title:'Dört Dörtlük', text: katAd + ' için denetim bekleyen oda yok, ellerinize sağlık.', timer: 2000, showConfirmButton:false});
+
+        if (this.odalar.length === 0) {
+            Swal.fire({ icon: 'success', title: 'Dört Dörtlük', text: katAd + ' için denetim bekleyen oda yok, ellerinize sağlık.', timer: 2000, showConfirmButton: false });
             return;
         }
-        
+
         this.index = 0;
         document.getElementById('mufettisKatSecim').classList.add('d-none');
         document.getElementById('mufettisOdakModu').classList.remove('d-none');
         document.getElementById('mufettisOdakModu').classList.add('d-flex');
-        
+
         this.renderOda();
     },
-    renderOda: function() {
-        if(this.index >= this.odalar.length) {
-            Swal.fire({icon:'success', title:'Tebrikler 🎊', text: this.aktifKat + ' denetimini tamamen bitirdiniz!', timer: 2500, showConfirmButton:false});
+    renderOda: function () {
+        if (this.index >= this.odalar.length) {
+            Swal.fire({ icon: 'success', title: 'Tebrikler 🎊', text: this.aktifKat + ' denetimini tamamen bitirdiniz!', timer: 2500, showConfirmButton: false });
             this.cikisYAP();
             return;
         }
-        
+
         const oda = this.odalar[this.index];
         document.getElementById('focusKatIsim').innerText = this.aktifKat;
-        
+
         const yuzde = Math.round((this.index / this.odalar.length) * 100);
         document.getElementById('focusYuzdeMetin').innerText = `%${yuzde} (${this.index}/${this.odalar.length})`;
         document.getElementById('focusIlerlemeBar').style.width = `${yuzde}%`;
-        
+
         document.getElementById('focusOdaAdi').innerText = oda.bolum;
-        
-        const timeStr = new Date(oda.tarih).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+
+        const timeStr = new Date(oda.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
         document.getElementById('focusGorevliZaman').innerText = `${timeStr} - Görevli Onaya Sundu`;
-        
+
         const notContainer = document.getElementById('focusGorevliNotContainer');
-        if(oda.yorum) {
+        if (oda.yorum) {
             notContainer.classList.remove('d-none');
             document.getElementById('focusGorevliNot').innerText = oda.yorum;
         } else {
             notContainer.classList.add('d-none');
         }
-        
+
         const kart = document.getElementById('focusOdaKarti');
         kart.style.opacity = '1';
         kart.style.transform = 'scale(1) rotate(0deg)';
     },
-    cikisYAP: function() {
+    cikisYAP: function () {
         document.getElementById('mufettisOdakModu').classList.add('d-none');
         document.getElementById('mufettisOdakModu').classList.remove('d-flex');
         document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
         document.getElementById('mufettisKatSecim').classList.remove('d-none');
         loadAdminPanel();
     },
-    gec: function(sonuc, neden) {
+    gec: function (sonuc, neden) {
         const oda = this.odalar[this.index];
-        
+
         let data = getData();
         const idx = data.findIndex(d => d.id === oda.id);
         if (idx !== -1) {
@@ -1215,39 +1215,39 @@ const MufettisFocus = {
             localStorage.setItem('topclean_data', JSON.stringify(data));
             cachedData = data;
         }
-        
+
         const kart = document.getElementById('focusOdaKarti');
         kart.style.transform = sonuc === 'onaylandi' ? 'translateX(120%) rotate(15deg)' : 'translateX(-120%) rotate(-15deg)';
         kart.style.opacity = '0';
-        
+
         document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
         document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
-        
+
         setTimeout(() => {
             kart.style.transition = 'none';
             kart.style.transform = 'translateY(20px) scale(0.9)';
             setTimeout(() => {
-                 kart.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s';
-                 this.index++;
-                 this.renderOda();
+                kart.style.transition = 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s';
+                this.index++;
+                this.renderOda();
             }, 50);
         }, 300);
     },
-    onayVer: function() {
+    onayVer: function () {
         this.gec('onaylandi', "");
     },
-    onBtnReddet: function() {
+    onBtnReddet: function () {
         document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(0)';
         document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'auto';
     },
-    iptalRet: function() {
+    iptalRet: function () {
         document.getElementById('mufettisHizliRetPanel').style.transform = 'translateY(100%)';
         document.getElementById('mufettisHizliRetPanel').style.pointerEvents = 'none';
     },
-    hizliRet: function(neden) {
+    hizliRet: function (neden) {
         this.gec('reddedildi', neden);
     },
-    acKlavyeRet: async function() {
+    acKlavyeRet: async function () {
         const { value: neden } = await Swal.fire({
             title: 'Kusur Nedeni',
             input: 'text',
@@ -1259,7 +1259,7 @@ const MufettisFocus = {
             color: '#fff',
             confirmButtonColor: '#ef4444'
         });
-        if(neden) {
+        if (neden) {
             this.hizliRet(neden);
         } else {
             this.iptalRet();
@@ -1370,425 +1370,364 @@ const AdminManager = {
     }
 };
 
-// ---------- İDARECİ MANAGER ----------
+// ---------- İDARECİ MANAGER (REMASTERED v4.0) ----------
+// ---------- İDARECİ MANAGER (REMASTERED v4.0) ----------
 const IdarecManager = {
+    currentBinaKat: 'Hepsi',
+
     load: function () {
         try {
-            const today = new Date().toISOString().split('T')[0];
             const dateSel = document.getElementById('idarecDateSelector');
-            if (dateSel) { dateSel.value = today; dateSel.onchange = function () { IdarecManager.loadBinaDurumu(); }; }
+            if (dateSel) {
+                dateSel.value = todayISO();
+                dateSel.onchange = () => this.loadBinaDurumu();
+            }
 
-            this.currentBinaKat = 'Hepsi';
-            try { this.loadBinaDurumu(); } catch(err) { console.error("Load Bina Error:", err); }
-            try { this.loadBasari('haftalik'); } catch(err) { console.error("Load Basari Error:", err); }
-            try { this.loadPersonel(); } catch(err) { console.error("Load Personel Error:", err); }
-            try { this.loadMufettis(); } catch(err) { console.error("Load Mufettis Error:", err); }
-            try { this.loadArizalar('hepsi'); } catch(err) { console.error("Load Arizalar Error:", err); }
-            try { if(typeof InventoryManager !== 'undefined') InventoryManager.render(); } catch(err) { console.error("Render Inventory Error:", err); }
+            this.updateStats();
+            this.loadBinaDurumu();
+            this.loadPersonel();
+            this.loadMufettis();
+            this.loadArizalar();
+            this.initKatFilters();
+
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
             console.error("IdarecManager.load Error:", e);
         }
     },
+
+    updateStats: function () {
+        const bekleyenAriza = cachedArizalar.filter(a => a.durum === "bekliyor").length;
+        const elAriza = document.getElementById('countBekleyenAriza');
+        if (elAriza) elAriza.innerText = bekleyenAriza;
+
+        const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        const totalStaff = usersData.filter(u => u.rol === 'gorevli' && !deletedFixed.includes(u.name)).length 
+                          + JSON.parse(localStorage.getItem('topclean_users') || '[]').length;
+        const elStaff = document.getElementById('countAktifPersonel');
+        if (elStaff) elStaff.innerText = totalStaff;
+
+        const todayData = getData().filter(d => toShortDate(parseInt(d.id)) === todayISO());
+        const totalRooms = Object.values(katlar).reduce((acc, k) => acc + Object.keys(k).length, 0);
+        const approvedRooms = todayData.filter(d => d.durum === 'onaylandi').length;
+        const score = totalRooms > 0 ? Math.round((approvedRooms / totalRooms) * 100) : 0;
+        
+        const elScore = document.getElementById('genelHijyenText');
+        if (elScore) elScore.innerText = `%${score}`;
+    },
+
     switchTab: function (tab, btn) {
-        document.querySelectorAll('.idarec-tab-content').forEach(function (el) { el.classList.add('d-none'); });
-        document.querySelectorAll('.idarec-tab').forEach(function (el) { el.classList.remove('active'); });
-        document.getElementById('idarec-tab-' + tab).classList.remove('d-none');
+        document.querySelectorAll('.idarec-tab-content').forEach(el => el.classList.add('d-none'));
+        document.querySelectorAll('.idarec-tab').forEach(el => el.classList.remove('active'));
+        
+        const targetTab = document.getElementById('idarec-tab-' + tab);
+        if (targetTab) targetTab.classList.remove('d-none');
         btn.classList.add('active');
-        lucide.createIcons();
+
+        if (tab === 'ari') this.loadArizalar();
+        if (tab === 'personel') this.loadPersonel();
+        if (tab === 'stok' && typeof InventoryManager !== 'undefined') InventoryManager.render();
+        
+        if (typeof lucide !== 'undefined') lucide.createIcons();
     },
-    loadBinaDurumu: function () {
-        var matris = document.getElementById('idarecBinaMatrisi');
-        var dateSel = document.getElementById('idarecDateSelector');
-        if (!matris || !dateSel) return;
-        matris.innerHTML = '';
-        var selectedDate = dateSel.value;
-        var allData = getData();
-        var dayData = allData.filter(function (d) { return toShortDate(d.tarih) === selectedDate; });
 
-        if (document.getElementById('idarecStatTotal')) document.getElementById('idarecStatTotal').innerText = dayData.length;
-        if (document.getElementById('idarecStatSuccess')) document.getElementById('idarecStatSuccess').innerText = dayData.filter(function (d) { return d.durum === 'onaylandi'; }).length;
-        if (document.getElementById('idarecStatDanger')) document.getElementById('idarecStatDanger').innerText = dayData.filter(function (d) { return d.durum === 'reddedildi'; }).length;
-
-        var totalGenel = dayData.length;
-        var onayGenel = dayData.filter(d => d.durum === 'onaylandi').length;
-        var yuzde = totalGenel > 0 ? Math.round((onayGenel / totalGenel) * 100) : 0;
-        var bar = document.getElementById('genelHijyenBar');
-        var txt = document.getElementById('genelHijyenText');
-        if (bar) bar.style.width = yuzde + '%';
-        if (txt) txt.innerText = '%' + yuzde;
-
-        var katKeys = Object.keys(katlar).reverse();
-        if (this.currentBinaKat && this.currentBinaKat !== 'Hepsi') {
-            katKeys = katKeys.filter(k => k === this.currentBinaKat);
-        }
-
-        var buildingWrapper = document.createElement('div');
-        buildingWrapper.className = 'bina-dis-cephe';
-
-        if (this.currentBinaKat === 'Hepsi') {
-            var roof = document.createElement('div');
-            roof.className = 'bina-cati';
-            buildingWrapper.appendChild(roof);
-        }
-
-        katKeys.forEach(function (katAd, kIdx) {
-            var w = document.createElement('div');
-            w.className = 'bina-kat d-flex align-items-stretch';
-
-            var leftSide = document.createElement('div');
-            leftSide.className = 'kat-kanat left-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
-            leftSide.style.width = '45%';
-
-            var middleSide = document.createElement('div');
-            middleSide.className = 'kat-asansor d-flex align-items-center justify-content-center flex-column text-center px-1';
-            middleSide.style.width = '10%';
-            middleSide.innerHTML = '<div class="kat-numarasi fw-bold text-white shadow-sm">' + katAd.replace('. Kat', '') + '</div>';
-
-            var rightSide = document.createElement('div');
-            rightSide.className = 'kat-kanat right-kanat d-flex flex-row flex-wrap gap-2 p-2 align-content-center justify-content-center';
-            rightSide.style.width = '45%';
-
-            var bolumKeys = Object.keys(katlar[katAd]);
-            var half = Math.ceil(bolumKeys.length / 2);
-
-            bolumKeys.forEach(function (bolumAd, bIdx) {
-                var recs = dayData.filter(function (d) { return d.kat === katAd && d.bolum === bolumAd; });
-                recs.sort(function (a, b) { return parseInt(b.id) - parseInt(a.id); });
-                var rec = recs[0];
-                var hasReport = !!rec;
-                var sc = 'cam-bekliyor', sy = '⏳';
-                if (rec) {
-                    if (rec.durum === 'onaylandi') { sc = 'cam-onayli'; sy = '✅'; }
-                    else if (rec.durum === 'reddedildi') { sc = 'cam-red'; sy = '❌'; }
-                    else { sc = 'cam-onay-bekliyor'; sy = '🔍'; }
-                }
-
-                var roomDiv = document.createElement('div');
-                roomDiv.className = 'bina-oda ' + sc + (hasReport ? ' cursor-pointer' : '');
-                var timeStr = rec ? new Date(rec.tarih).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--';
-                var clickAttr = hasReport ? 'onclick="AdminManager.showDetail(\'' + rec.id + '\')"' : '';
-
-                roomDiv.innerHTML = '<div class="oda-ic" ' + clickAttr + '><div class="oda-durum-ikoni">' + sy + '</div><div class="oda-baslik text-truncate" title="' + bolumAd + '">' + bolumAd + '</div></div>';
-
-                if (bIdx < half) leftSide.appendChild(roomDiv);
-                else rightSide.appendChild(roomDiv);
-            });
-
-            w.appendChild(leftSide);
-            w.appendChild(middleSide);
-            w.appendChild(rightSide);
-
-            buildingWrapper.appendChild(w);
-
-            var katZemin = document.createElement('div');
-            katZemin.className = 'kat-zemin';
-            buildingWrapper.appendChild(katZemin);
+    initKatFilters: function() {
+        const container = document.getElementById('katFilterButtons');
+        if (!container) return;
+        
+        container.innerHTML = `<button class="btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold active kat-filter" onclick="IdarecManager.filterKat('Hepsi', this)">Tümü</button>`;
+        
+        Object.keys(katlar).forEach(kat => {
+            const btn = document.createElement('button');
+            btn.className = "btn btn-sm btn-outline-secondary rounded-pill px-3 fw-bold kat-filter";
+            btn.style.borderColor = "rgba(255,255,255,0.2)";
+            btn.style.color = "white";
+            btn.innerText = kat.replace(' Katı', '').replace(' Kat', '');
+            btn.onclick = (e) => this.filterKat(kat, e.target);
+            container.appendChild(btn);
         });
-
-        if (this.currentBinaKat === 'Hepsi') {
-            var temel = document.createElement('div');
-            temel.className = 'bina-temel';
-            temel.innerHTML = '<div class="temel-yazi text-white fw-bold">ENDERUN BİNASI</div>';
-            buildingWrapper.appendChild(temel);
-        }
-
-        matris.appendChild(buildingWrapper);
-        lucide.createIcons();
     },
-    filterKat: function (katSecimi, btn) {
-        document.querySelectorAll('.kat-filter').forEach(b => {
-            b.classList.remove('active', 'bg-emerald', 'text-white');
-            b.style.borderColor = "rgba(255,255,255,0.2)";
-        });
-        btn.classList.add('active', 'bg-emerald', 'text-white');
-        btn.style.borderColor = "var(--accent-emerald)";
-        this.currentBinaKat = katSecimi;
+
+    filterKat: function (kat, btn) {
+        this.currentBinaKat = kat;
+        document.querySelectorAll('.kat-filter').forEach(el => el.classList.remove('active', 'btn-emerald'));
+        btn.classList.add('active');
         this.loadBinaDurumu();
     },
-    loadBasari: function (period, btn) {
-        if (btn) {
-            document.querySelectorAll('.basari-filter').forEach(b => {
-                b.classList.remove('active');
-                b.style.border = "1px solid transparent";
-            });
-            btn.classList.add('active');
-            btn.style.border = "1px solid rgba(255,255,255,0.1)";
-        }
-        var allData = getData();
-        var now = new Date();
-        var filteredData = allData.filter(d => {
-            var dTarih = new Date(d.tarih);
-            if (period === 'haftalik') {
-                var diff = now - dTarih;
-                return diff <= 7 * 24 * 60 * 60 * 1000;
-            } else if (period === 'aylik') {
-                return dTarih.getMonth() === now.getMonth() && dTarih.getFullYear() === now.getFullYear();
-            } else {
-                return true;
-            }
-        });
 
-        var katScores = {};
-        Object.keys(katlar).forEach(k => { katScores[k] = { total: 0, onay: 0 }; });
+    loadBinaDurumu: function () {
+        const matris = document.getElementById('idarecBinaMatrisi');
+        const dateSel = document.getElementById('idarecDateSelector');
+        if (!matris || !dateSel) return;
+        
+        matris.innerHTML = '';
+        const dayData = getData().filter(d => toShortDate(parseInt(d.id)) === dateSel.value);
+        this.updateStats(); 
 
-        filteredData.forEach(d => {
-            if (katScores[d.kat]) {
-                katScores[d.kat].total++;
-                if (d.durum === 'onaylandi') katScores[d.kat].onay++;
-            }
-        });
+        Object.keys(katlar).forEach(katAd => {
+            if (this.currentBinaKat !== 'Hepsi' && this.currentBinaKat !== katAd) return;
 
-        var bestKat = "-";
-        var bestPercentage = -1;
-        var minTotalThreshold = period === 'haftalik' ? 1 : (period === 'aylik' ? 5 : 10);
+            const katDiv = document.createElement('div');
+            katDiv.className = 'w-100 mb-4';
+            katDiv.innerHTML = `<h6 class="text-white x-small fw-bold mb-2 opacity-50">${katAd.toUpperCase()}</h6>`;
+            
+            const roomsDiv = document.createElement('div');
+            roomsDiv.className = 'd-flex flex-wrap gap-2';
 
-        Object.keys(katScores).forEach(k => {
-            if (katScores[k].total >= minTotalThreshold || (filteredData.length < minTotalThreshold && katScores[k].total > 0)) {
-                var p = (katScores[k].onay / katScores[k].total) * 100;
-                if (p > bestPercentage) {
-                    bestPercentage = p;
-                    bestKat = k;
+            Object.keys(katlar[katAd]).forEach(bolum => {
+                const report = dayData.find(d => d.kat === katAd && d.bolum === bolum);
+                let bgColor = 'rgba(255,255,255,0.05)';
+                let icon = '⭕';
+                
+                if (report) {
+                    if (report.durum === 'onaylandi') { bgColor = 'rgba(16,185,129,0.2)'; icon = '✅'; }
+                    else if (report.durum === 'reddedildi') { bgColor = 'rgba(239,68,68,0.2)'; icon = '❌'; }
+                    else { bgColor = 'rgba(245,158,11,0.2)'; icon = '🔍'; }
                 }
-            }
+
+                const roomEl = document.createElement('div');
+                roomEl.className = 'glass-card p-2 d-flex align-items-center gap-2';
+                roomEl.style.minWidth = '120px';
+                roomEl.style.background = bgColor;
+                roomEl.innerHTML = `<span class="small">${icon}</span> <span class="x-small fw-bold text-white">${bolum}</span>`;
+                if(report) {
+                   roomEl.style.cursor = 'pointer';
+                   roomEl.onclick = () => AdminManager.showDetail(report.id);
+                }
+                roomsDiv.appendChild(roomEl);
+            });
+
+            katDiv.appendChild(roomsDiv);
+            matris.appendChild(katDiv);
         });
 
-        var bIsim = document.getElementById('basariKatIsim');
-        var bPuan = document.getElementById('basariPuan');
-        var bGorevli = document.getElementById('basariGorevli');
-        var bBaskan = document.getElementById('basariBaskan');
+        this.loadBasari();
+    },
 
-        if (!bIsim) return;
+    loadBasari: function() {
+        const selectedDate = document.getElementById('idarecDateSelector')?.value || todayISO();
+        const data = getData().filter(d => toShortDate(parseInt(d.id)) === selectedDate);
+        
+        const katStats = {};
+        Object.keys(katlar).forEach(k => {
+            const rooms = Object.keys(katlar[k]).length;
+            const approved = data.filter(d => d.kat === k && d.durum === 'onaylandi').length;
+            katStats[k] = rooms > 0 ? (approved / rooms) * 100 : 0;
+        });
 
-        if (bestKat === "-") {
-            bIsim.innerText = "-";
-            bPuan.innerText = "Yeterli Veri Yok";
-            bGorevli.innerText = "-";
-            bBaskan.innerText = "-";
-        } else {
-            bIsim.innerText = bestKat;
-            bPuan.innerText = Math.round(bestPercentage) + "% Başarı Oranı";
-
-            var allUsers = [...usersData, ...JSON.parse(localStorage.getItem('topclean_users') || '[]')];
-            var hoca = allUsers.find(u => u.kat === bestKat && u.rol === 'gorevli');
-            bGorevli.innerText = hoca ? hoca.name : "Atanmadı";
-
-            var talebeData = JSON.parse(localStorage.getItem('topclean_talebe_listesi') || '{}');
-            var baskanlar = talebeData.baskanlar || {};
-            bBaskan.innerText = baskanlar[bestKat] || "Belirtilmedi";
+        const sorted = Object.entries(katStats).sort((a,b) => b[1] - a[1]);
+        const gururEl = document.getElementById('gururTablosu');
+        if (gururEl) {
+            gururEl.innerHTML = sorted.slice(0, 3).map(([kat, score], idx) => `
+                <div class="d-flex align-items-center justify-content-between mb-3 p-2 rounded-3" style="background: rgba(255,255,255,0.03);">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold text-white">${idx+1}.</span>
+                        <div>
+                            <div class="x-small fw-bold text-white">${kat}</div>
+                            <div class="progress" style="width: 60px; height: 3px; background: rgba(255,255,255,0.1);">
+                                <div class="progress-bar bg-emerald" style="width: ${score}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-emerald fw-bold x-small">%${Math.round(score)}</div>
+                </div>
+            `).join('') || '<div class="text-muted text-center x-small">Bugün henüz veri yok</div>';
         }
     },
     loadMufettis: function () {
-        var list = document.getElementById('mufettisListesi');
+        const list = document.getElementById('mufettisListesi');
         if (!list) return;
         list.innerHTML = '';
-        var fixedMuf = usersData.filter(function (u) { return u.rol === 'mufettis'; });
-        var extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
-        var all = fixedMuf.concat(extraMuf);
+        const fixedMuf = usersData.filter(u => u.rol === 'mufettis');
+        const extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        const all = fixedMuf.concat(extraMuf);
 
-        all.forEach(function (u, idx) {
-            var isExtra = idx >= fixedMuf.length;
-            var c = document.createElement('div');
-            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            // GÜVENLİK: Şifre UI'da gösterilmiyor
-            c.innerHTML = '<div><div class="fw-bold text-white">' + u.name + '</div><div class="x-small text-muted">İç Mesul' + (isExtra ? ' • Dinamik' : ' • Sistem') + '</div></div>' +
-                '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.mufettisSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
+        all.forEach((u, idx) => {
+            const isExtra = idx >= fixedMuf.length;
+            const c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between stagger-item';
+            c.innerHTML = `
+                <div>
+                    <div class="fw-bold text-white" style="font-size:0.9rem;">${u.name}</div>
+                    <div class="x-small text-muted">İç Mesul${isExtra ? ' • Eklenen' : ' • Sistem'}</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="IdarecManager.mufettisSil(${idx})">
+                    <i data-lucide="trash-2" size="16"></i>
+                </button>
+            `;
             list.appendChild(c);
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     },
+
     mufettisEkle: function () {
-        var ad = document.getElementById('yeniMufettisAd').value.trim();
-        var sifre = document.getElementById('yeniMufettisSifre').value.trim();
-        if (!ad || !sifre) { Swal.fire({ icon: 'warning', title: 'Eksik Bilgi', text: 'Ad ve şifre girin.', timer: 2000, showConfirmButton: false }); return; }
-        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
-        var newUser = { name: ad, pass: sifre, rol: 'mufettis', kat: 'Hepsi' };
-        extras.push(newUser);
-        localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
-        if (db) {
-            db.ref('users/' + newUser.name).set(newUser);
-        }
+        const ad = document.getElementById('yeniMufettisAd').value.trim();
+        const sifre = document.getElementById('yeniMufettisSifre').value.trim();
+        if (!ad || !sifre) { Swal.fire({ icon:'warning', title:'Eksik Bilgi', text:'Ad ve şifre girin.' }); return; }
+        
+        const extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        const newUser = { name: ad, pass: sifre, rol: 'mufettis', kat: 'Hepsi' };
+        extraMuf.push(newUser);
+        localStorage.setItem('topclean_mufetts', JSON.stringify(extraMuf));
+        if (db) db.ref('users/' + ad).set(newUser);
+        
         document.getElementById('yeniMufettisAd').value = '';
         document.getElementById('yeniMufettisSifre').value = '';
-        Swal.fire({ icon: 'success', title: 'Kaydedildi!', text: ad + ' İç Mesul olarak eklendi.', timer: 1800, showConfirmButton: false });
-        IdarecManager.loadMufettis();
+        Swal.fire({ icon:'success', title:'Başarılı', text: ad + ' müfettiş olarak eklendi.', timer: 1500, showConfirmButton: false });
+        this.loadMufettis();
         initLoginSelect();
     },
+
     mufettisSil: function (idx) {
-        var fixed = usersData.filter(u => u.rol === 'mufettis');
-        var extras = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
-        var target;
-        if (idx < fixed.length) {
-            Swal.fire({ icon: 'error', title: 'Hata', text: 'Sistem admini silinemez.', timer: 2000, showConfirmButton: false });
-            return;
-        } else {
-            target = extras[idx - fixed.length];
-            extras.splice(idx - fixed.length, 1);
-            localStorage.setItem('topclean_mufetts', JSON.stringify(extras));
-        }
+        const fixedMuf = usersData.filter(u => u.rol === 'mufettis');
+        const extraMuf = JSON.parse(localStorage.getItem('topclean_mufetts') || '[]');
+        if (idx < fixedMuf.length) { Swal.fire({ icon:'error', title:'Hata', text:'Sistem hesabı silinemez.' }); return; }
+        
+        const target = extraMuf[idx - fixedMuf.length];
+        extraMuf.splice(idx - fixedMuf.length, 1);
+        localStorage.setItem('topclean_mufetts', JSON.stringify(extraMuf));
         if (db && target) db.ref('users/' + target.name).remove();
-        Swal.fire({ icon: 'info', title: 'Silindi', text: 'İç Mesul kaldırıldı.', timer: 1800, showConfirmButton: false });
-        IdarecManager.loadMufettis();
+        this.loadMufettis();
         initLoginSelect();
     },
+
     loadPersonel: function () {
-        var list = document.getElementById('personelListesi');
+        const list = document.getElementById('personelListesi');
+        const katSel = document.getElementById('yeniPersonelKat');
         if (!list) return;
         list.innerHTML = '';
-        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-        var sabitGorevliler = usersData.filter(function (u) { return u.rol === 'gorevli' && !deletedFixed.includes(u.name); });
-        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        var all = sabitGorevliler.concat(extraUsers);
-        all.forEach(function (u, idx) {
-            var isExtra = idx >= sabitGorevliler.length;
-            var c = document.createElement('div');
-            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between';
-            var deleteBtn = '<button class="btn btn-sm btn-danger rounded-circle p-0 d-flex align-items-center justify-content-center" style="width:28px;height:28px;" onclick="IdarecManager.personelSil(' + idx + ')"><i data-lucide="trash-2" size="13"></i></button>';
-            // GÜVENLİK: Şifre UI'da gösterilmiyor
-            c.innerHTML = '<div><div class="fw-bold text-white" style="font-size:0.85rem;">' + u.name + '</div>' +
-                '<div class="x-small text-muted">' + (u.kat || 'Kat Yok') + '</div></div>' +
-                '<div class="d-flex gap-2 align-items-center">' +
-                '<span class="badge-status ' + (isExtra ? 'badge-warning' : 'badge-idle') + '" style="font-size:0.55rem;padding:2px 6px;">' + (isExtra ? 'YENİ' : 'SABİT') + '</span>' +
-                deleteBtn + '</div>';
+        
+        if (katSel && katSel.options.length <= 1) {
+            Object.keys(katlar).forEach(k => {
+                const opt = new Option(k, k);
+                katSel.add(opt);
+            });
+        }
+
+        const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        const fixed = usersData.filter(u => u.rol === 'gorevli' && !deletedFixed.includes(u.name));
+        const extra = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        const all = fixed.concat(extra);
+
+        all.forEach((u, idx) => {
+            const isExtra = idx >= fixed.length;
+            const c = document.createElement('div');
+            c.className = 'glass-card p-3 d-flex align-items-center justify-content-between stagger-item';
+            c.innerHTML = `
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-circle bg-emerald bg-opacity-10 p-2 text-emerald"><i data-lucide="user" size="18"></i></div>
+                    <div>
+                        <div class="fw-bold text-white" style="font-size:0.85rem;">${u.name}</div>
+                        <div class="x-small text-muted">${u.kat}</div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge ${isExtra ? 'bg-warning' : 'bg-secondary'} bg-opacity-10 text-${isExtra ? 'warning' : 'secondary'} x-small p-1 px-2" style="font-size:0.6rem;">${isExtra ? 'YENİ' : 'SİSTEM'}</span>
+                    <button class="btn btn-sm btn-outline-danger border-0 rounded-circle" onclick="IdarecManager.personelSil(${idx})">
+                        <i data-lucide="trash-2" size="16"></i>
+                    </button>
+                </div>
+            `;
             list.appendChild(c);
         });
         if (typeof lucide !== 'undefined') lucide.createIcons();
     },
-    personelEkle: function () {
-        var ad = document.getElementById('yeniPersonelAd').value.trim();
-        var sifre = document.getElementById('yeniPersonelSifre').value.trim();
-        var kat = document.getElementById('yeniPersonelKat').value;
-        if (!ad || !sifre || !kat) { Swal.fire({ icon: 'warning', title: 'Eksik Bilgi', text: 'Tüm alanları doldurun.', timer: 2000, showConfirmButton: false }); return; }
-        var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        var newUser = { name: ad, pass: sifre, kat: kat, rol: 'gorevli' };
-        extras.push(newUser);
 
+    personelEkle: function () {
+        const ad = document.getElementById('yeniPersonelAd').value.trim();
+        const sifre = document.getElementById('yeniPersonelSifre').value.trim();
+        const kat = document.getElementById('yeniPersonelKat').value;
+        if (!ad || !sifre || !kat) { Swal.fire({ icon:'warning', title:'Eksik', text:'Alanları doldurun.' }); return; }
+        
+        const extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        const newUser = { name: ad, pass: sifre, kat: kat, rol: 'gorevli' };
+        extras.push(newUser);
         localStorage.setItem('topclean_users', JSON.stringify(extras));
-        if (db) {
-            db.ref('users/' + newUser.name).set(newUser);
-        }
+        if (db) db.ref('users/' + ad).set(newUser);
+        
         document.getElementById('yeniPersonelAd').value = '';
         document.getElementById('yeniPersonelSifre').value = '';
-        document.getElementById('yeniPersonelKat').value = '';
-        Swal.fire({ icon: 'success', title: 'Kaydedildi!', text: ad + ' sisteme eklendi.', timer: 1800, showConfirmButton: false });
-        IdarecManager.loadPersonel();
-        initLoginSelect(); // Login dropdown'u güncelle
-    },
-    personelSil: function (allIdx) {
-        var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-        var sabitGorevliler = usersData.filter(function (u) { return u.rol === 'gorevli' && !deletedFixed.includes(u.name); });
-        var extraUsers = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-        var all = sabitGorevliler.concat(extraUsers);
-        var target = all[allIdx];
-        if (!target) return;
-
-        if (allIdx >= sabitGorevliler.length) {
-            // Extra user
-            var extras = JSON.parse(localStorage.getItem('topclean_users') || '[]');
-            var filtered = extras.filter(u => u.name !== target.name);
-            localStorage.setItem('topclean_users', JSON.stringify(filtered));
-        } else {
-            // Fixed user
-            var deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
-            deletedFixed.push(target.name);
-            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
-            if (db) db.ref('deleted_fixed_users').set(deletedFixed);
-        }
-
-        // Cloud Delete
-        if (db) db.ref('users/' + target.name).remove();
-
-        Swal.fire({ icon: 'info', title: 'Silindi', text: target.name + ' sistemden kaldırıldı.', timer: 1800, showConfirmButton: false });
-        IdarecManager.loadPersonel();
+        this.loadPersonel();
         initLoginSelect();
     },
-    exportCSV: function () {
-        var selectedDate = document.getElementById('idarecDateSelector').value;
-        var dayData = getData().filter(function (d) { return toShortDate(d.tarih) === selectedDate; });
-        if (dayData.length === 0) { Swal.fire({ icon: 'info', title: 'Kayıt Yok', text: 'Seçilen tarih için rapor bulunamadı.', timer: 2000, showConfirmButton: false }); return; }
-        var csv = "\uFEFFKat,Bolum,Kriterler,Saat,Durum,GorevliNotu,IcMesulNotu\n";
-        csv += dayData.map(function (d) {
-            var saat = new Date(d.tarih).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
-            return '"' + d.kat + '","' + d.bolum + '",' + d.secilen.length + ',' + saat + ',' + d.durum + ',"' + (d.yorum || '') + '","' + (d.mufettis_yorum || '') + '"';
-        }).join("\n");
-        var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url; a.download = 'TopClean_Rapor_' + selectedDate + '.csv';
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
 
+    personelSil: function (idx) {
+        const deletedFixed = JSON.parse(localStorage.getItem('topclean_deleted_fixed_users') || '[]');
+        const fixed = usersData.filter(u => u.rol === 'gorevli' && !deletedFixed.includes(u.name));
+        const extra = JSON.parse(localStorage.getItem('topclean_users') || '[]');
+        let targetName = "";
+
+        if (idx < fixed.length) {
+            targetName = fixed[idx].name;
+            deletedFixed.push(targetName);
+            localStorage.setItem('topclean_deleted_fixed_users', JSON.stringify(deletedFixed));
+            if (db) db.ref('deleted_fixed_users').set(deletedFixed);
+        } else {
+            const target = extra[idx - fixed.length];
+            targetName = target.name;
+            extra.splice(idx - fixed.length, 1);
+            localStorage.setItem('topclean_users', JSON.stringify(extra));
+        }
+        
+        if (db && targetName) db.ref('users/' + targetName).remove();
+        Swal.fire({ icon:'info', title:'Silindi', text: targetName + ' kaldırıldı.', timer: 1500, showConfirmButton: false });
+        this.loadPersonel();
+        initLoginSelect();
+    },
+
+    exportCSV: function () {
+        const dateSel = document.getElementById('idarecDateSelector');
+        if (!dateSel) return;
+        const selectedDate = dateSel.value;
+        const dayData = getData().filter(d => toShortDate(parseInt(d.id)) === selectedDate);
+        if (dayData.length === 0) { Swal.fire({ icon:'info', title:'Kayıt Yok', text:'Seçilen tarih için rapor bulunamadı.' }); return; }
+
+        let csv = "\uFEFFKat,Bolum,Saat,Durum,GorevliNotu,IcMesulNotu\n";
+        csv += dayData.map(d => {
+            const saat = new Date(parseInt(d.id)).toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+            return `"${d.kat}","${d.bolum}","${saat}","${d.durum}","${(d.yorum || '').replace(/"/g, '""')}","${(d.mufettis_yorum || '').replace(/"/g, '""')}"`;
+        }).join("\n");
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `TopClean_Rapor_${selectedDate}.csv`;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        
         setTimeout(() => {
             Swal.fire({
-                title: 'Google Drive Yardımcısı',
-                text: 'İndirilen dosyayı Google Drive klasörünüze taşıyabilirsiniz.',
-                icon: 'info',
+                title: 'İndirme Başarılı',
+                text: 'Google Drive\'a yüklemek ister misiniz?',
+                icon: 'success',
                 showCancelButton: true,
-                confirmButtonText: 'Driveı Aç',
-                cancelButtonText: 'Kapat'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.open("https://drive.google.com/drive/my-drive", "_blank");
-                }
-            });
+                confirmButtonText: 'Drive\'ı Aç'
+            }).then(res => { if(res.isConfirmed) window.open("https://drive.google.com/drive/my-drive", "_blank"); });
         }, 1000);
     },
 
-    loadArizalar: function (filterType) {
-        var aList = cachedArizalar;
-        if (filterType === 'bekliyor') aList = aList.filter(a => a.durum === 'bekliyor');
-        else if (filterType === 'onarildi') aList = aList.filter(a => a.durum === 'onarildi');
-
-        aList.sort((a, b) => b.tarih - a.tarih);
-        var container = document.getElementById('idarecArizaList');
+    loadArizalar: function() {
+        const container = document.getElementById('idarecArizaListesi');
         if (!container) return;
-        container.innerHTML = '';
-        if (aList.length === 0) {
-            container.innerHTML = '<div class="glass-card text-center text-muted p-4 small">Kayıtlı arıza bulunmuyor.</div>';
+        
+        const bekleyenler = cachedArizalar.filter(a => a.durum === 'bekliyor');
+        if (bekleyenler.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center py-5 text-muted x-small">Bekleyen teknik arıza bulunmuyor.</div>';
             return;
         }
 
-        aList.forEach(a => {
-            var sc = a.durum === 'onarildi' ? 'badge-success' : 'badge-warning';
-            var sy = a.durum === 'onarildi' ? 'ONARILDI' : 'BEKLİYOR';
-            var div = document.createElement('div');
-            div.className = 'glass-card p-3 mb-2';
-            div.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="fw-bold fs-6 text-white"><i data-lucide="wrench" size="14"></i> ${a.kat} / ${a.bolum}</span>
-                    <span class="badge-status ${sc} px-2 py-1" style="font-size:0.6rem;">${sy}</span>
+        container.innerHTML = bekleyenler.map(a => `
+            <div class="col-12 col-md-6 stagger-item">
+                <div class="glass-card p-3 border-start border-warning" style="border-left-width: 4px !important;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="x-small fw-bold text-warning">${a.kat} / ${a.bolum}</span>
+                        <span class="x-small text-muted">${new Date(a.tarih).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                    </div>
+                    <div class="text-white small mb-3">${a.detay}</div>
+                    <button class="btn btn-sm btn-emerald-lg w-100" onclick="AdminManager.onarildiIsaretle('${a.id}')">ONARILDI OLARAK İŞARETLE</button>
                 </div>
-                <div class="small text-white mb-2">${a.detay}</div>
-                <div class="x-small text-muted d-flex justify-content-between mt-2 pt-2 border-top border-secondary">
-                    <span>GÖNDEREN: ${a.gonderen}</span>
-                    <span>${new Date(a.tarih).toLocaleString()}</span>
-                </div>
-            `;
-            container.appendChild(div);
-        });
+            </div>
+        `).join('');
         if (typeof lucide !== 'undefined') lucide.createIcons();
-    },
-
-    filterArizalar: function (type, btn) {
-        document.querySelectorAll('.ariza-filter').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
-        this.loadArizalar(type);
-    },
-
-    exportArizaCSV: function () {
-        if (cachedArizalar.length === 0) return;
-        let csvHeader = "ID,Kat,Bolum,Gonderen,Detay,Tarih,Durum,OnayTarihi\n";
-        let csvBody = cachedArizalar.map(a => {
-            let onayTarihStr = a.onay_tarih ? new Date(a.onay_tarih).toLocaleString() : "";
-            return `${a.id},${a.kat},${a.bolum},${a.gonderen},"${a.detay}","${new Date(a.tarih).toLocaleString()}",${a.durum},"${onayTarihStr}"`;
-        }).join("\n");
-        const blob = new Blob(["\uFEFF" + csvHeader + csvBody], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", `TopClean_Arizalar.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
     }
 };
 
@@ -1803,7 +1742,7 @@ const ListeManager = {
             document.getElementById('listSaglikli').value = data.saglikli || "";
             document.getElementById('listDiger').value = data.diger || "";
             document.getElementById('cleaningPeriod').value = data.period || "";
-            
+
             if (data.sonuclar) {
                 this.renderSonuclar(data.sonuclar, data.baskanlar || {}, data.locks || {});
             } else {
@@ -1816,7 +1755,7 @@ const ListeManager = {
         if (typeof lucide !== 'undefined') lucide.createIcons();
     },
 
-    toggleEdit: function() {
+    toggleEdit: function () {
         const area = document.getElementById('listeInputArea');
         area.classList.toggle('d-none');
         this.updateStats();
@@ -1825,7 +1764,7 @@ const ListeManager = {
     updateStats: function () {
         const parseList = (id) => document.getElementById(id).value.split(',').map(s => s.trim()).filter(s => s !== "");
         const tCount = [...parseList('listAlerjik'), ...parseList('listAstim'), ...parseList('listSaglikli'), ...parseList('listDiger')].length;
-        
+
         let capacity = 0;
         let floorStats = [];
         Object.keys(katlar).forEach(kat => {
@@ -1930,10 +1869,10 @@ const ListeManager = {
                 let nameLower = oda.toLowerCase();
                 if (nameLower.includes("wc") || nameLower.includes("lavabo")) type = "lavabo";
                 else if (nameLower.includes("merdiven") || nameLower.includes("donanım") || nameLower.includes("muhasebe")) type = "dar";
-                
+
                 let capacity = type === "lavabo" ? 2 : 1;
                 let assigned = [];
-                for(let i=0; i<capacity; i++) {
+                for (let i = 0; i < capacity; i++) {
                     const lockId = `${kat}-${oda}-${i}`;
                     if (locks[lockId]) assigned[i] = locks[lockId];
                 }
@@ -1948,7 +1887,7 @@ const ListeManager = {
         const fill = (pool, condition) => {
             rooms.forEach(r => {
                 if (condition(r)) {
-                    for(let i=0; i<r.capacity; i++) {
+                    for (let i = 0; i < r.capacity; i++) {
                         if (!r.assigned[i] && pool.length > 0) {
                             r.assigned[i] = pool.shift();
                         }
@@ -2099,7 +2038,7 @@ const ListeManager = {
         const period = document.getElementById('cleaningPeriod').value;
         const posterPeriodEl = document.getElementById('posterPeriod');
         if (posterPeriodEl) posterPeriodEl.innerText = period || new Date().toLocaleDateString();
-        
+
         area.classList.add('is-exporting');
         Swal.fire({ title: 'PDF Hazırlanıyor...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
 
@@ -2112,7 +2051,7 @@ const ListeManager = {
 
         doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
         doc.save(`TopClean_Liste_${period ? period.replace(/\s+/g, '_') : 'Guncel'}.pdf`);
-        
+
         area.classList.remove('is-exporting');
         Swal.close();
     },
@@ -2141,12 +2080,12 @@ const ListeManager = {
 
 // ---------- STOK (INVENTORY) MANAGER ----------
 const InventoryManager = {
-    ac: function() {
+    ac: function () {
         showPanel('stokPanel');
         this.render();
     },
 
-    kapat: function() {
+    kapat: function () {
         if (currentUser.rol === 'idareci') {
             showPanel('idarecPanel');
         } else {
@@ -2160,11 +2099,11 @@ const InventoryManager = {
 
         const searchInput = document.getElementById('stokSearchInput');
         const search = searchInput ? searchInput.value.toLowerCase() : "";
-        
+
         let items = [];
         try {
             items = Array.isArray(cachedInventory) ? cachedInventory : Object.values(cachedInventory || {});
-        } catch(e) { items = []; }
+        } catch (e) { items = []; }
 
         if (search) {
             items = items.filter(i => i && i.name && i.name.toLowerCase().includes(search));
@@ -2228,7 +2167,7 @@ const InventoryManager = {
     },
 
     showAddProductForm: async function () {
-        const isEligible = (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) || currentUser.rol === 'idareci'; 
+        const isEligible = (currentUser.rol === 'gorevli' && (currentUser.kat === 'Ara Kat' || currentUser.kat === '2. Kat')) || currentUser.rol === 'idareci';
         if (!isEligible) {
             return Swal.fire({ icon: 'error', title: 'Yetki Hatası', text: 'Ürün tanımlama yetkisi Depo Sorumlusuna (Ara Kat) veya İdarecilere aittir.' });
         }
