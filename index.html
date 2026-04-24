@@ -35,57 +35,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <!-- Firebase SDKs -->
-    <style>
-        /* v3.0.6 NUCLEAR VISIBILITY - Dış CSS'e bağımlılığı öldürür */
-        :root {
-            --tc-bg: #030807;
-            --tc-emerald: #10b981;
-            --tc-glass: rgba(255, 255, 255, 0.03);
-            --tc-border: rgba(255, 255, 255, 0.1);
-        }
-        body, html { background-color: var(--tc-bg) !important; color: white !important; }
-        #mainContainer {
-            display: flex !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-            min-height: 100vh !important;
-            z-index: 100 !important;
-            background: var(--tc-bg) !important;
-        }
-        #idarecPanel, #stokPanel, #gorevliPanel, #adminPanel {
-            width: 100% !important;
-            max-width: 1200px !important;
-            margin: 0 auto !important;
-            display: none; /* JS ile açılır */
-        }
-        .view-panel.active {
-            display: flex !important;
-            flex-direction: column !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-        .glass-card {
-            background: var(--tc-glass) !important;
-            border: 1px solid var(--tc-border) !important;
-            backdrop-filter: blur(10px) !important;
-            border-radius: 20px !important;
-        }
-        .text-emerald { color: var(--tc-emerald) !important; }
-        .bg-emerald { background-color: var(--tc-emerald) !important; }
-        .idarec-tab {
-            background: rgba(255,255,255,0.05) !important;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            color: #94a3b8 !important;
-            transition: 0.3s !important;
-        }
-        .idarec-tab.active {
-            background: var(--tc-emerald) !important;
-            color: white !important;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3) !important;
-        }
-        /* Gizli Logo Temizliği */
-        .side-branding { opacity: 0.05 !important; pointer-events: none !important; }
-    </style>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
