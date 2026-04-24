@@ -1,4 +1,5 @@
-const CACHE_NAME = 'topclean-cache-v3-0-3';
+// TopClean v4.0 Service Worker — Stale-While-Revalidate
+const CACHE_NAME = 'topclean-cache-v4';
 const ASSETS = [
     './',
     './index.html',
@@ -8,37 +9,54 @@ const ASSETS = [
     './manifest.json'
 ];
 
-// Install Event
+// Install: Cache tüm varlıkları
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            return cache.addAll(ASSETS);
-        })
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
     );
 });
 
-// Activate Event
+// Activate: Eski cache'leri temizle
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((keys) => {
-            return Promise.all(
-                keys.map((key) => {
-                    if (key !== CACHE_NAME) {
-                        console.log('Cleaning old cache:', key);
-                        return caches.delete(key);
-                    }
-                })
-            );
-        }).then(() => self.clients.claim())
+        caches.keys().then((keys) =>
+            Promise.all(keys.map((key) => {
+                if (key !== CACHE_NAME) {
+                    console.log('[SW] Eski cache silindi:', key);
+                    return caches.delete(key);
+                }
+            }))
+        ).then(() => self.clients.claim())
     );
 });
 
-// Fetch Event - Network First for critical assets to bypass stale SW
+// Fetch: Stale-While-Revalidate stratejisi
+// Önce cache'den hızlıca göster, arka planda ağdan güncelle
 self.addEventListener('fetch', (event) => {
+    // Sadece GET isteklerini cache'le
+    if (event.request.method !== 'GET') return;
+
+    // Firebase API isteklerini cache'leme
+    if (event.request.url.includes('firebaseio.com') ||
+        event.request.url.includes('googleapis.com')) {
+        return event.respondWith(fetch(event.request));
+    }
+
     event.respondWith(
-        fetch(event.request).catch(() => {
-            return caches.match(event.request);
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.match(event.request).then((cachedResponse) => {
+                const fetchPromise = fetch(event.request).then((networkResponse) => {
+                    // Başarılı ağ yanıtını cache'e yaz
+                    if (networkResponse && networkResponse.status === 200) {
+                        cache.put(event.request, networkResponse.clone());
+                    }
+                    return networkResponse;
+                }).catch(() => null);
+
+                // Cache varsa hemen döndür, yoksa ağı bekle
+                return cachedResponse || fetchPromise;
+            });
         })
     );
 });
