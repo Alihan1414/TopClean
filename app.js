@@ -1446,7 +1446,15 @@ const IdarecManager = {
 
             if (typeof lucide !== 'undefined') lucide.createIcons();
         } catch (e) {
-            console.error("IdarecManager.load Error:", e);
+            console.error("LOAD HATASI:", e);
+            const panel = document.getElementById("idarecPanel");
+            if (panel) {
+                // Sadece en üstte küçük bir uyarı gösterelim ki bütün sayfa silinmesin
+                const errDiv = document.createElement('div');
+                errDiv.className = 'alert alert-danger m-3';
+                errDiv.innerHTML = '<strong>Hata:</strong> Panel yüklenirken bir sorun oluştu. (' + e.message + ')';
+                panel.prepend(errDiv);
+            }
         }
     },
 
