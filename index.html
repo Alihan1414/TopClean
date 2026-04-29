@@ -261,10 +261,10 @@
                         </div>
                         
                         <div class="mt-auto pb-4">
-                            <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="AdminManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
+                            <button class="btn btn-emerald-outline fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill mb-2" onclick="IdarecManager.exportCSV()" style="font-size: 0.8rem; height: 44px;">
                                 <i data-lucide="download" size="14"></i> EXCEL RAPORU İNDİR
                             </button>
-                            <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="AdminManager.showArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
+                            <button class="btn btn-warning fw-bold w-100 d-flex align-items-center justify-content-center gap-2 rounded-pill" onclick="IdarecManager.loadArizalar()" style="font-size: 0.8rem; height: 44px; color: #1e1e1e;">
                                 <i data-lucide="wrench" size="14"></i> BEKLEYEN ARIZALAR (<span id="adminArizaCount">0</span>)
                             </button>
                         </div>
@@ -338,140 +338,242 @@
 
                 </div>
 
-            <!-- 5. İDAREC PANELİ (REMASTERED v4.0) -->
-            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch">
-                <div class="w-100" style="max-width: 1000px; margin: 0 auto; padding: 1rem;">
+            <!-- 5. İDAREC PANELİ (PREMIUM REMASTERED v5.0) -->
+            <div id="idarecPanel" class="view-panel w-100 flex-column align-items-stretch animate-fade-in">
+                <div class="w-100" style="max-width: 1200px; margin: 0 auto; padding: 2rem 1rem;">
                     
-                    <!-- Premium Header & Stats -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-12 col-md-4">
-                            <div class="glass-card p-3 d-flex align-items-center gap-3" style="border-left: 4px solid var(--accent-emerald);">
-                                <div class="rounded-circle bg-emerald bg-opacity-10 p-3 text-emerald">
-                                    <i data-lucide="building-2"></i>
+                    <!-- Hero Header Section -->
+                    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 gap-3">
+                        <div>
+                            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-3" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+                                <span class="pulse-emerald rounded-circle" style="width: 8px; height: 8px; background: #10b981;"></span>
+                                <span class="small fw-bold text-emerald tracking-wide">YÖNETİM MERKEZİ</span>
+                            </div>
+                            <h2 class="fw-black text-white m-0" style="font-size: 2.5rem; letter-spacing: -1px;">Sistem <span class="text-emerald">İzleme</span></h2>
+                        </div>
+                        <div class="glass-card px-4 py-2 d-flex align-items-center gap-3 rounded-pill">
+                            <i data-lucide="calendar" class="text-emerald" size="20"></i>
+                            <input type="date" id="idarecDateSelector" class="bg-transparent border-0 text-white fw-bold" style="outline: none; cursor: pointer;">
+                        </div>
+                    </div>
+
+                    <!-- Premium Stats Row -->
+                    <div class="row g-4 mb-5">
+                        <div class="col-12 col-lg-4">
+                            <div class="glass-card p-4 d-flex align-items-center justify-content-between h-100 position-relative overflow-hidden admin-card-hover" style="border-top: 4px solid var(--accent-emerald);">
+                                <div class="position-relative z-1">
+                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-2 tracking-wide">Genel Hijyen Puanı</h6>
+                                    <div class="d-flex align-items-baseline gap-2">
+                                        <h2 id="genelHijyenText" class="fw-black m-0 text-white" style="font-size: 3rem;">%0</h2>
+                                        <i data-lucide="trending-up" class="text-emerald" size="24"></i>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-1">Bina Durumu</h6>
-                                    <h4 id="genelHijyenText" class="fw-bold m-0 text-white">%0</h4>
+                                <div class="position-absolute end-0 top-50 translate-middle-y me-4 opacity-10">
+                                    <i data-lucide="sparkles" size="100" class="text-emerald"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <div class="glass-card p-3 d-flex align-items-center gap-3" style="border-left: 4px solid #f59e0b;">
-                                <div class="rounded-circle bg-warning bg-opacity-10 p-3 text-warning">
-                                    <i data-lucide="tool"></i>
+                        <div class="col-6 col-lg-4">
+                            <div class="glass-card p-4 d-flex align-items-center justify-content-between h-100 position-relative overflow-hidden admin-card-hover" style="border-top: 4px solid #f59e0b;">
+                                <div class="position-relative z-1">
+                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-2 tracking-wide">Bekleyen Arıza</h6>
+                                    <h2 id="countBekleyenAriza" class="fw-black m-0 text-white" style="font-size: 3rem;">0</h2>
                                 </div>
-                                <div>
-                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-1">Bekleyen Arıza</h6>
-                                    <h4 id="countBekleyenAriza" class="fw-bold m-0 text-white">0</h4>
+                                <div class="position-absolute end-0 top-50 translate-middle-y me-4 opacity-10">
+                                    <i data-lucide="alert-triangle" size="80" class="text-warning"></i>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-6 col-md-4">
-                            <div class="glass-card p-3 d-flex align-items-center gap-3" style="border-left: 4px solid #3b82f6;">
-                                <div class="rounded-circle bg-info bg-opacity-10 p-3 text-info">
-                                    <i data-lucide="users"></i>
+                        <div class="col-6 col-lg-4">
+                            <div class="glass-card p-4 d-flex align-items-center justify-content-between h-100 position-relative overflow-hidden admin-card-hover" style="border-top: 4px solid #3b82f6;">
+                                <div class="position-relative z-1">
+                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-2 tracking-wide">Aktif Personel</h6>
+                                    <h2 id="countAktifPersonel" class="fw-black m-0 text-white" style="font-size: 3rem;">0</h2>
                                 </div>
-                                <div>
-                                    <h6 class="x-small text-muted text-uppercase fw-bold mb-1">Aktif Personel</h6>
-                                    <h4 id="countAktifPersonel" class="fw-bold m-0 text-white">0</h4>
+                                <div class="position-absolute end-0 top-50 translate-middle-y me-4 opacity-10">
+                                    <i data-lucide="users" size="80" class="text-info"></i>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Modern Navigation Tabs -->
-                    <div class="glass-card p-1 mb-4 d-flex overflow-auto no-scrollbar gap-1" style="border-radius: 50px;">
-                        <button class="idarec-tab active flex-fill py-2 px-3 rounded-pill border-0 fw-bold" onclick="IdarecManager.switchTab('durum', this)">
-                            <i data-lucide="layout-dashboard" size="16" class="me-1"></i> Durum
+                    <!-- Sleek Navigation Tabs -->
+                    <div class="d-flex overflow-auto no-scrollbar gap-2 mb-5 pb-2" style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <button class="idarec-tab active btn text-white px-4 py-3 fw-bold d-flex align-items-center gap-2 position-relative" onclick="IdarecManager.switchTab('durum', this)">
+                            <i data-lucide="layout-dashboard" size="18"></i> Bina Matrisi
+                            <div class="tab-indicator position-absolute bottom-0 start-0 w-100 bg-emerald" style="height: 3px; border-radius: 3px 3px 0 0; opacity: 1;"></div>
                         </button>
-                        <button class="idarec-tab flex-fill py-2 px-3 rounded-pill border-0 fw-bold" onclick="IdarecManager.switchTab('muf', this)">
-                            <i data-lucide="shield-check" size="16" class="me-1"></i> Müfettiş
+                        <button class="idarec-tab btn text-muted px-4 py-3 fw-bold d-flex align-items-center gap-2 position-relative" onclick="IdarecManager.switchTab('muf', this)">
+                            <i data-lucide="shield-check" size="18"></i> Müfettişler
+                            <div class="tab-indicator position-absolute bottom-0 start-0 w-100 bg-emerald" style="height: 3px; border-radius: 3px 3px 0 0; opacity: 0;"></div>
                         </button>
-                        <button class="idarec-tab flex-fill py-2 px-3 rounded-pill border-0 fw-bold" onclick="IdarecManager.switchTab('personel', this)">
-                            <i data-lucide="user-cog" size="16" class="me-1"></i> Personel
+                        <button class="idarec-tab btn text-muted px-4 py-3 fw-bold d-flex align-items-center gap-2 position-relative" onclick="IdarecManager.switchTab('personel', this)">
+                            <i data-lucide="users-round" size="18"></i> Personel
+                            <div class="tab-indicator position-absolute bottom-0 start-0 w-100 bg-emerald" style="height: 3px; border-radius: 3px 3px 0 0; opacity: 0;"></div>
                         </button>
-                        <button class="idarec-tab flex-fill py-2 px-3 rounded-pill border-0 fw-bold" onclick="IdarecManager.switchTab('ari', this)">
-                            <i data-lucide="wrench" size="16" class="me-1"></i> Arıza
+                        <button class="idarec-tab btn text-muted px-4 py-3 fw-bold d-flex align-items-center gap-2 position-relative" onclick="IdarecManager.switchTab('ari', this)">
+                            <i data-lucide="wrench" size="18"></i> Arıza Takip
+                            <div class="tab-indicator position-absolute bottom-0 start-0 w-100 bg-emerald" style="height: 3px; border-radius: 3px 3px 0 0; opacity: 0;"></div>
                         </button>
-                        <button class="idarec-tab flex-fill py-2 px-3 rounded-pill border-0 fw-bold" onclick="IdarecManager.switchTab('stok', this)">
-                            <i data-lucide="package" size="16" class="me-1"></i> Stok
+                        <button class="idarec-tab btn text-muted px-4 py-3 fw-bold d-flex align-items-center gap-2 position-relative" onclick="IdarecManager.switchTab('stok', this)">
+                            <i data-lucide="package" size="18"></i> Envanter
+                            <div class="tab-indicator position-absolute bottom-0 start-0 w-100 bg-emerald" style="height: 3px; border-radius: 3px 3px 0 0; opacity: 0;"></div>
                         </button>
                     </div>
 
-                    <!-- TAB 1: DASHBOARD / BİNA DURUMU -->
-                    <div id="idarec-tab-durum" class="idarec-tab-content">
-                        <div class="d-flex flex-column flex-md-row gap-3 mb-4">
-                            <div class="glass-card p-3 flex-grow-1 d-flex align-items-center gap-2">
-                                <i data-lucide="calendar" class="text-emerald"></i>
-                                <input type="date" id="idarecDateSelector" class="bg-transparent border-0 text-white fw-bold w-100" style="outline: none;">
-                            </div>
-                            <button class="btn btn-emerald-lg px-4" onclick="IdarecManager.exportCSV()">
-                                <i data-lucide="download" size="18" class="me-2"></i> CSV İNDİR
+                    <!-- TAB 1: BİNA MATRİSİ -->
+                    <div id="idarec-tab-durum" class="idarec-tab-content animate-fade-in">
+                        <div class="d-flex justify-content-end mb-4">
+                            <button class="btn btn-outline-success rounded-pill px-4 d-flex align-items-center gap-2 fw-bold shadow-sm" onclick="IdarecManager.exportCSV()">
+                                <i data-lucide="file-spreadsheet" size="18"></i> Rapor İndir (CSV)
                             </button>
                         </div>
-
-                        <div class="row g-4">
+                        
+                        <div class="row g-5">
                             <div class="col-12 col-xl-8">
-                                <div class="glass-card p-4 h-100">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h5 class="fw-bold m-0 text-white">Bina Matrisi</h5>
-                                        <div class="d-flex gap-1" id="katFilterButtons">
-                                            <!-- JS ile doldurulacak -->
+                                <div class="glass-card p-4 p-md-5 h-100" style="border: 1px solid rgba(255,255,255,0.05); box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);">
+                                    <h4 class="fw-bold text-white mb-4"><i data-lucide="grid" class="text-emerald me-2" size="24"></i> Canlı Durum Haritası</h4>
+                                    <div id="idarecBinaMatrisi" class="d-flex flex-column gap-4">
+                                        <!-- JS ile dolacak -->
+                                        <div class="text-center p-5 text-muted">Matris Yükleniyor...</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Gurur Tablosu (Leaderboard) -->
+                            <div class="col-12 col-xl-4">
+                                <div class="glass-card p-4 p-md-5 h-100 position-relative overflow-hidden" style="background: linear-gradient(180deg, rgba(20,20,20,0.8) 0%, rgba(10,10,10,0.9) 100%); border: 1px solid rgba(245, 158, 11, 0.2);">
+                                    <div class="position-absolute top-0 end-0 p-3 opacity-25">
+                                        <i data-lucide="award" size="120" class="text-warning"></i>
+                                    </div>
+                                    <div class="position-relative z-1">
+                                        <div class="d-flex align-items-center gap-3 mb-4">
+                                            <div class="p-3 rounded-circle bg-warning bg-opacity-10">
+                                                <i data-lucide="trophy" class="text-warning" size="28"></i>
+                                            </div>
+                                            <h4 class="fw-black text-white m-0 tracking-wide">GURUR<br><span class="text-warning">TABLOSU</span></h4>
+                                        </div>
+                                        
+                                        <div class="d-flex gap-2 mb-5 bg-black bg-opacity-25 p-1 rounded-pill">
+                                            <button class="btn btn-sm flex-fill rounded-pill fw-bold text-white basari-filter active" style="background: rgba(255,255,255,0.1);" onclick="IdarecManager.loadBasari('haftalik', this)">Haftalık</button>
+                                            <button class="btn btn-sm flex-fill rounded-pill fw-bold text-muted basari-filter" onclick="IdarecManager.loadBasari('aylik', this)">Aylık</button>
+                                            <button class="btn btn-sm flex-fill rounded-pill fw-bold text-muted basari-filter" onclick="IdarecManager.loadBasari('donemlik', this)">Dönemlik</button>
+                                        </div>
+                                        
+                                        <div id="gururTablosu" class="d-flex flex-column gap-3 mb-4">
+                                            <!-- JS ile dolacak -->
+                                        </div>
+                                        
+                                        <div class="mt-auto pt-4 border-top border-secondary border-opacity-25">
+                                            <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-emerald bg-opacity-10 border border-emerald border-opacity-25 mb-2">
+                                                <div>
+                                                    <div class="x-small text-emerald fw-bold tracking-wide mb-1">HAFTANIN GÖREVLİSİ</div>
+                                                    <h6 id="basariGorevli" class="text-white fw-bold m-0">-</h6>
+                                                </div>
+                                                <i data-lucide="medal" class="text-emerald" size="24"></i>
+                                            </div>
+                                            <div class="d-flex align-items-center justify-content-between p-3 rounded-4 bg-warning bg-opacity-10 border border-warning border-opacity-25">
+                                                <div>
+                                                    <div class="x-small text-warning fw-bold tracking-wide mb-1">HAFTANIN BAŞKANI</div>
+                                                    <h6 id="basariBaskan" class="text-white fw-bold m-0">-</h6>
+                                                </div>
+                                                <i data-lucide="crown" class="text-warning" size="24"></i>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div id="idarecBinaMatrisi" class="d-flex flex-column align-items-center"></div>
-                                </div>
-                            </div>
-                            <div class="col-12 col-xl-4">
-                                <div class="glass-card p-4 h-100">
-                                    <h5 class="fw-bold mb-4 text-white">🏆 Gurur Tablosu</h5>
-                                    <div id="gururTablosu"></div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- DİĞER TABLAR (Placeholder - Manager tarafında yönetiliyor) -->
-                    <div id="idarec-tab-muf" class="idarec-tab-content d-none">
-                        <div class="glass-card p-4">
-                            <h5 class="fw-bold mb-4">İç Mesul Yönetimi</h5>
-                            <div class="row g-3 mb-4">
-                                <div class="col-12 col-sm-5"><input type="text" id="yeniMufettisAd" class="form-control custom-input" placeholder="Ad Soyad"></div>
-                                <div class="col-12 col-sm-4"><input type="password" id="yeniMufettisSifre" class="form-control custom-input" placeholder="Şifre"></div>
-                                <div class="col-12 col-sm-3"><button class="btn btn-emerald-lg w-100" onclick="IdarecManager.mufettisEkle()">EKLE</button></div>
+                    <!-- TAB 2: MÜFETTİŞLER -->
+                    <div id="idarec-tab-muf" class="idarec-tab-content d-none animate-fade-in">
+                        <div class="glass-card p-5" style="max-width: 800px; margin: 0 auto;">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div class="p-3 rounded-circle bg-info bg-opacity-10"><i data-lucide="shield" class="text-info" size="24"></i></div>
+                                <h4 class="fw-bold text-white m-0">İç Mesul (Müfettiş) Yönetimi</h4>
                             </div>
-                            <div id="mufettisListesi" class="d-flex flex-column gap-2"></div>
-                        </div>
-                    </div>
-
-                    <div id="idarec-tab-personel" class="idarec-tab-content d-none">
-                        <div class="glass-card p-4">
-                            <h5 class="fw-bold mb-4">Personel Yönetimi</h5>
-                            <div class="row g-2 mb-4">
-                                <div class="col-12 col-sm-4"><input type="text" id="yeniPersonelAd" class="form-control custom-input" placeholder="Ad Soyad"></div>
-                                <div class="col-12 col-sm-4"><input type="password" id="yeniPersonelSifre" class="form-control custom-input" placeholder="Şifre"></div>
-                                <div class="col-12 col-sm-4">
-                                    <select id="yeniPersonelKat" class="form-select custom-input">
-                                        <option value="">Kat Seçiniz</option>
-                                        <!-- JS ile dolacak -->
-                                    </select>
+                            
+                            <div class="p-4 rounded-4 bg-black bg-opacity-25 mb-5 border border-secondary border-opacity-25">
+                                <h6 class="fw-bold text-white mb-3">Yeni İç Mesul Kaydı</h6>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-5"><input type="text" id="yeniMufettisAd" class="form-control custom-input py-3" placeholder="Ad Soyad"></div>
+                                    <div class="col-12 col-md-4"><input type="password" id="yeniMufettisSifre" class="form-control custom-input py-3" placeholder="Şifre Belirle"></div>
+                                    <div class="col-12 col-md-3"><button class="btn btn-info w-100 py-3 fw-bold rounded-3 shadow-sm text-white" onclick="IdarecManager.mufettisEkle()">ONAYLA</button></div>
                                 </div>
-                                <div class="col-12"><button class="btn btn-emerald-lg w-100 mt-2" onclick="IdarecManager.personelEkle()">PERSONEL EKLE</button></div>
                             </div>
-                            <div id="personelListesi" class="d-flex flex-column gap-2"></div>
+                            
+                            <h6 class="fw-bold text-muted mb-3 text-uppercase tracking-wide x-small">Aktif İç Mesuller</h6>
+                            <div id="mufettisListesi" class="d-flex flex-column gap-3"></div>
                         </div>
                     </div>
 
-                    <div id="idarec-tab-ari" class="idarec-tab-content d-none">
-                        <div class="glass-card p-4">
-                            <h5 class="fw-bold mb-4">Arıza Takip Paneli</h5>
-                            <div id="idarecArizaListesi" class="row g-3"></div>
+                    <!-- TAB 3: PERSONEL -->
+                    <div id="idarec-tab-personel" class="idarec-tab-content d-none animate-fade-in">
+                        <div class="glass-card p-5" style="max-width: 800px; margin: 0 auto;">
+                            <div class="d-flex align-items-center gap-3 mb-4">
+                                <div class="p-3 rounded-circle bg-emerald bg-opacity-10"><i data-lucide="users-round" class="text-emerald" size="24"></i></div>
+                                <h4 class="fw-bold text-white m-0">Saha Personeli Yönetimi</h4>
+                            </div>
+                            
+                            <div class="p-4 rounded-4 bg-black bg-opacity-25 mb-5 border border-secondary border-opacity-25">
+                                <h6 class="fw-bold text-white mb-3">Yeni Personel Ataması</h6>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-4"><input type="text" id="yeniPersonelAd" class="form-control custom-input py-3" placeholder="Ad Soyad"></div>
+                                    <div class="col-12 col-md-4"><input type="password" id="yeniPersonelSifre" class="form-control custom-input py-3" placeholder="Şifre Belirle"></div>
+                                    <div class="col-12 col-md-4">
+                                        <select id="yeniPersonelKat" class="form-select custom-input py-3">
+                                            <option value="">Görev Yeri Seç</option>
+                                            <option>Bodrum Kat</option>
+                                            <option>Zemin Kat</option>
+                                            <option>Akademik Kat</option>
+                                            <option>Ara Kat</option>
+                                            <option>Yatakhane Katı</option>
+                                            <option>Sosyal Alan Katı</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mt-3"><button class="btn btn-emerald-lg w-100 py-3 rounded-3 shadow-lg" onclick="IdarecManager.personelEkle()"><i data-lucide="plus-circle" size="18" class="me-2"></i> PERSONELİ KAYDET VE ATA</button></div>
+                                </div>
+                            </div>
+                            
+                            <h6 class="fw-bold text-muted mb-3 text-uppercase tracking-wide x-small">Görevdeki Personel Listesi</h6>
+                            <div id="personelListesi" class="d-flex flex-column gap-3"></div>
                         </div>
                     </div>
 
-                    <div id="idarec-tab-stok" class="idarec-tab-content d-none">
-                        <div id="stokYonetimIcerik"></div>
+                    <!-- TAB 4: ARIZALAR -->
+                    <div id="idarec-tab-ari" class="idarec-tab-content d-none animate-fade-in">
+                        <div class="glass-card p-5">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="p-3 rounded-circle bg-warning bg-opacity-10"><i data-lucide="wrench" class="text-warning" size="24"></i></div>
+                                    <h4 class="fw-bold text-white m-0">Teknik Arıza Merkezi</h4>
+                                </div>
+                                <div class="d-flex gap-2 p-1 bg-black bg-opacity-25 rounded-pill">
+                                    <button class="btn btn-sm rounded-pill px-4 py-2 fw-bold ariza-filter active text-white" style="background: rgba(16,185,129,0.2);" onclick="IdarecManager.filterArizalar('hepsi', this)">Tümü</button>
+                                    <button class="btn btn-sm rounded-pill px-4 py-2 fw-bold text-muted ariza-filter" onclick="IdarecManager.filterArizalar('bekliyor', this)">Bekleyen</button>
+                                    <button class="btn btn-sm rounded-pill px-4 py-2 fw-bold text-muted ariza-filter" onclick="IdarecManager.filterArizalar('onarildi', this)">Çözülen</button>
+                                </div>
+                            </div>
+                            <div id="idarecArizaList" class="row g-4"></div>
+                        </div>
                     </div>
+
+                    <!-- TAB 5: STOK -->
+                    <div id="idarec-tab-stok" class="idarec-tab-content d-none animate-fade-in">
+                        <div class="glass-card p-5 text-center mt-4 border border-emerald border-opacity-25" style="max-width: 600px; margin: 0 auto;">
+                            <div class="mb-4 d-inline-block p-4 rounded-circle bg-emerald bg-opacity-10 pulse-emerald-light">
+                                <i data-lucide="boxes" size="64" class="text-emerald"></i>
+                            </div>
+                            <h3 class="text-white fw-black mb-3">Envanter ve Stok Yönetimi</h3>
+                            <p class="text-muted mb-5 text-sm lh-lg">Sarf malzemelerin takibini yapmak, kritik stok uyarılarını incelemek ve ürün hareketlerini yönetmek için Envanter Paneline geçiş yapın.</p>
+                            <button class="btn btn-emerald-lg px-5 py-4 rounded-pill fw-bold shadow-lg d-inline-flex align-items-center gap-2" onclick="InventoryManager.ac()">
+                                <span>ENVANTER SİSTEMİNİ AÇ</span>
+                                <i data-lucide="arrow-right" size="20"></i>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
                             
@@ -487,10 +589,8 @@
                                         <button class="btn btn-sm rounded-pill fw-bold flex-grow-1 basari-filter" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid transparent;" onclick="IdarecManager.loadBasari('aylik', this)">Aylık</button>
                                         <button class="btn btn-sm rounded-pill fw-bold flex-grow-1 basari-filter" style="background: rgba(255,255,255,0.1); color: #fff; border: 1px solid transparent;" onclick="IdarecManager.loadBasari('donemlik', this)">Dönemlik</button>
                                     </div>
-                                    <div class="d-flex flex-column gap-1 text-center mt-2 mb-4 bg-glass-dark p-3 rounded-4" style="background: rgba(0,0,0,0.2);">
-                                        <div class="small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;">EN BAŞARILI KAT</div>
-                                        <h2 id="basariKatIsim" class="fw-black text-warning m-0">-</h2>
-                                        <div id="basariPuan" class="small text-emerald fw-bold mt-1"></div>
+                                    <div id="gururTablosu" class="d-flex flex-column gap-1 text-center mt-2 mb-4 bg-glass-dark p-3 rounded-4" style="background: rgba(0,0,0,0.2);">
+                                        <!-- JS ile dolacak -->
                                     </div>
                                     <div class="d-flex flex-column gap-1 text-center mt-2">
                                         <div class="x-small text-muted text-uppercase fw-bold" style="letter-spacing: 1px;"><i data-lucide="user" size="12"></i> KAT GÖREVLİSİ</div>
@@ -750,37 +850,24 @@
         </main>
     </div>
 
-    <!-- INSPECTOR DETAIL MODAL -->
-    <div class="modal fade" id="adminDetailModal" tabindex="-1" aria-hidden="true">
+    <!-- REPORT DETAIL MODAL -->
+    <div class="modal fade" id="reportDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content glass-card border-0 shadow-lg">
                 <div class="modal-header border-bottom-0 pb-0">
-                    <h5 class="modal-title fw-bold text-white" id="modalKatBolum">Detaylı İnceleme</h5>
+                    <h5 class="modal-title fw-bold text-white">Rapor Detayı</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body py-4">
-                    <div id="modalFotoContainer" class="text-center mb-4 d-none">
-                        <img id="modalFoto" src="" class="img-fluid rounded-4 border shadow-lg" style="max-height: 280px; border-color: var(--glass-border) !important;">
-                    </div>
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-dim small text-uppercase mb-3" style="letter-spacing: 1px;">Kriter Analizi</h6>
-                        <div id="modalKriterListesi" class="d-flex flex-column gap-2"></div>
-                    </div>
-                    <div class="mb-3">
-                        <h6 class="fw-bold text-dim small text-uppercase mb-2" style="letter-spacing: 1px;">Denetçi Notu</h6>
-                        <textarea id="modalAdminNot" class="form-control custom-input" rows="3" placeholder="Gözlemlerinizi buraya not edin..."></textarea>
-                    </div>
-                </div>
-                <div class="modal-footer border-top-0 pt-0 gap-2">
-                    <button type="button" class="btn btn-outline-danger flex-grow-1 py-3 fw-bold rounded-pill" onclick="AdminManager.processReport('reddedildi')" style="border-radius: 50px !important;">REDDET</button>
-                    <button type="button" class="btn btn-emerald-lg flex-grow-1 py-3 fw-bold" onclick="AdminManager.processReport('onaylandi')">ONAYLA</button>
+                <div id="reportDetailBody" class="modal-body py-4">
+                    <!-- JS ile dolacak -->
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="app.js?v=4.0"></script>
+    <script src="managers.js?v=4.8"></script>
+    <script src="app.js?v=4.8"></script>
 
     <!-- PWA Service Worker + Offline Detection -->
     <script>
