@@ -1,5 +1,6 @@
-// TopClean v4.0 Service Worker — Stale-While-Revalidate
-const CACHE_NAME = 'topclean-cache-v4';
+// TopClean v5.0 Service Worker — Stale-While-Revalidate (Remastered)
+const CACHE_NAME = 'topclean-cache-v5.0';
+const DYNAMIC_CACHE = 'topclean-dynamic-v5.0';
 const ASSETS = [
     './',
     './index.html',
