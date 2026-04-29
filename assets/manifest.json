@@ -2,7 +2,7 @@
   "name": "TopClean Denetim",
   "short_name": "TopClean",
   "description": "Profesyonel Temizlik Denetim ve Stok Yönetim Sistemi",
-  "start_url": "./index.html",
+  "start_url": "https://alperenoz.github.io/topclean_web/",
   "display": "standalone",
   "background_color": "#030807",
   "theme_color": "#10b981",
