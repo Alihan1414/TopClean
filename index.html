@@ -132,21 +132,21 @@
                         <h4 class="fw-black mb-1 text-white" style="letter-spacing: 5px; text-shadow: 0 0 15px var(--cyber-neon-glow);">SİSTEME GİRİŞ</h4>
                     </div>
                     
-                    <form id="loginForm" class="d-flex flex-column gap-3 position-relative text-start" style="z-index: 20;">
+                    <form id="loginForm" class="d-flex flex-column gap-3 position-relative text-start" style="z-index: 50;">
                         <!-- Kullanıcı Adı -->
                         <div class="mb-2">
                             <div class="position-relative">
-                                <i data-lucide="user" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-emerald" size="18"></i>
-                                <input type="text" id="userSelect" class="form-control cyber-input py-3 ps-5" placeholder="Kullanıcı Adı veya E-posta" required>
+                                <i data-lucide="user" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-emerald" style="z-index: 60;" size="18"></i>
+                                <input type="text" id="userId" class="form-control cyber-input py-3 ps-5" placeholder="Kullanıcı Adı veya E-posta" required style="z-index: 55; position: relative;">
                             </div>
                         </div>
 
                         <!-- Şifre -->
                         <div class="mb-2">
                             <div class="position-relative">
-                                <i data-lucide="lock" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-emerald" size="18"></i>
-                                <input type="password" id="passInput" class="form-control cyber-input py-3 ps-5 pe-5" placeholder="Şifre" required>
-                                <i data-lucide="eye" class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted cursor-pointer" size="18"></i>
+                                <i data-lucide="lock" class="position-absolute top-50 start-0 translate-middle-y ms-3 text-emerald" style="z-index: 60;" size="18"></i>
+                                <input type="password" id="userPass" class="form-control cyber-input py-3 ps-5 pe-5" placeholder="Şifre" required style="z-index: 55; position: relative;">
+                                <i data-lucide="eye" class="position-absolute top-50 end-0 translate-middle-y me-3 text-muted cursor-pointer" style="z-index: 60;" size="18"></i>
                             </div>
                         </div>
 
@@ -158,7 +158,7 @@
                             <a href="#" class="x-small text-emerald text-decoration-none">Şifremi unuttum?</a>
                         </div>
 
-                        <button type="submit" class="btn cyber-button w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                        <button type="submit" class="btn cyber-button w-100 py-3 d-flex align-items-center justify-content-center gap-2" style="z-index: 60; position: relative;">
                             GİRİŞ YAP
                         </button>
 
@@ -167,7 +167,7 @@
                             <span class="position-absolute top-50 start-50 translate-middle px-3 bg-dark x-small text-muted" style="background: #010403 !important;">VEYA</span>
                         </div>
 
-                        <button type="button" class="btn btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2 rounded-pill" style="border: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem;">
+                        <button type="button" class="btn btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2 rounded-pill" style="border: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; z-index: 60; position: relative;">
                             <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> Google ile giriş yap
                         </button>
                     </form>
@@ -193,7 +193,7 @@
 
                 <div id="reddedilenUyari" class="alert alert-danger d-none d-flex align-items-center gap-3 p-3 rounded-3" style="background-color: rgba(225, 29, 72, 0.1); border-color: var(--danger-color);">
                     <i data-lucide="alert-circle" class="text-danger" size="24"></i>
-                    <div class="fw-bold flex-grow-1" style="color: #fca5a5;">ÄŸÅ¸Å¡Â¨ Ã„Â°ÃƒÂ§in reddedilen <span id="reddedilenSayi"></span> bÃƒÂ¶lÃƒÂ¼m var Ã¢â‚¬â€ mÃƒÂ¼fettiÃ…Å¸ notlarÃ„Â±nÃ„Â± inceleyin!</div>
+                    <div class="fw-bold flex-grow-1" style="color: #fca5a5;">Bugün için reddedilen <span id="reddedilenSayi"></span> bölüm var — müfettiş notlarını inceleyin!</div>
                 </div>
 
                 <div id="onarilanArizaUyari" class="alert alert-success d-none flex-column gap-2 p-3 rounded-3 mb-3 w-100" style="background-color: rgba(16, 185, 129, 0.1); border: 1px solid var(--success-color);">
@@ -206,7 +206,7 @@
                 
                 <div class="d-flex gap-2 mb-4">
                     <button class="btn btn-warning flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="showArizaForm()" style="background-color: #f59e0b; color: #1e1e1e; border: none; font-size: 1.1rem;">
-                        <i data-lucide="wrench" size="22"></i> ARIZA BÃ„Â°LDÃ„Â°R
+                        <i data-lucide="wrench" size="22"></i> ARIZA BİLDİR
                     </button>
                     <button class="btn btn-info flex-grow-1 py-3 fw-bold rounded-pill d-flex align-items-center justify-content-center gap-2 shadow-lg" onclick="QRManager.start()" style="font-size: 1.1rem; background: #3b82f6; border: none;">
                         <i data-lucide="qr-code" size="22"></i> HIZLI QR TARA
@@ -586,7 +586,7 @@
                         <div class="glass-card p-5" style="max-width: 800px; margin: 0 auto;">
                             <div class="d-flex align-items-center gap-3 mb-4">
                                 <div class="p-3 rounded-circle bg-info bg-opacity-10"><i data-lucide="shield" class="text-info" size="24"></i></div>
-                                <h4 class="fw-bold text-white m-0">Ã„Â°ÃƒÂ§ Mesul (MÃƒÂ¼fettiÃ…Å¸) Yönetimi</h4>
+                                <h4 class="fw-bold text-white m-0">İç Mesul (Müfettiş) Yönetimi</h4>
                             </div>
                             
                             <div class="p-4 rounded-4 bg-black bg-opacity-25 mb-5 border border-secondary border-opacity-25">
