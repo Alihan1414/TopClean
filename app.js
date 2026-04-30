@@ -179,11 +179,19 @@ function updateSyncStatus(status) {
 function showPanel(id) {
     document.querySelectorAll('.view-panel').forEach(p => p.classList.add('d-none'));
     const target = document.getElementById(id);
+    const header = document.getElementById('app-header');
+
     if (target) {
         target.classList.remove('d-none');
         target.classList.add('d-flex');
         
-        // Add a subtle transition/skeleton effect if it's a main panel
+        // Header visibility logic
+        if (id === 'loginPanel') {
+            if (header) header.classList.add('d-none');
+        } else {
+            if (header && currentUser) header.classList.remove('d-none');
+        }
+
         if (id === 'idarecPanel' || id === 'gorevliPanel') {
             target.style.opacity = '0';
             setTimeout(() => { target.style.opacity = '1'; target.style.transition = 'opacity 0.3s ease'; }, 50);
@@ -193,19 +201,19 @@ function showPanel(id) {
 
 function handleLogin(e) {
     if (e) e.preventDefault();
-    const uName = document.getElementById('userSelect')?.value?.trim();
-    const uPass = document.getElementById('passInput')?.value;
+    const uName = document.getElementById('userId')?.value?.trim();
+    const uPass = document.getElementById('userPass')?.value;
 
     if (!uName || !uPass) {
-        alert("Lütfen tüm alanları doldurun.");
+        Swal.fire({ icon: 'warning', title: 'Hata', text: 'Lütfen tüm alanları doldurun.', background: 'var(--bg-main)', color: '#fff' });
         return;
     }
 
-    if (uName.toLowerCase() === "liste" || uName === "Liste Dağılımı") {
+    // "liste" shortcut
+    if (uName.toLowerCase() === "liste") {
         currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
         _saveSession(currentUser);
-        if (typeof ListeManager !== 'undefined') ListeManager.load();
-        showPanel("listePanel");
+        _routeUser();
         return;
     }
 
@@ -213,9 +221,10 @@ function handleLogin(e) {
     if (un) {
         currentUser = { name: un.name, rol: un.rol, kat: un.kat, depo: un.depo || false };
         _saveSession(currentUser);
-        loginSuccess();
+        Swal.fire({ icon: 'success', title: 'Başarılı', text: `Hoş geldiniz, ${un.name}`, timer: 1500, showConfirmButton: false });
+        _routeUser();
     } else {
-        alert("Hatalı kullanıcı adı veya şifre! Lütfen tekrar deneyin.");
+        Swal.fire({ icon: 'error', title: 'Hata', text: 'Hatalı kullanıcı adı veya şifre!', background: 'var(--bg-main)', color: '#fff' });
     }
 }
 
@@ -1389,17 +1398,17 @@ const MufettisFocus = {
 // YÖNLENDİRME (Header dahil)
 function _routeUser() {
     const header = document.getElementById("app-header");
+    const badge = document.getElementById("headerUserBadge"); 
+    const nameEl = document.getElementById("headerName");
+
     if (!currentUser) { 
         if(header) header.classList.add("d-none");
+        if(badge) badge.classList.add("d-none");
         showPanel("loginPanel"); 
         return; 
     }
     
     if(header) header.classList.remove("d-none");
-    
-    const badge = document.getElementById("headerUserBadge"); 
-    const nameEl = document.getElementById("headerName");
-    
     if(badge) { badge.classList.remove("d-none"); badge.classList.add("d-flex"); } 
     if(nameEl) nameEl.innerText = currentUser.name;
     
@@ -1426,19 +1435,30 @@ function _routeUser() {
 
 // TEMA TOGGLE
 document.addEventListener("DOMContentLoaded", () => {
-    const saved = localStorage.getItem("tc_theme") || "dark";
-    document.documentElement.setAttribute("data-bs-theme", saved);
+    // Theme Init
+    const savedTheme = localStorage.getItem("tc_theme") || "dark";
+    document.documentElement.setAttribute("data-bs-theme", savedTheme);
     
-    function toggleTheme() { 
+    const toggleTheme = () => { 
         const cur = document.documentElement.getAttribute("data-bs-theme"); 
         const nxt = cur === "light" ? "dark" : "light"; 
         document.documentElement.setAttribute("data-bs-theme", nxt); 
         localStorage.setItem("tc_theme", nxt); 
+    };
+    
+    document.getElementById("themeToggleBtn")?.addEventListener("click", toggleTheme);
+    document.getElementById("themeToggleBtnLogin")?.addEventListener("click", toggleTheme);
+
+    // Login Form
+    document.getElementById('loginForm')?.addEventListener('submit', handleLogin);
+    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+    
+    // Core Init
+    checkSession();
+    if (db) {
+        syncFromCloud();
+        if (typeof ChatManager !== 'undefined') ChatManager.init();
+        if (typeof ActivityManager !== 'undefined') ActivityManager.init();
+        if (typeof VoiceManager !== 'undefined') VoiceManager.init();
     }
-    
-    const t1 = document.getElementById("themeToggleBtn"); 
-    if(t1) t1.addEventListener("click", toggleTheme);
-    
-    const t2 = document.getElementById("themeToggleBtnLogin"); 
-    if(t2) t2.addEventListener("click", toggleTheme);
 });
