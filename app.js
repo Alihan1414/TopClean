@@ -193,10 +193,15 @@ function showPanel(id) {
 
 function handleLogin(e) {
     if (e) e.preventDefault();
-    const uName = document.getElementById('userSelect')?.value;
+    const uName = document.getElementById('userSelect')?.value?.trim();
     const uPass = document.getElementById('passInput')?.value;
 
-    if (uName === "Liste Dağılımı") {
+    if (!uName || !uPass) {
+        alert("Lütfen tüm alanları doldurun.");
+        return;
+    }
+
+    if (uName.toLowerCase() === "liste" || uName === "Liste Dağılımı") {
         currentUser = { name: "Liste Dağılımı", rol: "liste", kat: "" };
         _saveSession(currentUser);
         if (typeof ListeManager !== 'undefined') ListeManager.load();
@@ -204,13 +209,13 @@ function handleLogin(e) {
         return;
     }
 
-    const un = usersData.find(u => u.name === uName && u.pass === uPass);
+    const un = usersData.find(u => u.name.toLowerCase() === uName.toLowerCase() && u.pass === uPass);
     if (un) {
         currentUser = { name: un.name, rol: un.rol, kat: un.kat, depo: un.depo || false };
         _saveSession(currentUser);
         loginSuccess();
     } else {
-        alert("Hatalı şifre! Lütfen tekrar deneyin.");
+        alert("Hatalı kullanıcı adı veya şifre! Lütfen tekrar deneyin.");
     }
 }
 
@@ -240,24 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutBtn = document.getElementById('logoutBtn');
     if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
     
-    // Populate userSelect - rol etiketleriyle
-    const userSelect = document.getElementById('userSelect');
-    if (userSelect) {
-        userSelect.innerHTML = '<option value="" disabled selected>👤 Personel Seçin</option>';
-        const rolEtiket = { gorevli: '🧹', mufettis: '🔍', idareci: '🏛️' };
-        usersData.forEach(user => {
-            const opt = document.createElement('option');
-            opt.value = user.name;
-            const icon = rolEtiket[user.rol] || '';
-            opt.textContent = icon + ' ' + user.name;
-            userSelect.appendChild(opt);
-        });
-        const optListe = document.createElement('option');
-        optListe.value = "Liste Dağılımı";
-        optListe.textContent = "📋 Liste Dağılımı";
-        userSelect.appendChild(optListe);
-    }
-
+    // Populate userSelect logic removed (using text input now)
+    
     checkSession();
     if (db) {
         syncFromCloud();
@@ -1399,9 +1388,13 @@ const MufettisFocus = {
 
 // YÖNLENDİRME (Header dahil)
 function _routeUser() {
-    if (!currentUser) { showPanel("loginPanel"); return; }
+    const header = document.getElementById("app-header");
+    if (!currentUser) { 
+        if(header) header.classList.add("d-none");
+        showPanel("loginPanel"); 
+        return; 
+    }
     
-    const header = document.getElementById("app-header"); 
     if(header) header.classList.remove("d-none");
     
     const badge = document.getElementById("headerUserBadge"); 
