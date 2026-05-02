@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/sw.js",
+      "headers": { "cache-control": "no-cache, no-store, must-revalidate" },
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/manifest.json",
+      "headers": { "Access-Control-Allow-Origin": "*" },
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/$1"
+    }
+  ]
+}
